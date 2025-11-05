@@ -1,203 +1,203 @@
 /* ========================================
-GROWTHEASY AI — FINAL CYBERPUNK THEME
-======================================== */
+   GROWTHEASY AI — FINAL CYBERPUNK THEME
+   ======================================== */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-background: #0a0f2c;
-color: #E0E7FF;
-font-family: 'Orbitron', sans-serif;
-min-height: 100vh;
-background-image:
-radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
-radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
-line-height: 1.5;
+  background: #0a0f2c;
+  color: #E0E7FF;
+  font-family: 'Orbitron', sans-serif;
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+  line-height: 1.5;
 }
 
 /* === NAV === */
 .navigation-bar {
-background: rgba(10, 15, 43, 0.9);
-border-bottom: 1px solid #00FFFF;
-padding: 1rem 2rem;
-backdrop-filter: blur(10px);
-position: sticky;
-top: 0;
-z-index: 100;
+  background: rgba(10, 15, 43, 0.9);
+  border-bottom: 1px solid #00FFFF;
+  padding: 1rem 2rem;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .nav-container {
-display: flex;
-justify-content: space-between;
-align-items: center;
-max-width: 1400px;
-margin: 0 auto;
-flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-wrap: wrap;
 }
 
 .nav-logo h1 {
-color: #00FFFF;
-font-size: 1.8rem;
-text-shadow: 0 0 10px #00FFFF;
-letter-spacing: 1px;
+  color: #00FFFF;
+  font-size: 1.8rem;
+  text-shadow: 0 0 10px #00FFFF;
+  letter-spacing: 1px;
 }
 
 .nav-links {
-display: flex;
-gap: 1.5rem;
-list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
 }
 
 .nav-btn {
-color: #E0E7FF;
-text-decoration: none;
-padding: 0.5rem 1rem;
-border-radius: 8px;
-font-weight: 500;
-transition: all 0.3s ease;
-font-size: 0.95rem;
+  color: #E0E7FF;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
 }
 
 .nav-btn:hover,
 .nav-btn.active {
-background: #00FFFF;
-color: #0a0f2c;
-box-shadow: 0 0 15px #00FFFF;
-transform: translateY(-2px);
+  background: #00FFFF;
+  color: #0a0f2c;
+  box-shadow: 0 0 15px #00FFFF;
+  transform: translateY(-2px);
 }
 
 .nav-actions button {
-background: transparent;
-border: 1px solid #00FFFF;
-color: #00FFFF;
-padding: 0.5rem 1rem;
-margin-left: 0.5rem;
-border-radius: 6px;
-cursor: pointer;
-font-size: 0.9rem;
-transition: 0.3s;
+  background: transparent;
+  border: 1px solid #00FFFF;
+  color: #00FFFF;
+  padding: 0.5rem 1rem;
+  margin-left: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.3s;
 }
 
 .nav-actions button:hover {
-background: #00FFFF;
-color: #0a0f2c;
-box-shadow: 0 0 10px #00FFFF;
+  background: #00FFFF;
+  color: #0a0f2c;
+  box-shadow: 0 0 10px #00FFFF;
 }
 
 /* === MOBILE MENU === */
 .mobile-menu-btn {
-display: none;
-background: rgba(0, 255, 255, 0.1);
-border: 1px solid #00FFFF;
-color: #00FFFF;
-font-size: 1.1rem;
-padding: 0.5rem 1rem;
-border-radius: 8px;
-cursor: pointer;
-font-family: 'Orbitron', sans-serif;
+  display: none;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid #00FFFF;
+  color: #00FFFF;
+  font-size: 1.1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .mobile-menu {
-display: none;
-position: absolute;
-top: 100%;
-right: 1rem;
-background: rgba(10, 15, 43, 0.98);
-border: 1px solid #00FFFF;
-border-radius: 12px;
-padding: 1rem;
-min-width: 220px;
-box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
-z-index: 1000;
-backdrop-filter: blur(10px);
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 1rem;
+  background: rgba(10, 15, 43, 0.98);
+  border: 1px solid #00FFFF;
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 220px;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
 }
 
 .mobile-menu a,
 .mobile-menu button {
-display: block;
-width: 100%;
-text-align: left;
-color: #E0E7FF;
-padding: 0.8rem 1rem;
-text-decoration: none;
-border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-font-size: 1rem;
-background: none;
-border: none;
-cursor: pointer;
-transition: 0.3s;
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: #E0E7FF;
+  padding: 0.8rem 1rem;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  font-size: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 .mobile-menu a:last-child,
 .mobile-menu button:last-child {
-border-bottom: none;
+  border-bottom: none;
 }
 
 .mobile-menu a:hover,
 .mobile-menu button:hover {
-background: #00FFFF;
-color: #0a0f2c;
-border-radius: 8px;
+  background: #00FFFF;
+  color: #0a0f2c;
+  border-radius: 8px;
 }
 
 /* === MAIN === */
 .page-view {
-max-width: 1400px;
-margin: 2rem auto;
-padding: 0 2rem;
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 2rem;
 }
 
 .page-view h1 {
-font-size: 2.5rem;
-color: #00FFFF;
-text-align: center;
-margin-bottom: 2rem;
-text-shadow: 0 0 15px #00FFFF;
-letter-spacing: 1px;
+  font-size: 2.5rem;
+  color: #00FFFF;
+  text-align: center;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 15px #00FFFF;
+  letter-spacing: 1px;
 }
 
 /* === METRICS === */
 .metrics-container {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-gap: 1.5rem;
-margin: 2rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
 }
 
 .metric-card {
-background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(255, 0, 255, 0.15));
-border: 1px solid #00FFFF;
-border-radius: 16px;
-padding: 1.5rem;
-text-align: center;
-transition: all 0.4s ease;
-backdrop-filter: blur(8px);
-min-height: 160px;
-display: flex;
-flex-direction: column;
-justify-content: center;
-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(255, 0, 255, 0.15));
+  border: 1px solid #00FFFF;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.4s ease;
+  backdrop-filter: blur(8px);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .metric-card:hover {
-transform: translateY(-8px) scale(1.02);
-box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
 }
 
 .metric-card h3 {
-font-size: 0.9rem;
-color: #00FFFF;
-text-transform: uppercase;
-letter-spacing: 1.5px;
-margin-bottom: 0.5rem;
-font-weight: 600;
+  font-size: 0.9rem;
+  color: #00FFFF;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .metric-card p {
-font-size: 1.8rem;
-font-weight: 700;
-color: #FFFFFF;
-margin: 0.3rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0.3rem 0;
 }
 
 .trend { color: #00FF88 !important; font-size: 1.2rem !important; }
@@ -224,110 +224,23 @@ margin: 0.3rem 0;
 .chat-messages p:nth-child(even) { background: rgba(255, 255, 255, 0.1); color: #E0E7FF; }
 .chat-input-row { display: flex; gap: 0.5rem; }
 #chat-input { flex: 1; background: rgba(0, 0, 0, 0.4); border: 1px solid #00FFFF; color: #E0E7FF; padding: 0.7rem; border-radius: 8px; font-size: 0.95rem; }
-.send-btn { background: #00FFFF; color: #0a0f2c; border: none; padding: 0 1.2rem; border-radius: 8
+.send-btn { background: #00FFFF; color: #0a0f2c; border: none; padding: 0 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
 
+/* === FOOTER === */
+.footer { text-align: center; padding: 2rem; color: #666; font-size: 0.9rem; margin-top: 3rem; border-top: 1px solid rgba(0, 255, 255, 0.2); }
+.footer a { color: #00FFFF; margin: 0 1rem; text-decoration: none; transition: 0.3s; }
+.footer a:hover { text-shadow: 0 0 10px #00FFFF; }
 
-// script.js — FINAL: METRICS + CHAT + MOBILE MENU
-document.addEventListener('DOMContentLoaded', async () => {
-// === MOCK DATA (FALLBACK) ===
-const MOCK_DATA = {
-metrics: {
-revenue: { total: 12450, trend: "12%" },
-shopify: { churn_rate: 3.2, at_risk_customers: 18 },
-ga4: { acquisition_cost: 87, top_channel: "Organic" }
-},
-insights: { churn: "18 customers at risk. Send 'We Miss You' email with 20% off." }
-};
-
-// === FETCH REAL DATA OR USE MOCK ===
-async function fetchData() {
-try {
-const res = await fetch('https://growth-easy-analytics-2.onrender.com/metrics', {
-headers: {
-"X-API-Key": "8f3a9c2d1e5b7g4h6j9k0l2m3n4p5q6r",
-"user-id": "sean"
+/* === MOBILE === */
+@media (max-width: 768px) {
+  .nav-links, .nav-actions { display: none !important; }
+  .mobile-menu-btn { display: block !important; }
+  .mobile-menu.open { display: block !important; }
+  .nav-container { justify-content: space-between; padding: 0.5rem 1rem; }
+  .nav-logo h1 { font-size: 1.5rem; }
+  .metrics-container { grid-template-columns: 1fr; }
+  .metric-card p { font-size: 1.5rem; }
+  .page-view { padding: 0 1rem; }
+  .page-view h1 { font-size: 2rem; }
+  .bottom-panel { grid-template-columns: 1fr; }
 }
-});
-if (!res.ok) throw new Error();
-return await res.json();
-} catch {
-return MOCK_DATA.metrics;
-}
-}
-
-// === ELEMENTS ===
-const metricsDiv = document.getElementById('dashboard-metrics');
-const insightsDiv = document.getElementById('ai-insights');
-const chatMessagesDiv = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.querySelector('.send-btn');
-const refreshBtn = document.querySelector('.refresh-btn');
-const menuBtn = document.querySelector('.mobile-menu-btn');
-const mobileMenu = document.querySelector('.mobile-menu');
-
-// === LOAD METRICS ===
-const data = await fetchData();
-metricsDiv.innerHTML = `
-<div class="metrics-container">
-<div class="metric-card"><h3>Revenue</h3><p>£${data.revenue.total.toLocaleString()}</p><p class="trend">up ${data.revenue.trend}</p></div>
-<div class="metric-card"><h3>Churn Rate</h3><p>${data.shopify.churn_rate}%</p><p class="at-risk">${data.shopify.at_risk_customers} at risk</p></div>
-<div class="metric-card"><h3>Acquisition Cost</h3><p>£${data.ga4.acquisition_cost}</p></div>
-<div class="metric-card"><h3>Top Channel</h3><p>${data.ga4.top_channel}</p></div>
-</div>
-`;
-
-// === AI INSIGHT ===
-insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${MOCK_DATA.insights.churn}</p>`;
-
-// === CHAT SYSTEM ===
-let messages = ['AI: Welcome! 18 at risk. Send 20% off.'];
-if (!localStorage.getItem('welcome_shown')) {
-localStorage.setItem('welcome_shown', 'true');
-} else {
-messages = [];
-}
-
-const updateChat = () => {
-chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
-chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
-};
-updateChat();
-
-sendBtn.addEventListener('click', () => {
-const q = chatInput.value.trim();
-if (!q) return;
-messages.push(`You: ${q}`, 'AI: Thinking...');
-updateChat();
-chatInput.value = '';
-setTimeout(() => {
-messages[messages.length - 1] = `AI: Churn is 3.2%. Send email now.`;
-updateChat();
-}, 800);
-});
-
-// === REFRESH BUTTON ===
-refreshBtn?.addEventListener('click', () => location.reload());
-
-// === MOBILE MENU TOGGLE ===
-menuBtn?.addEventListener('click', (e) => {
-e.stopPropagation();
-mobileMenu.classList.toggle('open');
-menuBtn.textContent = mobileMenu.classList.contains('open') ? 'Close' : 'Menu';
-});
-
-// Close menu when clicking outside
-document.addEventListener('click', (e) => {
-if (!menuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
-mobileMenu?.classList.remove('open');
-if (menuBtn) menuBtn.textContent = 'Menu';
-}
-});
-
-// Close menu on link click
-mobileMenu?.querySelectorAll('a, button').forEach(link => {
-link.addEventListener('click', () => {
-mobileMenu.classList.remove('open');
-if (menuBtn) menuBtn.textContent = 'Menu';
-});
-});
-});
