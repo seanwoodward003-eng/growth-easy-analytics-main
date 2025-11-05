@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GrowthEasy AI - Dashboard</title>
+<title>GrowthEasy AI - AI Growth Analytics for SMBs</title>
 <link rel="stylesheet" href="styles.css">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -54,7 +54,10 @@
 <option value="Returning">Returning</option>
 </select>
 </div>
-<div class="chart-placeholder">Mock Charts (Line/Bar)</div>
+<div class="chart-placeholder">
+<div class="pulse-glow"></div>
+<p>Revenue Trend (Line Chart)</p>
+</div>
 </div>
 
 <!-- BOTTOM PANEL -->
@@ -66,10 +69,10 @@
 
 <!-- CHAT -->
 <div class="chat-panel">
-<h3>AI Chat</h3>
+<h3>AI Growth Coach</h3>
 <div class="chat-messages" id="chat-messages"></div>
 <div class="chat-input-row">
-<input type="text" id="chat-input" placeholder="Ask AI about your growth..." />
+<input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO..." />
 <button class="send-btn">Send</button>
 </div>
 </div>
@@ -112,10 +115,10 @@ const USER_ID = "sean";
 const res = await fetch(`${API_BASE}/${endpoint}`, {
 headers: { "X-API-Key": API_KEY, "user-id": USER_ID }
 });
-if (!res.ok) throw new Error();
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 return await res.json();
-} catch (e) {
-console.warn("Backend down → Using MOCK DATA");
+} catch (err) {
+console.warn("Backend down → Using MOCK DATA", err);
 return MOCK_DATA.metrics;
 }
 }
@@ -137,25 +140,29 @@ const chatMessagesDiv = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const sendBtn = document.querySelector('.send-btn');
 
-// === RENDER METRICS ===
+// Loading
+metricsDiv.innerHTML = `<p class="loading-text">Loading metrics...</p>`;
+insightsDiv.innerHTML = `<p class="loading-text">Loading AI insights...</p>`;
+
+// Render Metrics
 const renderMetrics = (data) => {
 metricsDiv.innerHTML = `
 <div class="metrics-container">
-<div class="metric-card revenue-tile" id="revenue-card">
+<div class="metric-card revenue-tile">
 <h3>Revenue</h3>
 <p id="revenue-total">£${data.revenue.total.toLocaleString()}</p>
 <p class="trend" id="revenue-trend">↑ ${data.revenue.trend}</p>
 </div>
-<div class="metric-card churn-tile" id="churn-card">
+<div class="metric-card churn-tile">
 <h3>Churn Rate</h3>
 <p id="churn-rate">${data.shopify.churn_rate}%</p>
 <p class="at-risk" id="at-risk">${data.shopify.at_risk_customers} at risk</p>
 </div>
-<div class="metric-card acquisition-tile" id="acquisition-card">
+<div class="metric-card acquisition-tile">
 <h3>Acquisition Cost</h3>
 <p id="cac">£${data.ga4.acquisition_cost}</p>
 </div>
-<div class="metric-card channel-tile" id="channel-card">
+<div class="metric-card channel-tile">
 <h3>Top Channel</h3>
 <p id="top-channel">${data.ga4.top_channel}</p>
 </div>
@@ -163,12 +170,12 @@ metricsDiv.innerHTML = `
 `;
 };
 
-// === RENDER AI INSIGHT ===
+// Render Insight
 const renderInsight = (text) => {
 insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${text}</p>`;
 };
 
-// === LOAD DATA ===
+// Load Data
 const data = await fetchData("metrics");
 renderMetrics(data);
 const insight = await fetchAIInsight("churn");
@@ -176,9 +183,7 @@ renderInsight(insight.insight);
 
 // === CHAT SYSTEM ===
 let messages = [];
-const welcomeShown = localStorage.getItem('welcome_shown');
-
-if (!welcomeShown) {
+if (!localStorage.getItem('welcome_shown')) {
 messages = [
 'AI: Welcome! I just analyzed your store...',
 'AI: 18 customers at risk.',
@@ -193,7 +198,7 @@ chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
 };
 updateChat();
 
-sendBtn.addEventListener('click', async () => {
+sendBtn?.addEventListener('click', async () => {
 const question = chatInput.value.trim();
 if (!question) return;
 
@@ -231,5 +236,6 @@ document.querySelector('.refresh-btn')?.addEventListener('click', () => location
 </script>
 </body>
 </html>
+
 
 
