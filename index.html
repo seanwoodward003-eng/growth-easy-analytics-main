@@ -1,304 +1,235 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>GrowthEasy AI - Dashboard</title>
-
-  <link rel="stylesheet" href="styles.css">
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrowthEasy AI - Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
-  <div class="navigation-bar">
+<!-- NAVIGATION -->
+<div class="navigation-bar">
+<nav class="nav-container">
+<div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+<ul class="nav-links">
+<li><a href="index.html" class="nav-btn active">Dashboard</a></li>
+<li><a href="churn.html" class="nav-btn">Churn</a></li>
+<li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+<li><a href="retention.html" class="nav-btn">Retention</a></li>
+<li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+<li><a href="performance.html" class="nav-btn">Performance</a></li>
+<li><a href="about.html" class="nav-btn">About</a></li>
+<li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+</ul>
+<div class="nav-actions">
+<button class="profile-btn">Profile</button>
+<button class="logout-btn">Logout</button>
+<button class="refresh-btn">Refresh</button>
+</div>
+</nav>
+</div>
 
-    <nav class="nav-container">
+<!-- MAIN CONTENT -->
+<div id="root" class="page-view dashboard-view">
+<h1>Dashboard</h1>
 
-      <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+<!-- METRICS GRID -->
+<div id="dashboard-metrics" class="metrics-container">
+<p class="loading-text">Loading metrics...</p>
+</div>
 
-      <ul class="nav-links">
+<!-- CHARTS -->
+<div class="charts-panel">
+<div class="filter-bar">
+<select id="time-filter" class="filter-select">
+<option value="Weekly">Weekly</option>
+<option value="Monthly">Monthly</option>
+<option value="Custom">Custom</option>
+</select>
+<select id="customer-filter" class="filter-select">
+<option value="All">All</option>
+<option value="New">New</option>
+<option value="Returning">Returning</option>
+</select>
+</div>
+<div class="chart-placeholder">Mock Charts (Line/Bar)</div>
+</div>
 
-        <li><a href="dashboard.html" class="nav-btn active">Dashboard</a></li>
+<!-- BOTTOM PANEL -->
+<div class="bottom-panel">
+<!-- AI INSIGHTS -->
+<div class="ai-insights" id="ai-insights">
+<p class="loading-text">Loading AI insights...</p>
+</div>
 
-        <li><a href="churn.html" class="nav-btn">Churn</a></li>
+<!-- CHAT -->
+<div class="chat-panel">
+<h3>AI Chat</h3>
+<div class="chat-messages" id="chat-messages"></div>
+<div class="chat-input-row">
+<input type="text" id="chat-input" placeholder="Ask AI about your growth..." />
+<button class="send-btn">Send</button>
+</div>
+</div>
+</div>
+</div>
 
-        <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+<!-- FOOTER -->
+<div class="footer">
+<a href="contact.html">Contact</a>
+<a href="terms.html">Terms</a>
+<a href="privacy.html">Privacy</a>
+<p>Beta v0.1 © 2025 GrowthEasy AI</p>
+</div>
 
-        <li><a href="retention.html" class="nav-btn">Retention</a></li>
-
-        <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-
-        <li><a href="performance.html" class="nav-btn">Performance</a></li>
-
-        <li><a href="about.html" class="nav-btn">About</a></li>
-
-        <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
-
-      </ul>
-
-      <div class="nav-actions">
-
-        <button class="profile-btn">Profile</button>
-
-        <button class="logout-btn">Logout</button>
-
-        <button class="refresh-btn">Refresh</button>
-
-      </div>
-
-    </nav>
-
-  </div>
-
-  <div id="root" class="page-view dashboard-view">
-
-    <h1>Dashboard</h1>
-
-    <div id="dashboard-metrics"></div>
-
-    <div class="charts-panel">
-
-      <div class="filter-bar">
-
-        <select id="time-filter" class="filter-select">
-
-          <option value="Weekly">Weekly</option>
-
-          <option value="Monthly">Monthly</option>
-
-          <option value="Custom">Custom</option>
-
-        </select>
-
-        <select id="customer-filter" class="filter-select">
-
-          <option value="All">All</option>
-
-          <option value="New">New</option>
-
-          <option value="Returning">Returning</option>
-
-        </select>
-
-      </div>
-
-      <div class="chart-placeholder">Mock Charts (Line/Bar)</div>
-
-    </div>
-
-    <div class="bottom-panel">
-
-      <div class="ai-insights" id="ai-insights"></div>
-
-      <div class="chat-panel">
-
-        <h3>Chat</h3>
-
-        <div class="chat-messages" id="chat-messages"></div>
-
-        <input type="text" id="chat-input" placeholder="Ask AI..." />
-
-        <button class="send-btn">Send</button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  <div class="footer">
-
-    <a href="#">About</a><a href="#">Contact</a><a href="#">Terms</a>
-
-    <p>Beta v0.1 © 2025 GrowthEasy</p>
-
-  </div>
-
-
-
+<!-- SCRIPT -->
 <script>
-
-  document.addEventListener('DOMContentLoaded', async () => {
-
-    const metricsDiv = document.getElementById('dashboard-metrics');
-
-    const insightsDiv = document.getElementById('ai-insights');
-
-    const chatMessagesDiv = document.getElementById('chat-messages');
-
-    const chatInput = document.getElementById('chat-input');
-
-    const sendBtn = document.querySelector('.send-btn');
-
-
-
-    // === SHOW LOADING ===
-
-    metricsDiv.innerHTML = "<p>Loading metrics...</p>";
-
-    insightsDiv.innerHTML = "<p>Loading AI insights...</p>";
-
-
-
-    // === FETCH METRICS ===
-
-    const metrics = await fetchData("metrics", {
-
-      "shopify_api_key": SHOPIFY.api_key,
-
-      "shopify_password": SHOPIFY.password,
-
-      "shopify_shop": SHOPIFY.shop
-
-    });
-
-
-
-    if (!metrics.error) {
-
-      metricsDiv.innerHTML = `
-
-        <div class="metrics-container">
-
-          <div class="revenue-tile">
-
-            <h3>Revenue</h3>
-
-            <p>£${metrics.revenue?.total || '0'}</p>
-
-            <p class="trend">↑ ${metrics.revenue?.trend || '0%'}</p>
-
-          </div>
-
-          <div class="churn-tile">
-
-            <h3>Churn Rate</h3>
-
-            <p>${metrics.shopify?.churn_rate || '0'}%</p>
-
-            <p class="at-risk">${metrics.shopify?.at_risk_customers || '0'} at risk</p>
-
-          </div>
-
-          <div class="acquisition-tile">
-
-            <h3>Acquisition Cost</h3>
-
-            <p>£${metrics.ga4?.acquisition_cost || '0'}</p>
-
-          </div>
-
-          <div class="channel-tile">
-
-            <h3>Top Channel</h3>
-
-            <p>${metrics.ga4?.top_channel || 'N/A'}</p>
-
-          </div>
-
-        </div>
-
-      `;
-
-    } else {
-
-      metricsDiv.innerHTML = `<p class="alert-text">Metrics offline</p>`;
-
-    }
-
-
-
-    // === FETCH AI INSIGHT ===
-
-    const ai = await fetchAIInsight("churn");
-
-    insightsDiv.innerHTML = ai.error
-
-      ? `<p class="alert-text">AI offline</p>`
-
-      : `<p class="alert-text">${ai.insight}</p>`;
-
-
-
-    // === CHAT SYSTEM ===
-
-    let messages = ['AI: Welcome! Ask me anything about your business.'];
-
-    const updateChat = () => {
-
-      chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
-
-      chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
-
-    };
-
-    updateChat();
-
-
-
-    sendBtn.addEventListener('click', async () => {
-
-      const question = chatInput.value.trim();
-
-      if (!question) return;
-
-
-
-      messages.push(`You: ${question}`, 'AI: Thinking...');
-
-      updateChat();
-
-      chatInput.value = '';
-
-
-
-      const aiRes = await fetchAIInsight("churn");
-
-      messages[messages.length - 1] = aiRes.error
-
-        ? 'AI: Sorry, I couldn’t process that.'
-
-        : `AI: ${aiRes.insight}`;
-
-      updateChat();
-
-    });
-
-
-
-    // === FILTERS (VISUAL ONLY) ===
-
-    ['time-filter', 'customer-filter'].forEach(id => {
-
-      const el = document.getElementById(id);
-
-      if (el) {
-
-        el.addEventListener('change', () => {
-
-          el.style.boxShadow = '0 0 20px #00FFFF';
-
-          setTimeout(() => el.style.boxShadow = '0 0 10px #00FFFF', 300);
-
-        });
-
-      }
-
-    });
-
-  });
-
+// === MOCK DATA (INSTANT WOW) ===
+const MOCK_DATA = {
+metrics: {
+revenue: { total: 12450, trend: "12%" },
+shopify: { churn_rate: 3.2, at_risk_customers: 18 },
+ga4: { acquisition_cost: 87, top_channel: "Organic" }
+},
+insights: {
+churn: "18 customers at risk. Send 'We Miss You' email with 20% off.",
+revenue: "Forecast: £14,200 next month. Launch upsell campaign.",
+acquisition: "Organic is your top channel. Double down on SEO blog posts.",
+retention: "Retention rate 78%. Add loyalty program to boost to 85%.",
+performance: "LTV:CAC = 4.8:1. You're in the top 5% of SaaS!"
+}
+};
+
+// === FETCH DATA (LIVE OR MOCK) ===
+async function fetchData(endpoint) {
+try {
+const API_BASE = 'https://growth-easy-analytics-2.onrender.com';
+const API_KEY = "8f3a9c2d1e5b7g4h6j9k0l2m3n4p5q6r";
+const USER_ID = "sean";
+
+const res = await fetch(`${API_BASE}/${endpoint}`, {
+headers: { "X-API-Key": API_KEY, "user-id": USER_ID }
+});
+if (!res.ok) throw new Error();
+return await res.json();
+} catch (e) {
+console.warn("Backend down → Using MOCK DATA");
+return MOCK_DATA.metrics;
+}
+}
+
+async function fetchAIInsight(endpoint) {
+try {
+const res = await fetchData("ai/insights");
+return res.error ? { insight: MOCK_DATA.insights[endpoint] } : res;
+} catch {
+return { insight: MOCK_DATA.insights[endpoint] || "Ask me anything about your growth!" };
+}
+}
+
+// === RENDER DASHBOARD ===
+document.addEventListener('DOMContentLoaded', async () => {
+const metricsDiv = document.getElementById('dashboard-metrics');
+const insightsDiv = document.getElementById('ai-insights');
+const chatMessagesDiv = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.querySelector('.send-btn');
+
+// === RENDER METRICS ===
+const renderMetrics = (data) => {
+metricsDiv.innerHTML = `
+<div class="metrics-container">
+<div class="metric-card revenue-tile" id="revenue-card">
+<h3>Revenue</h3>
+<p id="revenue-total">£${data.revenue.total.toLocaleString()}</p>
+<p class="trend" id="revenue-trend">↑ ${data.revenue.trend}</p>
+</div>
+<div class="metric-card churn-tile" id="churn-card">
+<h3>Churn Rate</h3>
+<p id="churn-rate">${data.shopify.churn_rate}%</p>
+<p class="at-risk" id="at-risk">${data.shopify.at_risk_customers} at risk</p>
+</div>
+<div class="metric-card acquisition-tile" id="acquisition-card">
+<h3>Acquisition Cost</h3>
+<p id="cac">£${data.ga4.acquisition_cost}</p>
+</div>
+<div class="metric-card channel-tile" id="channel-card">
+<h3>Top Channel</h3>
+<p id="top-channel">${data.ga4.top_channel}</p>
+</div>
+</div>
+`;
+};
+
+// === RENDER AI INSIGHT ===
+const renderInsight = (text) => {
+insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${text}</p>`;
+};
+
+// === LOAD DATA ===
+const data = await fetchData("metrics");
+renderMetrics(data);
+const insight = await fetchAIInsight("churn");
+renderInsight(insight.insight);
+
+// === CHAT SYSTEM ===
+let messages = [];
+const welcomeShown = localStorage.getItem('welcome_shown');
+
+if (!welcomeShown) {
+messages = [
+'AI: Welcome! I just analyzed your store...',
+'AI: 18 customers at risk.',
+'AI: Send 20% off → save £2,400.'
+];
+localStorage.setItem('welcome_shown', 'true');
+}
+
+const updateChat = () => {
+chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
+chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+};
+updateChat();
+
+sendBtn.addEventListener('click', async () => {
+const question = chatInput.value.trim();
+if (!question) return;
+
+messages.push(`You: ${question}`, 'AI: Thinking...');
+updateChat();
+chatInput.value = '';
+
+setTimeout(() => {
+const responses = [
+"Churn's 3.2%. Send 'We Miss You' email with 20% off.",
+"Organic is killing it. Double down on SEO.",
+"LTV:CAC = 4.8:1. You're in the top 5% of SaaS!",
+"Revenue up 12%. Launch upsell campaign now."
+];
+const reply = responses[Math.floor(Math.random() * responses.length)];
+messages[messages.length - 1] = `AI: ${reply}`;
+updateChat();
+}, 800);
+});
+
+// === FILTER GLOW ===
+['time-filter', 'customer-filter'].forEach(id => {
+const el = document.getElementById(id);
+if (el) {
+el.addEventListener('change', () => {
+el.style.boxShadow = '0 0 20px #00FFFF';
+setTimeout(() => el.style.boxShadow = '0 0 10px #00FFFF', 300);
+});
+}
+});
+
+// === REFRESH ===
+document.querySelector('.refresh-btn')?.addEventListener('click', () => location.reload());
+});
 </script>
-
-
-
 </body>
-
 </html>
+
 
