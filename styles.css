@@ -244,3 +244,58 @@ body {
   .page-view h1 { font-size: 2rem; }
   .bottom-panel { grid-template-columns: 1fr; }
 }
+
+.legal-section {
+  background: rgba(10, 15, 43, 0.95);
+  border: 1px solid #00FFFF;
+  border-radius: 12px;
+  padding: 1.8rem;
+  margin: 2rem 0;
+  max-width: 700px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: #E0E7FF;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+}
+
+.legal-section h3 {
+  color: #00FFFF;
+  font-size: 1.4rem;
+  margin-bottom: 0.8rem;
+  text-shadow: 0 0 10px #00FFFF;
+}
+
+.legal-section h4 {
+  color: #00FFFF;
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.legal-section p {
+  margin-bottom: 0.8rem;
+}
+
+.legal-section a {
+  color: #00FFFF;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #E0E7FF;
+  margin: 1.2rem 0;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  margin-top: 0.2rem;
+}
+
+.checkbox-label a {
+  color: #00FFFF;
+  text-decoration: underline;
+}
