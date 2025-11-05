@@ -2,11 +2,7 @@
 GROWTHEASY AI — FINAL CYBERPUNK THEME
 ======================================== */
 
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
 background: #0a0f2c;
@@ -36,6 +32,7 @@ justify-content: space-between;
 align-items: center;
 max-width: 1400px;
 margin: 0 auto;
+flex-wrap: wrap;
 }
 
 .nav-logo h1 {
@@ -87,6 +84,62 @@ color: #0a0f2c;
 box-shadow: 0 0 10px #00FFFF;
 }
 
+/* === MOBILE MENU === */
+.mobile-menu-btn {
+display: none;
+background: rgba(0, 255, 255, 0.1);
+border: 1px solid #00FFFF;
+color: #00FFFF;
+font-size: 1.1rem;
+padding: 0.5rem 1rem;
+border-radius: 8px;
+cursor: pointer;
+font-family: 'Orbitron', sans-serif;
+}
+
+.mobile-menu {
+display: none;
+position: absolute;
+top: 100%;
+right: 1rem;
+background: rgba(10, 15, 43, 0.98);
+border: 1px solid #00FFFF;
+border-radius: 12px;
+padding: 1rem;
+min-width: 220px;
+box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+z-index: 1000;
+backdrop-filter: blur(10px);
+}
+
+.mobile-menu a,
+.mobile-menu button {
+display: block;
+width: 100%;
+text-align: left;
+color: #E0E7FF;
+padding: 0.8rem 1rem;
+text-decoration: none;
+border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+font-size: 1rem;
+background: none;
+border: none;
+cursor: pointer;
+transition: 0.3s;
+}
+
+.mobile-menu a:last-child,
+.mobile-menu button:last-child {
+border-bottom: none;
+}
+
+.mobile-menu a:hover,
+.mobile-menu button:hover {
+background: #00FFFF;
+color: #0a0f2c;
+border-radius: 8px;
+}
+
 /* === MAIN === */
 .page-view {
 max-width: 1400px;
@@ -103,7 +156,7 @@ text-shadow: 0 0 15px #00FFFF;
 letter-spacing: 1px;
 }
 
-/* === METRICS GRID === */
+/* === METRICS === */
 .metrics-container {
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -129,8 +182,6 @@ box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 .metric-card:hover {
 transform: translateY(-8px) scale(1.02);
 box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
-border-color: #00FFFF;
-background: linear-gradient(135deg, rgba(0, 255, 255, 0.25), rgba(255, 0, 255, 0.25));
 }
 
 .metric-card h3 {
@@ -147,221 +198,136 @@ font-size: 1.8rem;
 font-weight: 700;
 color: #FFFFFF;
 margin: 0.3rem 0;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
 }
 
-.trend {
-color: #00FF88 !important;
-font-size: 1.2rem !important;
-font-weight: 600;
-}
-
-.at-risk {
-color: #FF6B6B;
-font-size: 1rem;
-font-weight: 500;
-}
-
-.loading-text {
-text-align: center;
-color: #00FFFF;
-font-style: italic;
-opacity: 0.7;
-}
+.trend { color: #00FF88 !important; font-size: 1.2rem !important; }
+.at-risk { color: #FF6B6B; font-size: 1rem; }
+.loading-text { text-align: center; color: #00FFFF; opacity: 0.7; }
 
 /* === CHARTS === */
-.charts-panel {
-margin: 3rem 0;
-background: rgba(10, 15, 43, 0.6);
-border-radius: 16px;
-padding: 1.5rem;
-border: 1px solid #00FFFF;
-box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.filter-bar {
-display: flex;
-gap: 1rem;
-margin-bottom: 1rem;
-flex-wrap: wrap;
-}
-
-.filter-select {
-background: rgba(0, 255, 255, 0.1);
-border: 1px solid #00FFFF;
-color: #E0E7FF;
-padding: 0.6rem 1rem;
-border-radius: 8px;
-font-size: 0.95rem;
-cursor: pointer;
-transition: 0.3s;
-}
-
-.filter-select:hover {
-box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-}
-
-.chart-container {
-background: rgba(10, 15, 43, 0.6);
-border-radius: 16px;
-padding: 1.5rem;
-border: 1px solid #00FFFF;
-margin-top: 1rem;
-}
-
-.chart-container h3 {
-color: #00FFFF;
-font-size: 1.1rem;
-margin-bottom: 1rem;
-text-align: center;
-text-shadow: 0 0 10px #00FFFF;
-}
-
-.chart-svg {
-width: 100%;
-height: 300px;
-background: rgba(0, 0, 0, 0.3);
-border-radius: 12px;
-overflow: hidden;
-border: 1px dashed rgba(0, 255, 255, 0.3);
-}
-
-.chart-svg svg {
-width: 100%;
-height: 100%;
-}
-
-.chart-caption {
-text-align: center;
-color: #00FF88;
-font-size: 0.9rem;
-margin-top: 0.5rem;
-font-weight: 600;
-}
+.charts-panel { margin: 3rem 0; background: rgba(10, 15, 43, 0.6); border-radius: 16px; padding: 1.5rem; border: 1px solid #00FFFF; }
+.filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-select { background: rgba(0, 255, 255, 0.1); border: 1px solid #00FFFF; color: #E0E7FF; padding: 0.6rem 1rem; border-radius: 8px; }
+.chart-container { background: rgba(10, 15, 43, 0.6); border-radius: 16px; padding: 1.5rem; border: 1px solid #00FFFF; margin-top: 1rem; }
+.chart-container h3 { color: #00FFFF; font-size: 1.1rem; margin-bottom: 1rem; text-align: center; text-shadow: 0 0 10px #00FFFF; }
+.chart-svg { width: 100%; height: 300px; background: rgba(0, 0, 0, 0.3); border-radius: 12px; overflow: hidden; border: 1px dashed rgba(0, 255, 255, 0.3); }
+.chart-caption { text-align: center; color: #00FF88; font-size: 0.9rem; margin-top: 0.5rem; font-weight: 600; }
 
 /* === AI + CHAT === */
-.bottom-panel {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 2rem;
-margin-top: 2rem;
+.bottom-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+.ai-insights, .chat-panel { background: rgba(10, 15, 43, 0.8); border: 1px solid #00FFFF; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+.ai-insight-text { color: #E0E7FF; font-size: 1.1rem; line-height: 1.7; }
+.ai-insight-text strong { color: #00FFFF; }
+.chat-messages { height: 200px; overflow-y: auto; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(0, 255, 255, 0.2); }
+.chat-messages p { margin: 0.5rem 0; padding: 0.6rem 1rem; border-radius: 12px; max-width: 85%; font-size: 0.95rem; word-wrap: break-word; }
+.chat-messages p:nth-child(odd) { background: #00FFFF; color: #0a0f2c; margin-left: auto; text-align: right; }
+.chat-messages p:nth-child(even) { background: rgba(255, 255, 255, 0.1); color: #E0E7FF; }
+.chat-input-row { display: flex; gap: 0.5rem; }
+#chat-input { flex: 1; background: rgba(0, 0, 0, 0.4); border: 1px solid #00FFFF; color: #E0E7FF; padding: 0.7rem; border-radius: 8px; font-size: 0.95rem; }
+.send-btn { background: #00FFFF; color: #0a0f2c; border: none; padding: 0 1.2rem; border-radius: 8
+
+
+// script.js — FINAL: METRICS + CHAT + MOBILE MENU
+document.addEventListener('DOMContentLoaded', async () => {
+// === MOCK DATA (FALLBACK) ===
+const MOCK_DATA = {
+metrics: {
+revenue: { total: 12450, trend: "12%" },
+shopify: { churn_rate: 3.2, at_risk_customers: 18 },
+ga4: { acquisition_cost: 87, top_channel: "Organic" }
+},
+insights: { churn: "18 customers at risk. Send 'We Miss You' email with 20% off." }
+};
+
+// === FETCH REAL DATA OR USE MOCK ===
+async function fetchData() {
+try {
+const res = await fetch('https://growth-easy-analytics-2.onrender.com/metrics', {
+headers: {
+"X-API-Key": "8f3a9c2d1e5b7g4h6j9k0l2m3n4p5q6r",
+"user-id": "sean"
+}
+});
+if (!res.ok) throw new Error();
+return await res.json();
+} catch {
+return MOCK_DATA.metrics;
+}
 }
 
-.ai-insights,
-.chat-panel {
-background: rgba(10, 15, 43, 0.8);
-border: 1px solid #00FFFF;
-border-radius: 16px;
-padding: 1.5rem;
-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+// === ELEMENTS ===
+const metricsDiv = document.getElementById('dashboard-metrics');
+const insightsDiv = document.getElementById('ai-insights');
+const chatMessagesDiv = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.querySelector('.send-btn');
+const refreshBtn = document.querySelector('.refresh-btn');
+const menuBtn = document.querySelector('.mobile-menu-btn');
+const mobileMenu = document.querySelector('.mobile-menu');
+
+// === LOAD METRICS ===
+const data = await fetchData();
+metricsDiv.innerHTML = `
+<div class="metrics-container">
+<div class="metric-card"><h3>Revenue</h3><p>£${data.revenue.total.toLocaleString()}</p><p class="trend">up ${data.revenue.trend}</p></div>
+<div class="metric-card"><h3>Churn Rate</h3><p>${data.shopify.churn_rate}%</p><p class="at-risk">${data.shopify.at_risk_customers} at risk</p></div>
+<div class="metric-card"><h3>Acquisition Cost</h3><p>£${data.ga4.acquisition_cost}</p></div>
+<div class="metric-card"><h3>Top Channel</h3><p>${data.ga4.top_channel}</p></div>
+</div>
+`;
+
+// === AI INSIGHT ===
+insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${MOCK_DATA.insights.churn}</p>`;
+
+// === CHAT SYSTEM ===
+let messages = ['AI: Welcome! 18 at risk. Send 20% off.'];
+if (!localStorage.getItem('welcome_shown')) {
+localStorage.setItem('welcome_shown', 'true');
+} else {
+messages = [];
 }
 
-.ai-insight-text {
-color: #E0E7FF;
-font-size: 1.1rem;
-line-height: 1.7;
-}
+const updateChat = () => {
+chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
+chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+};
+updateChat();
 
-.ai-insight-text strong {
-color: #00FFFF;
-}
+sendBtn.addEventListener('click', () => {
+const q = chatInput.value.trim();
+if (!q) return;
+messages.push(`You: ${q}`, 'AI: Thinking...');
+updateChat();
+chatInput.value = '';
+setTimeout(() => {
+messages[messages.length - 1] = `AI: Churn is 3.2%. Send email now.`;
+updateChat();
+}, 800);
+});
 
-.chat-messages {
-height: 200px;
-overflow-y: auto;
-margin-bottom: 1rem;
-padding: 0.5rem;
-background: rgba(0, 0, 0, 0.3);
-border-radius: 8px;
-border: 1px solid rgba(0, 255, 255, 0.2);
-}
+// === REFRESH BUTTON ===
+refreshBtn?.addEventListener('click', () => location.reload());
 
-.chat-messages p {
-margin: 0.5rem 0;
-padding: 0.6rem 1rem;
-border-radius: 12px;
-max-width: 85%;
-font-size: 0.95rem;
-word-wrap: break-word;
-}
+// === MOBILE MENU TOGGLE ===
+menuBtn?.addEventListener('click', (e) => {
+e.stopPropagation();
+mobileMenu.classList.toggle('open');
+menuBtn.textContent = mobileMenu.classList.contains('open') ? 'Close' : 'Menu';
+});
 
-.chat-messages p:nth-child(odd) {
-background: #00FFFF;
-color: #0a0f2c;
-margin-left: auto;
-text-align: right;
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+if (!menuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
+mobileMenu?.classList.remove('open');
+if (menuBtn) menuBtn.textContent = 'Menu';
 }
+});
 
-.chat-messages p:nth-child(even) {
-background: rgba(255, 255, 255, 0.1);
-color: #E0E7FF;
-}
-
-.chat-input-row {
-display: flex;
-gap: 0.5rem;
-}
-
-#chat-input {
-flex: 1;
-background: rgba(0, 0, 0, 0.4);
-border: 1px solid #00FFFF;
-color: #E0E7FF;
-padding: 0.7rem;
-border-radius: 8px;
-font-size: 0.95rem;
-}
-
-#chat-input::placeholder {
-color: rgba(224, 231, 255, 0.6);
-}
-
-.send-btn {
-background: #00FFFF;
-color: #0a0f2c;
-border: none;
-padding: 0 1.2rem;
-border-radius: 8px;
-cursor: pointer;
-font-weight: 600;
-transition: 0.3s;
-}
-
-.send-btn:hover {
-background: #00cccc;
-box-shadow: 0 0 15px #00FFFF;
-}
-
-/* === FOOTER === */
-.footer {
-text-align: center;
-padding: 2rem;
-color: #666;
-font-size: 0.9rem;
-margin-top: 3rem;
-border-top: 1px solid rgba(0, 255, 255, 0.2);
-}
-
-.footer a {
-color: #00FFFF;
-margin: 0 1rem;
-text-decoration: none;
-transition: 0.3s;
-}
-
-.footer a:hover {
-text-shadow: 0 0 10px #00FFFF;
-}
-
-/* === MOBILE === */
-@media (max-width: 768px) {
-.nav-links { display: none; }
-.bottom-panel { grid-template-columns: 1fr; }
-.metrics-container { grid-template-columns: 1fr; gap: 1rem; }
-.metric-card p { font-size: 1.5rem; }
-.page-view { padding: 0 1rem; }
-.page-view h1 { font-size: 2rem; }
-}
-
+// Close menu on link click
+mobileMenu?.querySelectorAll('a, button').forEach(link => {
+link.addEventListener('click', () => {
+mobileMenu.classList.remove('open');
+if (menuBtn) menuBtn.textContent = 'Menu';
+});
+});
+});
