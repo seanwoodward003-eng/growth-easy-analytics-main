@@ -1,128 +1,126 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GrowthEasy AI - Performance</title>
-
-  <link rel="stylesheet" href="styles.css">
-
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-
   <div class="navigation-bar">
-
     <nav class="nav-container">
-
       <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
-
       <ul class="nav-links">
-
         <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
-
         <li><a href="churn.html" class="nav-btn">Churn</a></li>
-
         <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-
         <li><a href="retention.html" class="nav-btn">Retention</a></li>
-
         <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-
         <li><a href="performance.html" class="nav-btn active">Performance</a></li>
-
         <li><a href="about.html" class="nav-btn">About</a></li>
-
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
-
       </ul>
-
       <div class="nav-actions">
-
         <button class="profile-btn">Profile</button>
-
         <button class="logout-btn">Logout</button>
-
-        <button class="refresh-btn">Refresh</button>
-
+        <button class="refresh-btn" onclick="location.reload()">Refresh</button>
       </div>
-
     </nav>
-
   </div>
 
   <div id="root" class="page-view performance-view">
-
     <h1>Performance</h1>
 
-    <div id="performance-stats"></div>
-
-    <div id="ai-alert"></div>
-
-    <div id="summary">
-
-      <h3>Summary</h3>
-
-      <p id="performance-summary">Loading summary...</p>
-
+    <div class="controls">
+      <select id="time-filter" onchange="loadPerformance()">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+      <button onclick="exportCSV()">Export CSV</button>
     </div>
 
+    <div class="chart-container">
+      <canvas id="ltvCacChart"></canvas>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>LTV</h3>
+        <p id="ltv-value">£--</p>
+      </div>
+      <div class="stat-card">
+        <h3>CAC</h3>
+        <p id="cac-value">£--</p>
+      </div>
+      <div class="stat-card">
+        <h3>LTV:CAC</h3>
+        <p id="ratio-value">--:1</p>
+      </div>
+    </div>
+
+    <div class="ai-insight">
+      <h3>AI Alert</h3>
+      <p id="ai-alert">Loading...</p>
+    </div>
+
+    <div id="summary">
+      <h3>Summary</h3>
+      <p id="performance-summary">Loading summary...</p>
+    </div>
   </div>
 
   <div class="footer">
-
     <a href="#">About</a><a href="#">Contact</a><a href="#">Terms</a>
-
     <p>Beta v0.1 © 2025 GrowthEasy</p>
-
   </div>
 
   <script src="script.js"></script>
-
   <script>
+    let ltvCacChart;
 
-    document.addEventListener('DOMContentLoaded', async () => {
-
-      const statsDiv = document.getElementById('performance-stats');
-
-      const alertDiv = document.getElementById('ai-alert');
-
-      const summaryDiv = document.getElementById('performance-summary');
-
-
-
+    async function loadPerformance() {
       const data = await fetchData('performance');
+      const metrics = await fetchData('metrics');
 
-      if (!data.error) {
+      const ltv = data.ltv || 150;
+      const cac = data.cac || 50;
+      const ratio = (ltv / cac).toFixed(1);
 
-        statsDiv.innerHTML = `
+      document.getElementById('ltv-value').textContent = `£${ltv}`;
+      document.getElementById('cac-value').textContent = `£${cac}`;
+      document.getElementById('ratio-value').textContent = `${ratio}:1`;
 
-          <p>Lifetime Value (LTV): ${data.ltv || 'N/A'}</p>
+      if (ltvCacChart) ltvCacChart.destroy();
+      ltvCacChart = new Chart(document.getElementById('ltvCacChart'), {
+        type: 'bar',
+        data: {
+          labels: ['LTV', 'CAC'],
+          datasets: [{
+            label: 'Amount',
+            data: [ltv, cac],
+            backgroundColor: ['#2ecc71', '#e74c3c']
+          }]
+        },
+        options: { responsive: true }
+      });
 
-          <p>Customer Acquisition Cost (CAC): ${data.cac || 'N/A'}</p>
+      document.getElementById('ai-alert').textContent = 
+        ratio > 3 ? "Healthy LTV:CAC!" : "Reduce CAC — aim for 3:1.";
+      document.getElementById('performance-summary').textContent = 
+        `LTV:CAC = ${ratio}:1. Target >3:1 for sustainable growth.`;
+    }
 
-          <p>Profit Margin: ${data.margin || 'N/A'}%</p>
+    function exportCSV() {
+      const csv = `Metric,Value\nLTV,150\nCAC,50\nRatio,3.0`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'performance.csv'; a.click();
+    }
 
-        `;
-
-        alertDiv.innerHTML = `<h3>AI Alert</h3><p>${data.message || 'No alert'}</p>`;
-
-        summaryDiv.textContent = `Summary: ${data.message || 'Performance metrics stable, monitor CAC.'}`;
-
-      }
-
-    });
-
+    loadPerformance();
   </script>
-
 </body>
-
 </html>
-
-
-
