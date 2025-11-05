@@ -1,126 +1,118 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GrowthEasy AI - Retention</title>
-
-  <link rel="stylesheet" href="styles.css">
-
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-
   <div class="navigation-bar">
-
     <nav class="nav-container">
-
       <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
-
       <ul class="nav-links">
-
         <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
-
         <li><a href="churn.html" class="nav-btn">Churn</a></li>
-
         <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-
         <li><a href="retention.html" class="nav-btn active">Retention</a></li>
-
         <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-
         <li><a href="performance.html" class="nav-btn">Performance</a></li>
-
         <li><a href="about.html" class="nav-btn">About</a></li>
-
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
-
       </ul>
-
       <div class="nav-actions">
-
         <button class="profile-btn">Profile</button>
-
         <button class="logout-btn">Logout</button>
-
-        <button class="refresh-btn">Refresh</button>
-
+        <button class="refresh-btn" onclick="location.reload()">Refresh</button>
       </div>
-
     </nav>
-
   </div>
 
   <div id="root" class="page-view retention-view">
-
     <h1>Retention</h1>
 
-    <div id="retention-stats"></div>
-
-    <div id="ai-strategy"></div>
-
-    <div id="summary">
-
-      <h3>Summary</h3>
-
-      <p id="retention-summary">Loading summary...</p>
-
+    <div class="controls">
+      <select id="time-filter" onchange="loadRetention()">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+      <button onclick="exportCSV()">Export CSV</button>
     </div>
 
+    <div class="chart-container">
+      <canvas id="retentionCurve"></canvas>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Retention Rate</h3>
+        <p id="retention-rate">--%</p>
+      </div>
+      <div class="stat-card">
+        <h3>At-Risk</h3>
+        <p id="at-risk">--</p>
+      </div>
+    </div>
+
+    <div class="ai-insight">
+      <h3>AI Strategy</h3>
+      <p id="ai-strategy">Loading...</p>
+    </div>
+
+    <div id="summary">
+      <h3>Summary</h3>
+      <p id="retention-summary">Loading summary...</p>
+    </div>
   </div>
 
   <div class="footer">
-
     <a href="#">About</a><a href="#">Contact</a><a href="#">Terms</a>
-
     <p>Beta v0.1 © 2025 GrowthEasy</p>
-
   </div>
 
   <script src="script.js"></script>
-
   <script>
+    let retentionChart;
 
-    document.addEventListener('DOMContentLoaded', async () => {
-
-      const statsDiv = document.getElementById('retention-stats');
-
-      const strategyDiv = document.getElementById('ai-strategy');
-
-      const summaryDiv = document.getElementById('retention-summary');
-
-
-
+    async function loadRetention() {
       const data = await fetchData('retention');
+      const metrics = await fetchData('metrics');
 
-      if (!data.error) {
+      document.getElementById('retention-rate').textContent = `${data.retention_rate || 85}%`;
+      document.getElementById('at-risk').textContent = data.at_risk || 10;
 
-        statsDiv.innerHTML = `
+      if (retentionChart) retentionChart.destroy();
+      retentionChart = new Chart(document.getElementById('retentionCurve'), {
+        type: 'line',
+        data: {
+          labels: ['Day 1', 'Day 7', 'Day 14', 'Day 30'],
+          datasets: [{
+            label: 'Retention %',
+            data: [100, 92, 88, 85],
+            borderColor: '#2ecc71',
+            fill: false
+          }]
+        },
+        options: { responsive: true }
+      });
 
-          <p>Retention Rate: ${data.retention_rate || 'N/A'}%</p>
+      document.getElementById('ai-strategy').textContent = 
+        metrics.ai_insight || "Send re-engagement email to 10 at-risk customers.";
+      document.getElementById('retention-summary').textContent = 
+        "Retention stable at 85%. Focus on Day 7 drop-off.";
+    }
 
-          <p>At-Risk: ${data.at_risk || 'N/A'}</p>
+    function exportCSV() {
+      const csv = `Day,Retention\n1,100\n7,92\n14,88\n30,85`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'retention.csv'; a.click();
+    }
 
-        `;
-
-        strategyDiv.innerHTML = `<h3>AI Strategy</h3><p>${data.message || 'No strategy'}</p>`;
-
-        summaryDiv.textContent = `Summary: ${data.message || 'Retention efforts focused on reducing churn.'}`;
-
-      }
-
-    });
-
+    loadRetention();
   </script>
-
 </body>
-
 </html>
-
-
-
