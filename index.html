@@ -5,19 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GrowthEasy AI - AI Growth Analytics</title>
 
-<!-- FORCE NO CACHE -->
+<!-- NO CACHE -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<link rel="stylesheet" href="styles.css?v=7">
+<link rel="stylesheet" href="styles.css?v=8">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
+<!-- NAV -->
 <div class="navigation-bar">
 <nav class="nav-container">
 <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+
+<!-- DESKTOP NAV -->
 <ul class="nav-links">
 <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
 <li><a href="churn.html" class="nav-btn">Churn</a></li>
@@ -28,7 +31,27 @@
 <li><a href="about.html" class="nav-btn">About</a></li>
 <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
 </ul>
+
+<!-- MOBILE MENU BUTTON -->
+<button class="mobile-menu-btn">Menu</button>
+
+<!-- ACTIONS -->
 <div class="nav-actions">
+<button class="profile-btn">Profile</button>
+<button class="logout-btn">Logout</button>
+<button class="refresh-btn">Refresh</button>
+</div>
+
+<!-- MOBILE DROPDOWN -->
+<div class="mobile-menu">
+<a href="index.html" class="nav-btn">Dashboard</a>
+<a href="churn.html" class="nav-btn">Churn</a>
+<a href="acquisition.html" class="nav-btn">Acquisition</a>
+<a href="retention.html" class="nav-btn">Retention</a>
+<a href="revenue.html" class="nav-btn">Revenue</a>
+<a href="performance.html" class="nav-btn">Performance</a>
+<a href="about.html" class="nav-btn">About</a>
+<a href="signup.html" class="nav-btn">Sign Up</a>
 <button class="profile-btn">Profile</button>
 <button class="logout-btn">Logout</button>
 <button class="refresh-btn">Refresh</button>
@@ -36,6 +59,7 @@
 </nav>
 </div>
 
+<!-- MAIN -->
 <div id="root" class="page-view dashboard-view">
 <h1>Dashboard</h1>
 
@@ -114,11 +138,24 @@ fill="none" stroke="#00FFFF" stroke-width="4" stroke-linecap="round" filter="url
 <p>Beta v0.1 © 2025 GrowthEasy AI</p>
 </div>
 
-<!-- SCRIPT LINK -->
-<script src="script.js?v=7"></script>
+<!-- SCRIPT -->
+<script src="script.js?v=8"></script>
+
+<!-- MOBILE MENU JS -->
+<script>
+const menuBtn = document.querySelector('.mobile-menu-btn');
+const mobileMenu = document.querySelector('.mobile-menu');
+menuBtn?.addEventListener('click', (e) => {
+e.stopPropagation();
+mobileMenu.classList.toggle('open');
+menuBtn.textContent = mobileMenu.classList.contains('open') ? 'Close' : 'Menu';
+});
+document.addEventListener('click', (e) => {
+if (!menuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+mobileMenu.classList.remove('open');
+menuBtn.textContent = 'Menu';
+}
+});
+</script>
 </body>
 </html>
-
-
-
-
