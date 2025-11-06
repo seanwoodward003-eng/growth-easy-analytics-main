@@ -1,30 +1,6 @@
-// script.js — FINAL: METRICS + CHAT + MOBILE MENU
+// script.js — FINAL LIVE VERSION (REAL DATA ONLY, MULTI-PLATFORM CONNECT)
 document.addEventListener('DOMContentLoaded', async () => {
-  // === MOCK DATA (FALLBACK) ===
-  const MOCK_DATA = {
-    metrics: {
-      revenue: { total: 12450, trend: "12%" },
-      shopify: { churn_rate: 3.2, at_risk_customers: 18 },
-      ga4: { acquisition_cost: 87, top_channel: "Organic" }
-    },
-    insights: { churn: "18 customers at risk. Send 'We Miss You' email with 20% off." }
-  };
-
-  // === FETCH REAL DATA OR USE MOCK ===
-  async function fetchData() {
-    try {
-      const res = await fetch('https://growth-easy-analytics-2.onrender.com/metrics', {
-        headers: {
-          "X-API-Key": "8f3a9c2d1e5b7g4h6j9k0l2m3n4p5q6r",
-          "user-id": "sean"
-        }
-      });
-      if (!res.ok) throw new Error();
-      return await res.json();
-    } catch {
-      return MOCK_DATA.metrics;
-    }
-  }
+  const token = localStorage.getItem('token');
 
   // === ELEMENTS ===
   const metricsDiv = document.getElementById('dashboard-metrics');
@@ -36,28 +12,73 @@ document.addEventListener('DOMContentLoaded', async () => {
   const menuBtn = document.querySelector('.mobile-menu-btn');
   const mobileMenu = document.querySelector('.mobile-menu');
 
-  // === LOAD METRICS ===
-  const data = await fetchData();
-  metricsDiv.innerHTML = `
-    <div class="metrics-container">
-      <div class="metric-card"><h3>Revenue</h3><p>£${data.revenue.total.toLocaleString()}</p><p class="trend">up ${data.revenue.trend}</p></div>
-      <div class="metric-card"><h3>Churn Rate</h3><p>${data.shopify.churn_rate}%</p><p class="at-risk">${data.shopify.at_risk_customers} at risk</p></div>
-      <div class="metric-card"><h3>Acquisition Cost</h3><p>£${data.ga4.acquisition_cost}</p></div>
-      <div class="metric-card"><h3>Top Channel</h3><p>${data.ga4.top_channel}</p></div>
-    </div>
-  `;
+  // === FETCH REAL DATA ===
+  async function fetchData() {
+    if (!token) return { error: "Please log in" };
 
-  // === AI INSIGHT ===
-  insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${MOCK_DATA.insights.churn}</p>`;
-
-  // === CHAT SYSTEM ===
-  let messages = ['AI: Welcome! 18 at risk. Send 20% off.'];
-  if (!localStorage.getItem('welcome_shown')) {
-    localStorage.setItem('welcome_shown', 'true');
-  } else {
-    messages = [];
+    try {
+      const res = await fetch('/api/metrics', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error();
+      return await res.json();
+    } catch {
+      return { error: "Failed to load data" };
+    }
   }
 
+  // === RENDER METRICS ===
+  function renderMetrics(data) {
+    if (data.error === "Connect Shopify first") {
+      metricsDiv.innerHTML = `
+        <div class="connect-prompt">
+          <h3>Connect Your Accounts</h3>
+          <p>Unlock real-time revenue, churn, and AI insights.</p>
+          <button onclick="connectShopify()">Connect Shopify</button>
+          <button onclick="connectHubSpot()">Connect HubSpot</button>
+          <button onclick="connectGA4()">Connect Google Analytics</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (data.error) {
+      metricsDiv.innerHTML = `<p class="error">${data.error}</p>`;
+      return;
+    }
+
+    metricsDiv.innerHTML = `
+      <div class="metrics-container">
+        <div class="metric-card"><h3>Revenue</h3><p>£${data.revenue.total.toLocaleString()}</p><p class="trend">up ${data.revenue.trend}</p></div>
+        <div class="metric-card"><h3>Churn Rate</h3><p>${data.churn.rate}%</p><p class="at-risk">${data.churn.at_risk} at risk</p></div>
+        <div class="metric-card"><h3>Acquisition Cost</h3><p>£${data.ga4?.acquisition_cost || '--'}</p></div>
+        <div class="metric-card"><h3>Top Channel</h3><p>${data.ga4?.top_channel || '--'}</p></div>
+      </div>
+    `;
+
+    insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight}</p>`;
+  }
+
+  // === CONNECT FUNCTIONS ===
+  window.connectShopify = () => {
+    const shop = prompt("Enter your Shopify store (e.g. my-store.myshopify.com):");
+    if (shop) window.location.href = `/auth/shopify?shop=${shop}`;
+  };
+
+  window.connectHubSpot = () => {
+    window.location.href = '/auth/hubspot';
+  };
+
+  window.connectGA4 = () => {
+    window.location.href = '/auth/ga4';
+  };
+
+  // === LOAD DATA ===
+  const data = await fetchData();
+  renderMetrics(data);
+
+  // === CHAT SYSTEM ===
+  let messages = ['AI: Welcome! Ask me about churn, revenue, or growth.'];
   const updateChat = () => {
     chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
     chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
@@ -71,22 +92,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateChat();
     chatInput.value = '';
     setTimeout(() => {
-      messages[messages.length - 1] = `AI: Churn is 3.2%. Send email now.`;
+      messages[messages.length - 1] = `AI: Churn is ${data.churn?.rate || '--'}%. Send win-back emails to ${data.churn?.at_risk || 0} at-risk customers.`;
       updateChat();
     }, 800);
   });
 
-  // === REFRESH BUTTON ===
+  // === REFRESH ===
   refreshBtn?.addEventListener('click', () => location.reload());
 
-  // === MOBILE MENU TOGGLE ===
+  // === MOBILE MENU ===
   menuBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     mobileMenu.classList.toggle('open');
     menuBtn.textContent = mobileMenu.classList.contains('open') ? 'Close' : 'Menu';
   });
 
-  // Close menu when clicking outside
   document.addEventListener('click', (e) => {
     if (!menuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
       mobileMenu?.classList.remove('open');
@@ -94,7 +114,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Close menu on link click
   mobileMenu?.querySelectorAll('a, button').forEach(link => {
     link.addEventListener('click', () => {
       mobileMenu.classList.remove('open');
