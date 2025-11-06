@@ -1,56 +1,61 @@
-<!-- signup.html — FULL FINAL VERSION (CARD REQUIRED, AUTO-CHARGE £25 AFTER 7 DAYS) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Start Free Trial - GrowthEasy AI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Start Free Trial – GrowthEasy AI</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui,sans-serif; }
-    body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; display:flex; flex-direction:column; }
-    .nav { padding:15px; text-align:center; border-bottom:1px solid #00ffff; }
-    .nav h1 { color:#00ffff; font-size:1.4rem; }
-    .main { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; }
-    .card { background:rgba(0,0,0,0.8); padding:40px; border-radius:16px; text-align:center; max-width:420px; width:100%; border:1px solid #00ffff; }
-    h1 { color:#00ffff; margin-bottom:10px; }
-    .subtitle { color:#a0d8ff; margin-bottom:30px; }
-    .pricing { background:rgba(0,255,255,0.1); padding:20px; border-radius:12px; margin:20px 0; }
+    body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; padding-bottom:80px; display:flex; flex-direction:column; }
+    .header { padding:20px; text-align:center; border-bottom:1px solid #00ffff; }
+    .header h1 { color:#00ffff; font-size:1.8rem; text-shadow:0 0 10px #00ffff; }
+    .page { padding:20px; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .page.active { display:flex; }
+    .card { background:rgba(0,0,0,0.8); padding:30px; border-radius:16px; text-align:center; max-width:380px; width:100%; border:1px solid #00ffff; }
+    .price-box { background:rgba(0,255,255,0.1); padding:20px; border-radius:12px; margin:15px 0; }
     .price { font-size:2.5rem; color:#00ffff; font-weight:bold; }
     .price span { font-size:1rem; color:#88c0ff; }
-    .features { text-align:left; margin:20px 0; }
-    .features li { margin:8px 0; color:#e0e7ff; }
-    input { width:100%; padding:14px; margin:15px 0; border:1px solid #00ffff; border-radius:8px; background:transparent; color:#e0e7ff; }
-    button { width:100%; padding:16px; background:#00ffff; color:#0a0f2c; border:none; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 0 20px rgba(0,255,255,0.5); }
-    button:hover { transform:scale(1.02); }
-    .subtext { margin-top:15px; color:#88c0ff; font-size:0.95rem; }
-    .footer { text-align:center; padding:20px; color:#666; font-size:0.8rem; }
-    .footer a { color:#00ffff; text-decoration:none; }
+    input { width:100%; padding:14px; margin:12px 0; border:1px solid #00ffff; border-radius:8px; background:transparent; color:#e0e7ff; }
+    button { width:100%; padding:16px; background:#00ffff; color:#0a0f2c; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:10px; }
+    .subtext { margin-top:12px; color:#88c0ff; font-size:0.9rem; }
+    .mobile-nav { position:fixed; bottom:0; left:0; right:0; background:#0a0f2c; border-top:1px solid #00ffff; display:flex; z-index:1000; }
+    .mobile-nav button { flex:1; padding:16px; background:transparent; color:#00ffff; border:none; font-weight:bold; }
+    .mobile-nav button.active { background:rgba(0,255,255,0.2); }
   </style>
 </head>
 <body>
-  <div class="nav"><h1>GrowthEasy AI</h1></div>
-  <div class="main">
+
+  <div class="header"><h1>GrowthEasy AI</h1></div>
+
+  <!-- SIGNUP PAGE -->
+  <div id="signup" class="page active">
     <div class="card">
-      <h1>AI Growth for Shopify</h1>
-      <p class="subtitle">Full access. 7 days free.</p>
-      <div class="pricing">
+      <h2 style="color:#00ffff;">AI Growth for Shopify</h2>
+      <p style="margin:10px 0;">Full access. 7 days free.</p>
+
+      <div class="price-box">
         <div class="price">£0<span> for 7 days</span></div>
-        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8. £25/month auto-charged after trial. Cancel anytime.</p>
+        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
       </div>
-      <ul class="features">
+
+      <ul style="text-align:left; margin:15px 0; font-size:0.95rem;">
         <li>AI churn detection</li>
         <li>Revenue forecasting</li>
         <li>Shopify + GA4 sync</li>
         <li>Daily AI tips</li>
         <li>Export reports</li>
       </ul>
+
       <input type="email" id="email" placeholder="Your email" required />
       <button onclick="startTrial()">Start 7-Day Free Trial</button>
     </div>
   </div>
-  <div class="footer">
-    <p><a href="mailto:info@growtheasy-ai.com">info@growtheasy-ai.com</a> | <a href="#">Terms</a> | <a href="#">Privacy</a></p>
-    <p>Beta v0.1 © 2025 GrowthEasy AI</p>
+
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav">
+    <button onclick="go('performance')">Performance</button>
+    <button onclick="go('acquisition')">Acquisition</button>
+    <button class="active" onclick="go('signup')">Signup</button>
   </div>
 
   <script>
@@ -68,6 +73,13 @@
       } else {
         alert("Try again");
       }
+    }
+
+    function go(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(page).classList.add('active');
+      document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
     }
   </script>
 </body>
