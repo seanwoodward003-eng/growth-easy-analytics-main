@@ -83,61 +83,83 @@ body {
   color: #0a0f2c;
   box-shadow: 0 0 10px #00FFFF;
 }
-
-/* === MOBILE MENU === */
+/* MOBILE MENU FIX */
 .mobile-menu-btn {
   display: none;
   background: rgba(0, 255, 255, 0.1);
   border: 1px solid #00FFFF;
   color: #00FFFF;
-  font-size: 1.1rem;
-  padding: 0.5rem 1rem;
+  padding: 10px 15px;
   border-radius: 8px;
   cursor: pointer;
-  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
 }
 
 .mobile-menu {
   display: none;
   position: absolute;
   top: 100%;
-  right: 1rem;
+  right: 0;
   background: rgba(10, 15, 43, 0.98);
   border: 1px solid #00FFFF;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0;
   min-width: 220px;
   box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
   z-index: 1000;
   backdrop-filter: blur(10px);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
 }
 
-.mobile-menu a,
-.mobile-menu button {
+.mobile-menu.open {
   display: block;
-  width: 100%;
-  text-align: left;
+  max-height: 500px;
+  padding: 1rem;
+}
+
+.mobile-menu a {
+  display: block;
   color: #E0E7FF;
   padding: 0.8rem 1rem;
   text-decoration: none;
   border-bottom: 1px solid rgba(0, 255, 255, 0.2);
   font-size: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
   transition: 0.3s;
 }
 
-.mobile-menu a:last-child,
-.mobile-menu button:last-child {
-  border-bottom: none;
+.mobile-menu a:hover {
+  background: #00FFFF;
+  color: #0a0f2c;
+  border-radius: 8px;
 }
 
-.mobile-menu a:hover,
+.mobile-menu button {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: transparent;
+  color: #E0E7FF;
+  border: none;
+  text-align: left;
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
 .mobile-menu button:hover {
   background: #00FFFF;
   color: #0a0f2c;
   border-radius: 8px;
+}
+
+/* MOBILE ONLY */
+@media (max-width: 768px) {
+  .nav-links, .nav-actions { display: none !important; }
+  .mobile-menu-btn { display: block !important; }
+  .nav-container { justify-content: space-between; padding: 10px; }
+  .nav-logo h1 { font-size: 1.3rem; }
+}
+
 }
 
 /* === MAIN === */
