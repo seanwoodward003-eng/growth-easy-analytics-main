@@ -1,4 +1,4 @@
-<!-- signup.html — FULL FINAL VERSION -->
+<!-- signup.html — FULL FINAL VERSION (CARD REQUIRED, AUTO-CHARGE £25 AFTER 7 DAYS) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,9 +22,9 @@
     input { width:100%; padding:14px; margin:15px 0; border:1px solid #00ffff; border-radius:8px; background:transparent; color:#e0e7ff; }
     button { width:100%; padding:16px; background:#00ffff; color:#0a0f2c; border:none; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 0 20px rgba(0,255,255,0.5); }
     button:hover { transform:scale(1.02); }
-    .subtext { margin-top:15px; color:#88c0ff; }
+    .subtext { margin-top:15px; color:#88c0ff; font-size:0.95rem; }
     .footer { text-align:center; padding:20px; color:#666; font-size:0.8rem; }
-    .footer a { color:#00ffff; }
+    .footer a { color:#00ffff; text-decoration:none; }
   </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
       <p class="subtitle">Full access. 7 days free.</p>
       <div class="pricing">
         <div class="price">£0<span> for 7 days</span></div>
-        <p class="subtext">Then £25/month — cancel anytime</p>
+        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8. £25/month auto-charged after trial. Cancel anytime.</p>
       </div>
       <ul class="features">
         <li>AI churn detection</li>
@@ -46,7 +46,6 @@
       </ul>
       <input type="email" id="email" placeholder="Your email" required />
       <button onclick="startTrial()">Start 7-Day Free Trial</button>
-      <p class="subtext">No card required.</p>
     </div>
   </div>
   <div class="footer">
