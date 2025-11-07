@@ -1,123 +1,50 @@
-// script.js — FINAL LIVE VERSION (REAL DATA ONLY, MULTI-PLATFORM CONNECT)
-document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('token');
+// static/script.js
+let token = localStorage.getItem('token');
 
-  // === ELEMENTS ===
-  const metricsDiv = document.getElementById('dashboard-metrics');
-  const insightsDiv = document.getElementById('ai-insights');
-  const chatMessagesDiv = document.getElementById('chat-messages');
-  const chatInput = document.getElementById('chat-input');
-  const sendBtn = document.querySelector('.send-btn');
-  const refreshBtn = document.querySelector('.refresh-btn');
+function requireAuth() {
+  if (!token) { window.location.href = '/signup.html'; return false; }
+  return true;
+}
+
+async function fetchMetrics() {
+  if (!token) return { error: "No token" };
+  try {
+    const res = await fetch('/api/metrics', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return res.ok ? await res.json() : { error: "Failed" };
+  } catch { return { error: "Offline" }; }
+}
+
+window.connectShopify = () => {
+  const shop = prompt("Enter your Shopify store (e.g. mystore.myshopify.com)");
+  if (shop) window.location.href = `/auth/shopify?shop=${encodeURIComponent(shop)}`;
+};
+window.connectHubSpot = () => window.location.href = '/auth/hubspot';
+window.connectGA4 = () => window.location.href = '/auth/ga4';
+window.logout = () => { localStorage.removeItem('token'); window.location.href = '/signup.html'; };
+window.refreshData = () => location.reload();
+
+// Mobile Menu
+document.addEventListener('DOMContentLoaded', () => {
   const menuBtn = document.querySelector('.mobile-menu-btn');
   const mobileMenu = document.querySelector('.mobile-menu');
+  const overlay = document.createElement('div');
+  overlay.className = 'mobile-overlay';
+  document.body.appendChild(overlay);
+  const style = document.createElement('style');
+  style.textContent = `.mobile-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;}.mobile-overlay.open{display:block;}`;
+  document.head.appendChild(style);
 
-  // === FETCH REAL DATA ===
-  async function fetchData() {
-    if (!token) return { error: "Please log in" };
-
-    try {
-      const res = await fetch('/api/metrics', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error();
-      return await res.json();
-    } catch {
-      return { error: "Failed to load data" };
-    }
-  }
-
-  // === RENDER METRICS ===
-  function renderMetrics(data) {
-    if (data.error === "Connect Shopify first") {
-      metricsDiv.innerHTML = `
-        <div class="connect-prompt">
-          <h3>Connect Your Accounts</h3>
-          <p>Unlock real-time revenue, churn, and AI insights.</p>
-          <button onclick="connectShopify()">Connect Shopify</button>
-          <button onclick="connectHubSpot()">Connect HubSpot</button>
-          <button onclick="connectGA4()">Connect Google Analytics</button>
-        </div>
-      `;
-      return;
-    }
-
-    if (data.error) {
-      metricsDiv.innerHTML = `<p class="error">${data.error}</p>`;
-      return;
-    }
-
-    metricsDiv.innerHTML = `
-      <div class="metrics-container">
-        <div class="metric-card"><h3>Revenue</h3><p>£${data.revenue.total.toLocaleString()}</p><p class="trend">up ${data.revenue.trend}</p></div>
-        <div class="metric-card"><h3>Churn Rate</h3><p>${data.churn.rate}%</p><p class="at-risk">${data.churn.at_risk} at risk</p></div>
-        <div class="metric-card"><h3>Acquisition Cost</h3><p>£${data.ga4?.acquisition_cost || '--'}</p></div>
-        <div class="metric-card"><h3>Top Channel</h3><p>${data.ga4?.top_channel || '--'}</p></div>
-      </div>
-    `;
-
-    insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight}</p>`;
-  }
-
-  // === CONNECT FUNCTIONS ===
-  window.connectShopify = () => {
-    const shop = prompt("Enter your Shopify store (e.g. my-store.myshopify.com):");
-    if (shop) window.location.href = `/auth/shopify?shop=${shop}`;
-  };
-
-  window.connectHubSpot = () => {
-    window.location.href = '/auth/hubspot';
-  };
-
-  window.connectGA4 = () => {
-    window.location.href = '/auth/ga4';
-  };
-
-  // === LOAD DATA ===
-  const data = await fetchData();
-  renderMetrics(data);
-
-  // === CHAT SYSTEM ===
-  let messages = ['AI: Welcome! Ask me about churn, revenue, or growth.'];
-  const updateChat = () => {
-    chatMessagesDiv.innerHTML = messages.map(m => `<p>${m}</p>`).join('');
-    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
-  };
-  updateChat();
-
-  sendBtn.addEventListener('click', () => {
-    const q = chatInput.value.trim();
-    if (!q) return;
-    messages.push(`You: ${q}`, 'AI: Thinking...');
-    updateChat();
-    chatInput.value = '';
-    setTimeout(() => {
-      messages[messages.length - 1] = `AI: Churn is ${data.churn?.rate || '--'}%. Send win-back emails to ${data.churn?.at_risk || 0} at-risk customers.`;
-      updateChat();
-    }, 800);
-  });
-
-  // === REFRESH ===
-  refreshBtn?.addEventListener('click', () => location.reload());
-
-  // === MOBILE MENU ===
-  menuBtn?.addEventListener('click', (e) => {
+  menuBtn?.addEventListener('click', e => {
     e.stopPropagation();
-    mobileMenu.classList.toggle('open');
-    menuBtn.textContent = mobileMenu.classList.contains('open') ? 'Close' : 'Menu';
+    const open = mobileMenu.classList.toggle('open');
+    overlay.classList.toggle('open', open);
+    menuBtn.textContent = open ? 'Close' : 'Menu';
   });
-
-  document.addEventListener('click', (e) => {
-    if (!menuBtn?.contains(e.target) && !mobileMenu?.contains(e.target)) {
-      mobileMenu?.classList.remove('open');
-      if (menuBtn) menuBtn.textContent = 'Menu';
-    }
-  });
-
-  mobileMenu?.querySelectorAll('a, button').forEach(link => {
-    link.addEventListener('click', () => {
-      mobileMenu.classList.remove('open');
-      if (menuBtn) menuBtn.textContent = 'Menu';
-    });
+  overlay.addEventListener('click', () => {
+    mobileMenu.classList.remove('open');
+    overlay.classList.remove('open');
+    menuBtn.textContent = 'Menu';
   });
 });
