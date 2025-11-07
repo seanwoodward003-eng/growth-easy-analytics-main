@@ -3,232 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GrowthEasy AI - AI Growth Analytics</title>
-
-  <!-- NO CACHE -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <link rel="stylesheet" href="styles.css?v=9">
+  <title>GrowthEasy AI - Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css?v=10">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-<!-- NAV -->
-<div class="navigation-bar">
-  <nav class="nav-container">
-    <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
-
-    <!-- DESKTOP NAV -->
-    <ul class="nav-links">
-      <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
-      <li><a href="churn.html" class="nav-btn">Churn</a></li>
-      <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-      <li><a href="retention.html" class="nav-btn">Retention</a></li>
-      <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-      <li><a href="performance.html" class="nav-btn">Performance</a></li>
-      <li><a href="about.html" class="nav-btn">About</a></li>
-      <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
-    </ul>
-
-    <!-- MOBILE MENU BUTTON -->
-    <button class="mobile-menu-btn" id="menuBtn">Menu</button>
-
-    <!-- ACTIONS -->
-    <div class="nav-actions">
-      <button class="profile-btn">Profile</button>
-      <button class="logout-btn">Logout</button>
-      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
-    </div>
-
-    <!-- MOBILE DROPDOWN -->
-    <div class="mobile-menu" id="mobileMenu">
-      <a href="index.html" class="nav-btn">Dashboard</a>
-      <a href="churn.html" class="nav-btn">Churn</a>
-      <a href="acquisition.html" class="nav-btn">Acquisition</a>
-      <a href="retention.html" class="nav-btn">Retention</a>
-      <a href="revenue.html" class="nav-btn">Revenue</a>
-      <a href="performance.html" class="nav-btn">Performance</a>
-      <a href="about.html" class="nav-btn">About</a>
-      <a href="signup.html" class="nav-btn">Sign Up</a>
-      <hr style="border-color:#334455; margin:10px 0;">
-      <button class="profile-btn">Profile</button>
-      <button class="logout-btn">Logout</button>
-      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
-    </div>
-  </nav>
-</div>
-
-<!-- MAIN -->
-<div id="root" class="page-view dashboard-view">
-  <h1>Dashboard</h1>
-
-  <div id="dashboard-metrics" class="metrics-container">
-    <p class="loading-text">Loading metrics...</p>
+  <div class="navigation-bar">
+    <nav class="nav-container">
+      <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
+        <li><a href="churn.html" class="nav-btn">Churn</a></li>
+        <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+        <li><a href="retention.html" class="nav-btn">Retention</a></li>
+        <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+        <li><a href="performance.html" class="nav-btn">Performance</a></li>
+        <li><a href="about.html" class="nav-btn">About</a></li>
+        <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+      </ul>
+      <button class="mobile-menu-btn">Menu</button>
+      <div class="nav-actions">
+        <button class="profile-btn">Profile</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+      </div>
+      <div class="mobile-menu">
+        <a href="index.html">Dashboard</a>
+        <a href="churn.html">Churn</a>
+        <a href="acquisition.html">Acquisition</a>
+        <a href="retention.html">Retention</a>
+        <a href="revenue.html">Revenue</a>
+        <a href="performance.html">Performance</a>
+        <a href="about.html">About</a>
+        <a href="signup.html">Sign Up</a>
+        <hr>
+        <button class="profile-btn">Profile</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+      </div>
+    </nav>
   </div>
 
-  <div class="charts-panel">
-    <div class="filter-bar">
-      <select id="time-filter" class="filter-select" onchange="refreshData()">
-        <option>Weekly</option>
-        <option>Monthly</option>
-        <option>Custom</option>
-      </select>
-      <select id="customer-filter" class="filter-select" onchange="refreshData()">
-        <option>All</option>
-        <option>New</option>
-        <option>Returning</option>
-      </select>
+  <div id="root" class="page-view dashboard-view">
+    <h1>Dashboard</h1>
+    <div id="dashboard-metrics" class="metrics-container"><p class="loading-text">Loading...</p></div>
+
+    <div class="charts-panel">
+      <div class="filter-bar">
+        <select id="time-filter" class="filter-select" onchange="refreshData()">
+          <option>Weekly</option><option>Monthly</option><option>Custom</option>
+        </select>
+      </div>
+      <div class="chart-container">
+        <h3>Revenue Trend</h3>
+        <canvas id="revenueChart"></canvas>
+        <p class="chart-caption" id="revenueCaption">Loading...</p>
+      </div>
     </div>
 
-    <div class="chart-container">
-      <h3>Revenue Trend</h3>
-      <canvas id="revenueChart" class="chart-svg"></canvas>
-      <p class="chart-caption" id="revenueCaption">Loading...</p>
-    </div>
-  </div>
-
-  <div class="bottom-panel">
-    <div class="ai-insights" id="ai-insights">
-      <p class="loading-text">Loading AI insights...</p>
-    </div>
-    <div class="chat-panel">
-      <h3>AI Growth Coach</h3>
-      <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO..." />
-        <button class="send-btn" onclick="sendChat()">Send</button>
+    <div class="bottom-panel">
+      <div class="ai-insights" id="ai-insights"><p class="loading-text">Loading AI...</p></div>
+      <div class="chat-panel">
+        <h3>AI Growth Coach</h3>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Ask about churn, revenue..." />
+          <button class="send-btn" id="send-btn">Send</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="footer">
-  <a href="contact.html">Contact</a>
-  <a href="terms.html">Terms</a>
-  <a href="privacy.html">Privacy</a>
-  <p>Beta v0.1 © 2025 GrowthEasy AI</p>
-</div>
+  <div class="footer">
+    <a href="contact.html">Contact</a>
+    <a href="terms.html">Terms</a>
+    <a href="privacy.html">Privacy</a>
+    <p>Beta v0.1 © 2025 GrowthEasy AI</p>
+  </div>
 
-<!-- SCRIPT -->
-<script src="script.js?v=9"></script>
+  <script src="/static/script.js?v=10"></script>
+  <script>
+    let revenueChart;
 
-<!-- MOBILE MENU + DATA LOGIC -->
-<script>
-  // === MOBILE MENU ===
-  const menuBtn = document.getElementById('menuBtn');
-  const mobileMenu = document.getElementById('mobileMenu');
+    async function loadDashboard() {
+      if (!requireAuth()) return;
+      const data = await fetchMetrics();
 
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = mobileMenu.classList.toggle('open');
-    menuBtn.textContent = isOpen ? 'Close' : 'Menu';
-  });
+      const metricsDiv = document.getElementById('dashboard-metrics');
+      const insightsDiv = document.getElementById('ai-insights');
 
-  document.addEventListener('click', (e) => {
-    if (!menuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
-      mobileMenu.classList.remove('open');
-      menuBtn.textContent = 'Menu';
-    }
-  });
+      if (data.error === "Connect Shopify first") {
+        metricsDiv.innerHTML = `
+          <div style="text-align:center;padding:2rem;">
+            <h3>Connect Your Accounts</h3>
+            <p>Unlock real-time insights.</p>
+            <button onclick="connectShopify()" style="margin:0.5rem;padding:1rem 2rem;background:#00ffff;color:#0a0f2c;border:none;border-radius:12px;font-weight:bold;cursor:pointer;">Connect Shopify</button>
+            <button onclick="connectHubSpot()" style="margin:0.5rem;padding:1rem 2rem;background:#00ffff;color:#0a0f2c;border:none;border-radius:12px;font-weight:bold;cursor:pointer;">Connect HubSpot</button>
+            <button onclick="connectGA4()" style="margin:0.5rem;padding:1rem 2rem;background:#00ffff;color:#0a0f2c;border:none;border-radius:12px;font-weight:bold;cursor:pointer;">Connect GA4</button>
+          </div>`;
+        return;
+      }
 
-  mobileMenu.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      mobileMenu.classList.remove('open');
-      menuBtn.textContent = 'Menu';
-    });
-  });
+      if (data.error) {
+        metricsDiv.innerHTML = `<p class="error">${data.error}</p>`;
+        return;
+      }
 
-  // === DATA & CHARTS ===
-  let revenueChart = null;
-
-  async function refreshData() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      document.getElementById('dashboard-metrics').innerHTML = '<p class="error">Please log in.</p>';
-      return;
-    }
-
-    const time = document.getElementById('time-filter').value;
-    const customer = document.getElementById('customer-filter').value;
-
-    try {
-      const res = await fetch(`/api/metrics?time=${time}&customer=${customer}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-
-      if (data.error) throw new Error(data.error);
-
-      // Update metrics
-      document.getElementById('dashboard-metrics').innerHTML = `
-        <div class="metric-card"><strong>Revenue</strong><br>£${data.revenue.total}</div>
-        <div class="metric-card"><strong>Churn</strong><br>${data.churn.rate}%</div>
-        <div class="metric-card"><strong>LTV:CAC</strong><br>${data.performance.ratio}:1</div>
+      metricsDiv.innerHTML = `
+        <div class="metric-card"><h3>Revenue</h3><p>£${data.revenue?.total || 0}</p><p class="trend">${data.revenue?.trend || ''}</p></div>
+        <div class="metric-card"><h3>Churn</h3><p>${data.churn?.rate || 0}%</p><p class="at-risk">${data.churn?.at_risk || 0} at risk</p></div>
+        <div class="metric-card"><h3>LTV:CAC</h3><p>${data.performance?.ratio || '--'}:1</p></div>
       `;
 
-      // Update chart
+      insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight || 'Connect data for insights'}</p>`;
+
       const ctx = document.getElementById('revenueChart').getContext('2d');
       if (revenueChart) revenueChart.destroy();
-
       revenueChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: data.revenue.history.labels,
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
           datasets: [{
             label: 'Revenue',
-            data: data.revenue.history.values,
+            data: [1100, 1200, 1150, 1300, 1250, 1400, 1270],
             borderColor: '#00FFFF',
             backgroundColor: 'rgba(0,255,255,0.1)',
             tension: 0.3,
             fill: true
           }]
         },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { grid: { color: 'rgba(0,255,255,0.1)' } },
-            x: { grid: { display: false } }
-          }
-        }
+        options: { responsive: true, plugins: { legend: { display: false } } }
       });
-
-      document.getElementById('revenueCaption').textContent = `${data.revenue.trend} this month`;
-
-      // AI Insights
-      document.getElementById('ai-insights').innerHTML = `
-        <p><strong>AI Insight:</strong> ${data.ai_insight}</p>
-      `;
-
-    } catch (err) {
-      document.getElementById('dashboard-metrics').innerHTML = `<p class="error">${err.message}</p>`;
+      document.getElementById('revenueCaption').textContent = data.revenue?.trend || '';
     }
-  }
 
-  function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
+    document.getElementById('send-btn')?.addEventListener('click', () => {
+      const input = document.getElementById('chat-input');
+      const q = input.value.trim();
+      if (!q) return;
+      document.getElementById('chat-messages').innerHTML += `<p style="background:#00FFFF;color:#0a0f2c;margin-left:auto;max-width:85%;padding:0.6rem 1rem;border-radius:12px;margin:0.5rem 0;word-wrap:break-word;">${q}</p>`;
+      input.value = '';
+      setTimeout(() => {
+        const res = "Send win-back email to save £2,400.";
+        document.getElementById('chat-messages').innerHTML += `<p style="background:rgba(255,255,255,0.1);max-width:85%;padding:0.6rem 1rem;border-radius:12px;margin:0.5rem 0;word-wrap:break-word;">${res}</p>`;
+        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+      }, 800);
+    });
 
-    const messages = document.getElementById('chat-messages');
-    messages.innerHTML += `<div class="user-msg">${msg}</div>`;
-    input.value = '';
-
-    // Simulate AI response
-    setTimeout(() => {
-      messages.innerHTML += `<div class="ai-msg">Analyzing your ${msg.toLowerCase()}... <br>Recommendation: Send win-back emails to at-risk customers.</div>`;
-      messages.scrollTop = messages.scrollHeight;
-    }, 800);
-  }
-
-  // Load on start
-  window.onload = () => {
-    if (localStorage.getItem('token')) refreshData();
-  };
-</script>
-
+    loadDashboard();
+    setInterval(loadDashboard, 30000);
+  </script>
 </body>
 </html>
