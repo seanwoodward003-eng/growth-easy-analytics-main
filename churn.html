@@ -9,18 +9,37 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="cyber-bg">
-  <nav class="cyber-nav">
-    <div class="logo">GrowthEasy</div>
-    <ul>
-      <li><a href="index.html">Dashboard</a></li>
-      <li><a href="revenue.html">Revenue</a></li>
-      <li><a href="churn.html" class="active">Churn</a></li>
-      <li><a href="acquisition.html">Acquisition</a></li>
-      <li><a href="retention.html">Retention</a></li>
-      <li><a href="performance.html">Performance</a></li>
-      <li><a href="about.html">About</a></li>
-    </ul>
-  </nav>
+  <div class="navigation-bar">
+    <nav class="nav-container">
+      <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-btn">Dashboard</a></li>
+        <li><a href="churn.html" class="nav-btn active">Churn</a></li>
+        <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+        <li><a href="retention.html" class="nav-btn">Retention</a></li>
+        <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+        <li><a href="performance.html" class="nav-btn">Performance</a></li>
+        <li><a href="about.html" class="nav-btn">About</a></li>
+        <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+      </ul>
+      <button class="mobile-menu-btn">Menu</button>
+      <div class="nav-actions">
+        <button class="profile-btn">Profile</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+      </div>
+      <div class="mobile-menu">
+        <a href="index.html">Dashboard</a>
+        <a href="churn.html">Churn</a>
+        <a href="acquisition.html">Acquisition</a>
+        <a href="retention.html">Retention</a>
+        <a href="revenue.html">Revenue</a>
+        <a href="performance.html">Performance</a>
+        <a href="about.html">About</a>
+        <a href="signup.html">Sign Up</a>
+      </div>
+    </nav>
+  </div>
 
   <div class="container">
     <h1 class="cyber-title glitch" data-text="CHURN RATE">CHURN RATE</h1>
