@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GrowthEasy AI - Acquisition</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=10" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <nav class="nav-container">
       <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
       <ul class="nav-links">
-        <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
+        <li><a href="index.html" class="nav-btn">Dashboard</a></li>
         <li><a href="churn.html" class="nav-btn">Churn</a></li>
         <li><a href="acquisition.html" class="nav-btn active">Acquisition</a></li>
         <li><a href="retention.html" class="nav-btn">Retention</a></li>
@@ -21,10 +21,21 @@
         <li><a href="about.html" class="nav-btn">About</a></li>
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
       </ul>
+      <button class="mobile-menu-btn">Menu</button>
       <div class="nav-actions">
         <button class="profile-btn">Profile</button>
-        <button class="logout-btn">Logout</button>
-        <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+      </div>
+      <div class="mobile-menu">
+        <a href="index.html">Dashboard</a>
+        <a href="churn.html">Churn</a>
+        <a href="acquisition.html">Acquisition</a>
+        <a href="retention.html">Retention</a>
+        <a href="revenue.html">Revenue</a>
+        <a href="performance.html">Performance</a>
+        <a href="about.html">About</a>
+        <a href="signup.html">Sign Up</a>
       </div>
     </nav>
   </div>
@@ -76,42 +87,30 @@
     <p>Beta v0.1 © 2025 GrowthEasy</p>
   </div>
 
-  <script src="script.js"></script>
+  <script src="/static/script.js?v=10"></script>
   <script>
     let channelChart, costTrendChart;
 
     async function loadAcquisition() {
-      const days = document.getElementById('time-filter').value;
-      const data = await fetchData('ga4/acquisition');
-      const metrics = await fetchData('metrics');
+      if (!requireAuth()) return;
+      const data = await fetchMetrics();
 
-      // Mock channel data
-      const channels = [
-        { name: 'Organic', value: 40, cost: 1200 },
-        { name: 'Email', value: 30, cost: 900 },
-        { name: 'Paid', value: 20, cost: 600 },
-        { name: 'Social', value: 10, cost: 300 }
-      ];
+      document.getElementById('cac-value').textContent = `£${data.ga4?.acquisition_cost || 87}`;
+      document.getElementById('top-channel').textContent = data.ga4?.top_channel || 'Organic';
 
-      // Update stats
-      document.getElementById('cac-value').textContent = `£${data.acquisition_cost || 87}`;
-      document.getElementById('top-channel').textContent = data.top_channel || 'Organic';
-
-      // Channel Pie Chart
       if (channelChart) channelChart.destroy();
       channelChart = new Chart(document.getElementById('channelChart'), {
         type: 'doughnut',
         data: {
-          labels: channels.map(c => c.name),
+          labels: ['Organic', 'Email', 'Paid', 'Social'],
           datasets: [{
-            data: channels.map(c => c.value),
+            data: [40, 30, 20, 10],
             backgroundColor: ['#2ecc71', '#3498db', '#e74c3c', '#f1c40f']
           }]
         },
         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
       });
 
-      // Cost Trend
       if (costTrendChart) costTrendChart.destroy();
       costTrendChart = new Chart(document.getElementById('costTrendChart'), {
         type: 'line',
@@ -127,12 +126,8 @@
         options: { responsive: true }
       });
 
-      // AI
-      document.getElementById('ai-recommendation').textContent = 
-        metrics.ai_insight || "Focus on Organic — highest ROI. Scale content 2x.";
-
-      document.getElementById('acquisition-summary').textContent = 
-        "Acquisition channels optimized. Organic leads at 40% of traffic.";
+      document.getElementById('ai-recommendation').textContent = data.ai_insight || "Focus on Organic — highest ROI.";
+      document.getElementById('acquisition-summary').textContent = "Acquisition channels optimized.";
     }
 
     function exportCSV() {
