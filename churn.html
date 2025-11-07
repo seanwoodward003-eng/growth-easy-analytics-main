@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Churn - GrowthEasy</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=10" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -12,7 +12,7 @@
   <nav class="cyber-nav">
     <div class="logo">GrowthEasy</div>
     <ul>
-      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="index.html">Dashboard</a></li>
       <li><a href="revenue.html">Revenue</a></li>
       <li><a href="churn.html" class="active">Churn</a></li>
       <li><a href="acquisition.html">Acquisition</a></li>
@@ -47,7 +47,7 @@
       <div class="metric-card">
         <h3>At-Risk Customers</h3>
         <p id="at-risk" class="metric-value">--</p>
-        <button onclick="sendWinBack()" class="cyber-btn">Send 15% off win-back</button>
+        <button onclick="connectShopify()" class="cyber-btn">Send 15% off win-back</button>
       </div>
     </div>
 
@@ -57,19 +57,20 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="/static/script.js?v=10"></script>
   <script>
     let churnTrendChart;
 
     async function loadChurn() {
-      const data = await fetchData('metrics');
+      if (!requireAuth()) return;
+      const data = await fetchMetrics();
       const monthlyRevenue = data.revenue?.total || 12500;
-      const churnRate = data.shopify?.churn_rate || 3.2;
+      const churnRate = data.churn?.rate || 3.2;
       const lost = (churnRate / 100) * monthlyRevenue;
 
       document.getElementById('churn-rate').textContent = `${churnRate}%`;
       document.getElementById('lost-revenue').textContent = `= £${lost.toFixed(0)}/mo bleeding`;
-      document.getElementById('at-risk').textContent = data.shopify?.at_risk_customers || 18;
+      document.getElementById('at-risk').textContent = data.churn?.at_risk || 18;
       document.getElementById('ai-insight').textContent = data.ai_insight || "No insight.";
 
       if (churnTrendChart) churnTrendChart.destroy();
