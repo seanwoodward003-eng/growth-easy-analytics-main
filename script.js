@@ -47,4 +47,4 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.remove('open');
     menuBtn.textContent = 'Menu';
   });
-});
+}); 
