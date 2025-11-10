@@ -1,5 +1,5 @@
-// static/script.js — FINAL: FULL BACKEND SYNC + ALL FIXES
-const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';  // Backend URL
+// static/script.js — FINAL: REAL BACKEND SYNC (NO 404s, LOADS DATA)
+const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';  // Your backend (Render)
 let token = localStorage.getItem('token');
 
 function requireAuth() {
@@ -20,15 +20,13 @@ async function fetchMetrics() {
   } catch { return { error: "Offline" }; }
 }
 
-// OAUTH BUTTONS
+// OAUTH BUTTONS (POINT TO BACKEND)
 window.connectShopify = () => {
   const shop = prompt("Enter your Shopify store (e.g. mystore.myshopify.com)");
   if (shop) window.location.href = `${BACKEND_URL}/auth/shopify?shop=${encodeURIComponent(shop)}`;
 };
 window.connectHubSpot = () => window.location.href = `${BACKEND_URL}/auth/hubspot`;
 window.connectGA4 = () => window.location.href = `${BACKEND_URL}/auth/ga4`;
-
-// BUTTONS
 window.logout = () => {
   localStorage.removeItem('token');
   document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -36,14 +34,13 @@ window.logout = () => {
 };
 window.refreshData = () => location.reload();
 window.profile = () => {
-  if (!token) {
-    window.location.href = '/signup.html';
-  } else {
+  if (!token) window.location.href = '/signup.html';
+  else {
     fetch(`${BACKEND_URL}/api/user`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(res => res.json()).then(data => {
       alert(`Profile: ID ${data.id}, Email ${data.email}, Connected: Shopify ${data.shopify_shop ? 'Yes' : 'No'}, GA4 ${data.ga4_connected ? 'Yes' : 'No'}, HubSpot ${data.hubspot_connected ? 'Yes' : 'No'}`);
-    }).catch(e => alert('Error loading profile'));
+    }).catch(e => alert('Error'));
   }
 };
 
@@ -82,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
   mobileMenu.querySelectorAll('a, button').forEach(link => {
     link.addEventListener('click', () => {
       mobileMenu.classList.remove('open');
-      overlay.className = 'mobile-overlay';
+      overlay.classList.remove('open');
       menuBtn.textContent = 'Menu';
     });
   });
@@ -116,7 +113,7 @@ async function sendMessage() {
       body: JSON.stringify({ message: q })
     });
     const data = await res.json();
-    const reply = data.reply || "AI thinking...";
+    const reply = data.reply || "AI is thinking...";
 
     messages.innerHTML += `<p style="background:rgba(255,255,255,0.1);max-width:85%;padding:0.6rem 1rem;border-radius:12px;margin:0.5rem 0;word-wrap:break-word;">${reply}</p>`;
     messages.scrollTop = messages.scrollHeight;
