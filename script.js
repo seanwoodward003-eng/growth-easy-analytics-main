@@ -1,5 +1,5 @@
-// static/script.js — FINAL: CONNECTED TO RENDER BACKEND
-const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';  // Your backend
+// static/script.js — FINAL: FULL BACKEND SYNC (REAL DATA, AI, OAUTH)
+const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';  // Your backend (Render)
 let token = localStorage.getItem('token');
 
 function requireAuth() {
@@ -20,8 +20,9 @@ async function fetchMetrics() {
   } catch { return { error: "Offline" }; }
 }
 
+// OAUTH BUTTONS (All Point to Backend)
 window.connectShopify = () => {
-  const shop = prompt("Enter your Shopify store (e.g., mystore.myshopify.com)");
+  const shop = prompt("Enter your Shopify store (e.g. mystore.myshopify.com)");
   if (shop) window.location.href = `${BACKEND_URL}/auth/shopify?shop=${encodeURIComponent(shop)}`;
 };
 window.connectHubSpot = () => window.location.href = `${BACKEND_URL}/auth/hubspot`;
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// AI CHAT — TO BACKEND
+// AI CHAT — FULL BACKEND SYNC
 const sendBtn = document.getElementById('send-btn');
 const input = document.getElementById('chat-input');
 const messages = document.getElementById('chat-messages');
@@ -84,7 +85,7 @@ async function sendMessage() {
       body: JSON.stringify({ message: q })
     });
     const data = await res.json();
-    const reply = data.reply || "AI thinking...";
+    const reply = data.reply || "AI is thinking...";
 
     messages.innerHTML += `<p style="background:rgba(255,255,255,0.1);max-width:85%;padding:0.6rem 1rem;border-radius:12px;margin:0.5rem 0;word-wrap:break-word;">${reply}</p>`;
     messages.scrollTop = messages.scrollHeight;
@@ -93,15 +94,18 @@ async function sendMessage() {
   }
 }
 
-// LOAD DATA ON DASHBOARD
+// DASHBOARD — REAL DATA FROM BACKEND
 document.addEventListener('DOMContentLoaded', async () => {
   if (!requireAuth()) return;
 
   const path = window.location.pathname;
   if (path === '/') loadDashboard();
+  if (path === '/churn.html') loadChurn();
+  if (path === '/revenue.html') loadRevenue();
+  // Add for other pages as needed
 });
 
-// DASHBOARD — REAL DATA
+// LOAD DASHBOARD (REAL METRICS)
 async function loadDashboard() {
   const data = await fetchMetrics();
   const metricsDiv = document.getElementById('dashboard-metrics');
@@ -144,10 +148,20 @@ async function loadDashboard() {
   insightsDiv.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight || 'Connected data for insights'}</p>`;
 }
 
-// OTHER PAGES (ADD SIMILAR FUNCTIONS)
+// LOAD CHURN (REAL DATA)
 async function loadChurn() {
   const data = await fetchMetrics();
   document.getElementById('churn-rate').textContent = `${data.churn?.rate || 0}%`;
   document.getElementById('at-risk').textContent = data.churn?.at_risk || 0;
-  document.getElementById('ai-insight').textContent = data.ai_insight || "No insights.";
+  document.getElementById('ai-insight').textContent = data.ai_insight || "No insights yet.";
 }
+
+// LOAD REVENUE (REAL DATA)
+async function loadRevenue() {
+  const data = await fetchMetrics();
+  document.getElementById('revenue-total').textContent = `£${data.revenue?.total || 0}`;
+  document.getElementById('revenue-trend').textContent = data.revenue?.trend || '0%';
+  document.getElementById('ai-insight').textContent = data.ai_insight || "No insights yet.";
+}
+
+// Add similar for other pages (acquisition, retention, performance)
