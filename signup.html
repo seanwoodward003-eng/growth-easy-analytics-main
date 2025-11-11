@@ -1,99 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Start Free Trial – GrowthEasy AI</title>
-  <link rel="stylesheet" href="styles.css?v=10">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui,sans-serif; }
+    body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; padding-bottom:80px; display:flex; flex-direction:column; }
+    .header { padding:20px; text-align:center; border-bottom:1px solid #00ffff; }
+    .header h1 { color:#00ffff; font-size:1.8rem; text-shadow:0 0 10px #00ffff; }
+    .page { padding:20px; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .page.active { display:flex; }
+    .card { background:rgba(0,0,0,0.8); padding:30px; border-radius:16px; text-align:center; max-width:380px; width:100%; border:1px solid #00ffff; }
+    .price-box { background:rgba(0,255,255,0.1); padding:20px; border-radius:12px; margin:15px 0; }
+    .price { font-size:2.5rem; color:#00ffff; font-weight:bold; }
+    .price span { font-size:1rem; color:#88c0ff; }
+    input { width:100%; padding:14px; margin:12px 0; border:1px solid #00ffff; border-radius:8px; background:transparent; color:#e0e7ff; }
+    button { width:100%; padding:16px; background:#00ffff; color:#0a0f2c; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:10px; }
+    .subtext { margin-top:12px; color:#88c0ff; font-size:0.9rem; }
+    .checkbox-label { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.9rem; color: #E0E7FF; margin: 1.2rem 0; cursor: pointer; text-align: left; }
+    .checkbox-label input { margin-top: 0.2rem; }
+    .checkbox-label a { color: #00FFFF; text-decoration: underline; }
+    .mobile-nav { position:fixed; bottom:0; left:0; right:0; background:#0a0f2c; border-top:1px solid #00ffff; display:flex; z-index:1000; }
+    .mobile-nav button { flex:1; padding:16px; background:transparent; color:#00ffff; border:none; font-weight:bold; }
+    .mobile-nav button.active { background:rgba(0,255,255,0.2); }
+  </style>
 </head>
 <body>
 
-<div class="navigation-bar">
-  <nav class="nav-container">
-    <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+  <div class="header"><h1>GrowthEasy AI</h1></div>
 
-    <ul class="nav-links">
-      <li><a href="index.html" class="nav-btn">Dashboard</a></li>
-      <li><a href="churn.html" class="nav-btn">Churn</a></li>
-      <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-      <li><a href="retention.html" class="nav-btn">Retention</a></li>
-      <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-      <li><a href="performance.html" class="nav-btn">Performance</a></li>
-      <li><a href="about.html" class="nav-btn">About</a></li>
-      <li><a href="signup.html" class="nav-btn active">Sign Up</a></li>
-    </ul>
+  <!-- SIGNUP PAGE -->
+  <div id="signup" class="page active">
+    <div class="card">
+      <h2 style="color:#00ffff;">AI Growth for Shopify</h2>
+      <p style="margin:10px 0;">Full access. 7 days free.</p>
 
-    <button class="mobile-menu-btn" id="menuBtn">Menu</button>
+      <div class="price-box">
+        <div class="price">£0<span> for 7 days</span></div>
+        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
+      </div>
 
-    <div class="nav-actions">
-      <button class="profile-btn" onclick="goProfile()">Profile</button>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-      <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+      <ul style="text-align:left; margin:15px 0; font-size:0.95rem;">
+        <li>AI churn detection</li>
+        <li>Revenue forecasting</li>
+        <li>Shopify + GA4 sync + HubSpot</li>
+        <li>Daily AI tips</li>
+        <li>Export reports</li>
+      </ul>
+
+      <input type="email" id="email" placeholder="Your email" required />
+      <label class="checkbox-label">
+        <input type="checkbox" id="consent" required />
+        <span>I consent to data processing per our <a href="privacy.html">GDPR policy</a>.</span>
+      </label>
+      <button onclick="startTrial()">Start 7-Day Free Trial</button>
     </div>
-
-    <div class="mobile-menu" id="mobileMenu">
-      <!-- same links as desktop -->
-      <a href="index.html" class="nav-btn">Dashboard</a>
-      <a href="churn.html" class="nav-btn">Churn</a>
-      <a href="acquisition.html" class="nav-btn">Acquisition</a>
-      <a href="retention.html" class="nav-btn">Retention</a>
-      <a href="revenue.html" class="nav-btn">Revenue</a>
-      <a href="performance.html" class="nav-btn">Performance</a>
-      <a href="about.html" class="nav-btn">About</a>
-      <a href="signup.html" class="nav-btn">Sign Up</a>
-      <hr style="border-color:#334455;margin:10px 0;">
-      <button class="profile-btn" onclick="goProfile()">Profile</button>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-      <button class="refresh-btn" onclick="location.reload()">Refresh</button>
-    </div>
-  </nav>
-</div>
-
-<div class="page-view" style="padding:2rem;max-width:420px;margin:auto;">
-  <div class="card">
-    <h2 style="color:#00ffff;">AI Growth for Shopify</h2>
-    <p style="margin:10px 0;">Full access. 7 days free.</p>
-
-    <div class="price-box">
-      <div class="price">£0<span> for 7 days</span></div>
-      <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
-    </div>
-
-    <ul style="text-align:left;margin:15px 0;font-size:0.95rem;">
-      <li>AI churn detection</li>
-      <li>Revenue forecasting</li>
-      <li>Shopify + GA4 sync + HubSpot</li>
-      <li>Daily AI tips</li>
-      <li>Export reports</li>
-    </ul>
-
-    <input type="email" id="email" placeholder="Your email" required>
-    <button onclick="startTrial()">Start 7-Day Free Trial</button>
   </div>
-</div>
 
-<div class="footer">
-  <a href="#">About</a><a href="#">Contact</a><a href="#">Terms</a>
-  <p>Beta v0.1 © 2025 GrowthEasy</p>
-</div>
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav">
+    <button onclick="go('performance')">Performance</button>
+    <button onclick="go('acquisition')">Acquisition</button>
+    <button class="active" onclick="go('signup')">Signup</button>
+  </div>
 
-<script>
-  // mobile menu (copy from dashboard)
-  const menuBtn = document.getElementById('menuBtn');
-  const mobileMenu = document.getElementById('mobileMenu');
-  menuBtn.addEventListener('click', e=>{e.stopPropagation(); const o=mobileMenu.classList.toggle('open'); menuBtn.textContent=o?'Close':'Menu';});
-  document.addEventListener('click',e=>{if(!menuBtn.contains(e.target)&&!mobileMenu.contains(e.target)){mobileMenu.classList.remove('open');menuBtn.textContent='Menu';}});
+  <script>
+    async function startTrial() {
+      const email = document.getElementById('email').value.trim();
+      const consent = document.getElementById('consent').checked;
+      if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent");
+      try {
+        const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {  // Backend URL
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, consent })
+        });
+        if (res.ok) {
+          const { url } = await res.json();
+          window.location = url;
+        } else {
+          const err = await res.json();
+          alert(err.error || "Try again");
+        }
+      } catch (e) {
+        alert('Connection error – try again.');
+      }
+    }
 
-  function goProfile(){ const t=localStorage.getItem('token'); window.location.href = t?'profile.html':'signup.html'; }
-  function logout(){ localStorage.removeItem('token'); window.location.href='signup.html'; }
-
-  async function startTrial(){
-    const email=document.getElementById('email').value.trim();
-    if(!email||!email.includes('@')) return alert('Valid email required');
-    const res=await fetch('/create-trial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-    if(res.ok){ const {url}=await res.json(); window.location=url; }
-    else alert('Try again');
-  }
-</script>
+    function go(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(page).classList.add('active');
+      document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
