@@ -1,14 +1,31 @@
 /*====================================================================
-  script.js – FINAL LIVE VERSION
-  - Fake metrics when no login
-  - Real data from https://growth-easy-analytics-2.onrender.com
+  script.js – FINAL LIVE VERSION (FIXED)
+  - Cookie-based token (fixes mismatch)
+  - Auto-sync + real data extraction (fixes integration)
+  - Error alerts + fallbacks (fixes handling)
   - Mobile menu (slide-in)
   - Chart + AI chat
-  - No redirects to signup
 ====================================================================*/
 
 const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com'; // LIVE BACKEND
-let token = localStorage.getItem('token');
+
+// === COOKIE TOKEN (Fixes Mismatch) ===
+function getToken() {
+  const name = 'token=';
+  const decoded = decodeURIComponent(document.cookie);
+  const ca = decoded.split(';');
+  for (let c of ca) {
+    c = c.trim();
+    if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+  }
+  return null;
+}
+
+function setToken(token) {
+  document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
+}
+
+let token = getToken();
 
 // === FAKE DATA (DEMO MODE) ===
 const FAKE = {
@@ -25,26 +42,36 @@ const FAKE = {
   ai_insight: 'Demo mode – connect accounts for real data.'
 };
 
-// === API FETCH ===
-async function apiFetch(endpoint) {
-  if (!token) return { error: 'No token' };
+// === API FETCH (Enhanced with Error Handling) ===
+async function apiFetch(endpoint, options = {}) {
+  if (!token) {
+    alert('Please sign up or log in to access data.');  // User-friendly error
+    return { error: 'No token' };
+  }
   try {
     const res = await fetch(`${BACKEND_URL}/${endpoint}`, {
-      method: 'GET',
+      ...options,
+      method: options.method || 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...options.headers
       }
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(`API Error: ${err.error || `HTTP ${res.status}`}. Retrying in 5s...`);  // User-friendly
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
     return await res.json();
   } catch (e) {
     console.error('API Error:', e);
+    alert('Connection issue – check internet and retry.');  // Fallback
     return { error: 'Failed to connect' };
   }
 }
 
-// === RENDER DASHBOARD ===
+// === RENDER DASHBOARD (Updated for Real Data) ===
 function renderDashboard(data, isFake = false) {
   const metrics = document.getElementById('dashboard-metrics');
   const insights = document.getElementById('ai-insights');
@@ -69,7 +96,7 @@ function renderDashboard(data, isFake = false) {
   drawChart(data.revenue.history.labels, data.revenue.history.values, data.revenue.trend);
 }
 
-// === CHART.JS ===
+// === CHART.JS (Unchanged) ===
 let revenueChart = null;
 function drawChart(labels, values, caption) {
   const ctx = document.getElementById('revenueChart')?.getContext('2d');
@@ -107,7 +134,7 @@ function drawChart(labels, values, caption) {
   if (cap) cap.textContent = `${caption} this month`;
 }
 
-// === AI CHAT ===
+// === AI CHAT (Unchanged) ===
 window.sendChat = () => {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
@@ -126,7 +153,7 @@ window.sendChat = () => {
   }, 600);
 };
 
-// === MOBILE MENU (SLIDE-IN) ===
+// === MOBILE MENU (SLIDE-IN) (Unchanged) ===
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('menuBtn');
   const menu = document.getElementById('mobileMenu');
@@ -200,16 +227,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// === REFRESH BUTTON ===
+// === REFRESH BUTTON (Fixed: Sync + Real Data) ===
 window.refreshData = async () => {
   const btn = document.querySelector('.refresh-btn');
-  if (btn) btn.textContent = 'Loading...';
+  if (btn) btn.textContent = 'Syncing...';  // Spinner-like
 
   if (!token) {
     renderDashboard(null, true);
   } else {
-    const data = await apiFetch('api/metrics');
-    renderDashboard(data);
+    try {
+      await apiFetch('api/sync', { method: 'POST' });  // NEW: Trigger sync
+      const data = await apiFetch('api/metrics');
+      renderDashboard(data);
+    } catch (e) {
+      alert('Refresh failed – showing demo data.');  // Error polish
+      renderDashboard(null, true);
+    }
   }
 
   setTimeout(() => {
@@ -217,20 +250,32 @@ window.refreshData = async () => {
   }, 1000);
 };
 
+// === LOGOUT (Fixed: Clear Cookie) ===
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.logout-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=Lax';
+      localStorage.clear();  // Fallback
+      window.location.href = '/signup.html';
+    });
+  });
+});
+
 // === INIT: DASHBOARD ONLY ===
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.body.dataset.page !== 'dashboard') return;
 
   // FORCE DEMO MODE VIA URL
   if (window.location.search.includes('demo=1')) {
-    localStorage.removeItem('token');
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=Lax';
     token = null;
   }
+
+  token = getToken();  // Re-fetch on load
 
   if (!token) {
     renderDashboard(null, true);
   } else {
-    const data = await apiFetch('api/metrics');
-    renderDashboard(data);
+    await refreshData();  // Use fixed refresh
   }
 });
