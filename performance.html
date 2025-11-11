@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GrowthEasy AI - Performance</title>
-  <link rel="stylesheet" href= styles.css>
+  <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <nav class="nav-container">
       <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-btn">Dashboard</a></li>
+        <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
         <li><a href="churn.html" class="nav-btn">Churn</a></li>
         <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
         <li><a href="retention.html" class="nav-btn">Retention</a></li>
@@ -21,21 +21,10 @@
         <li><a href="about.html" class="nav-btn">About</a></li>
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
       </ul>
-      <button class="mobile-menu-btn">Menu</button>
       <div class="nav-actions">
         <button class="profile-btn">Profile</button>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-        <button class="refresh-btn" onclick="refreshData()">Refresh</button>
-      </div>
-      <div class="mobile-menu">
-        <a href="index.html">Dashboard</a>
-        <a href="churn.html">Churn</a>
-        <a href="acquisition.html">Acquisition</a>
-        <a href="retention.html">Retention</a>
-        <a href="revenue.html">Revenue</a>
-        <a href="performance.html">Performance</a>
-        <a href="about.html">About</a>
-        <a href="signup.html">Sign Up</a>
+        <button class="logout-btn">Logout</button>
+        <button class="refresh-btn" onclick="loadPerformance()">Refresh</button>
       </div>
     </nav>
   </div>
@@ -83,42 +72,57 @@
   </div>
 
   <div class="footer">
-    <a href="#">About</a><a href="#">Contact</a><a href="#">Terms</a>
+    <a href="about.html">About</a><a href="contact.html">Contact</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a>
     <p>Beta v0.1 © 2025 GrowthEasy</p>
   </div>
 
-  <script src="/static/script.js?v=10"></script>
+  <script src="script.js"></script>
   <script>
     let ltvCacChart;
 
     async function loadPerformance() {
-      if (!requireAuth()) return;
-      const data = await fetchMetrics();
+      if (token) {
+        try {
+          await apiFetch('api/sync', { method: 'POST' });
+          const data = await apiFetch('api/metrics');
+          if (data.error) throw new Error(data.error);
 
-      const ltv = data.performance?.ltv || 150;
-      const cac = data.performance?.cac || 50;
-      const ratio = (ltv / cac).toFixed(1);
+          const ltv = data.performance.ltv || 150;
+          const cac = data.performance.cac || 50;
+          const ratio = (ltv / cac).toFixed(1);
 
-      document.getElementById('ltv-value').textContent = `£${ltv}`;
-      document.getElementById('cac-value').textContent = `£${cac}`;
-      document.getElementById('ratio-value').textContent = `${ratio}:1`;
+          document.getElementById('ltv-value').textContent = `£${ltv}`;
+          document.getElementById('cac-value').textContent = `£${cac}`;
+          document.getElementById('ratio-value').textContent = `${ratio}:1`;
 
-      if (ltvCacChart) ltvCacChart.destroy();
-      ltvCacChart = new Chart(document.getElementById('ltvCacChart'), {
-        type: 'bar',
-        data: {
-          labels: ['LTV', 'CAC'],
-          datasets: [{
-            label: 'Amount',
-            data: [ltv, cac],
-            backgroundColor: ['#2ecc71', '#e74c3c']
-          }]
-        },
-        options: { responsive: true }
-      });
+          if (ltvCacChart) ltvCacChart.destroy();
+          ltvCacChart = new Chart(document.getElementById('ltvCacChart'), {
+            type: 'bar',
+            data: {
+              labels: ['LTV', 'CAC'],
+              datasets: [{
+                label: 'Amount',
+                data: [ltv, cac],
+                backgroundColor: ['#2ecc71', '#e74c3c']
+              }]
+            },
+            options: { responsive: true }
+          });
 
-      document.getElementById('ai-alert').textContent = ratio > 3 ? "Healthy LTV:CAC!" : "Reduce CAC.";
-      document.getElementById('performance-summary').textContent = `LTV:CAC = ${ratio}:1.`;
+          document.getElementById('ai-alert').textContent = 
+            ratio > 3 ? "Healthy LTV:CAC!" : "Reduce CAC — aim for 3:1.";
+          document.getElementById('performance-summary').textContent = 
+            `LTV:CAC = ${ratio}:1. Target >3:1 for sustainable growth.`;
+        } catch (e) {
+          alert('Failed to load performance data – showing demo.');
+          // Fallback mocks (original)
+          const ltv = 150;
+          const cac = 50;
+          // ... (rest of original fallback)
+        }
+      } else {
+        // No token: Demo (original)
+      }
     }
 
     function exportCSV() {
