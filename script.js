@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   token = getToken();  // Re-fetch on load
 
   if (!token) {
-    renderDashboard(null, true);
+    renderDashboard(null, true); 
   } else {
     await refreshData();  // Use fixed refresh
   }
