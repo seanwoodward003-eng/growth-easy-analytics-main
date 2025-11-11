@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GrowthEasy AI - Retention</title>
+  <title>GrowthEasy AI - Revenue</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -15,8 +15,8 @@
         <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
         <li><a href="churn.html" class="nav-btn">Churn</a></li>
         <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-        <li><a href="retention.html" class="nav-btn active">Retention</a></li>
-        <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+        <li><a href="retention.html" class="nav-btn">Retention</a></li>
+        <li><a href="revenue.html" class="nav-btn active">Revenue</a></li>
         <li><a href="performance.html" class="nav-btn">Performance</a></li>
         <li><a href="about.html" class="nav-btn">About</a></li>
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
@@ -24,16 +24,16 @@
       <div class="nav-actions">
         <button class="profile-btn">Profile</button>
         <button class="logout-btn">Logout</button>
-        <button class="refresh-btn" onclick="loadRetention()">Refresh</button>
+        <button class="refresh-btn" onclick="loadRevenue()">Refresh</button>
       </div>
     </nav>
   </div>
 
-  <div id="root" class="page-view retention-view">
-    <h1>Retention</h1>
+  <div id="root" class="page-view revenue-view">
+    <h1>Revenue</h1>
 
     <div class="controls">
-      <select id="time-filter" onchange="loadRetention()">
+      <select id="time-filter" onchange="loadRevenue()">
         <option value="7">Last 7 days</option>
         <option value="30" selected>Last 30 days</option>
         <option value="90">Last 90 days</option>
@@ -42,28 +42,28 @@
     </div>
 
     <div class="chart-container">
-      <canvas id="retentionCurve"></canvas>
+      <canvas id="revenueTrend"></canvas>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <h3>Retention Rate</h3>
-        <p id="retention-rate">--%</p>
+        <h3>Total Revenue</h3>
+        <p id="total-revenue">£--</p>
       </div>
       <div class="stat-card">
-        <h3>At-Risk</h3>
-        <p id="at-risk">--</p>
+        <h3>Trend</h3>
+        <p id="revenue-trend">--</p>
       </div>
     </div>
 
     <div class="ai-insight">
-      <h3>AI Strategy</h3>
-      <p id="ai-strategy">Loading...</p>
+      <h3>AI Forecast</h3>
+      <p id="ai-forecast">Loading...</p>
     </div>
 
     <div id="summary">
       <h3>Summary</h3>
-      <p id="retention-summary">Loading summary...</p>
+      <p id="revenue-summary">Loading summary...</p>
     </div>
   </div>
 
@@ -74,41 +74,40 @@
 
   <script src="script.js"></script>
   <script>
-    let retentionChart;
+    let revenueChart;
 
-    async function loadRetention() {
+    async function loadRevenue() {
       if (token) {
         try {
           await apiFetch('api/sync', { method: 'POST' });
           const data = await apiFetch('api/metrics');
           if (data.error) throw new Error(data.error);
 
-          document.getElementById('retention-rate').textContent = `${data.retention.rate || 85}%`;
-          document.getElementById('at-risk').textContent = data.churn.at_risk || 10;
+          document.getElementById('total-revenue').textContent = `£${data.revenue.total}`;
+          document.getElementById('revenue-trend').textContent = data.revenue.trend || '+6%';
 
-          if (retentionChart) retentionChart.destroy();
-          retentionChart = new Chart(document.getElementById('retentionCurve'), {
-            type: 'line',
+          if (revenueChart) revenueChart.destroy();
+          revenueChart = new Chart(document.getElementById('revenueTrend'), {
+            type: 'bar',
             data: {
-              labels: ['Day 1', 'Day 7', 'Day 14', 'Day 30'],
+              labels: data.revenue.history.labels || ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
               datasets: [{
-                label: 'Retention %',
-                data: [100, 92, 88, data.retention.rate || 85],
-                borderColor: '#2ecc71',
-                fill: false
+                label: 'Revenue',
+                data: data.revenue.history.values || [11500, 12000, 12400, 12700],
+                backgroundColor: '#2ecc71'
               }]
             },
             options: { responsive: true }
           });
 
-          document.getElementById('ai-strategy').textContent = 
-            data.ai_insight || "Send re-engagement email to 10 at-risk customers.";
-          document.getElementById('retention-summary').textContent = 
-            `Retention stable at ${data.retention.rate || 85}%. Focus on Day 7 drop-off.`;
+          document.getElementById('ai-forecast').textContent = 
+            data.ai_insight || "Forecast: £13,200 next month. Upsell top 5 customers.";
+          document.getElementById('revenue-summary').textContent = 
+            `Revenue up ${data.revenue.trend}. Recurring at 60% — strong base.`;
         } catch (e) {
-          alert('Failed to load retention data – showing demo.');
+          alert('Failed to load revenue data – showing demo.');
           // Fallback mocks (original)
-          document.getElementById('retention-rate').textContent = `85%`;
+          document.getElementById('total-revenue').textContent = `£12700`;
           // ... (rest of original fallback)
         }
       } else {
@@ -117,14 +116,14 @@
     }
 
     function exportCSV() {
-      const csv = `Day,Retention\n1,100\n7,92\n14,88\n30,85`;
+      const csv = `Week,Revenue\n1,11500\n2,12000\n3,12400\n4,12700`;
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'retention.csv'; a.click();
+      a.href = url; a.download = 'revenue.csv'; a.click();
     }
 
-    loadRetention();
+    loadRevenue();
   </script>
 </body>
 </html>
