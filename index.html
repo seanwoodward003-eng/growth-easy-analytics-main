@@ -3,22 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GrowthEasy AI - Dashboard</title>
+  <title>GrowthEasy AI - AI Growth Analytics</title>
+
+  <!-- NO CACHE -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=9">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body data-page="dashboard">
 
+<!-- NAV -->
 <div class="navigation-bar">
   <nav class="nav-container">
     <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
 
-    <!-- DESKTOP -->
+    <!-- DESKTOP NAV -->
     <ul class="nav-links">
       <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
       <li><a href="churn.html" class="nav-btn">Churn</a></li>
@@ -33,10 +36,11 @@
     <!-- MOBILE MENU BUTTON -->
     <button class="mobile-menu-btn" id="menuBtn">Menu</button>
 
+    <!-- ACTIONS -->
     <div class="nav-actions">
-      <button class="profile-btn" id="profileBtn">Profile</button>
-      <button class="logout-btn" id="logoutBtn">Logout</button>
-      <button class="refresh-btn" id="refreshBtn">Refresh</button>
+      <button class="profile-btn">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
 
     <!-- MOBILE DROPDOWN -->
@@ -49,45 +53,52 @@
       <a href="performance.html" class="nav-btn">Performance</a>
       <a href="about.html" class="nav-btn">About</a>
       <a href="signup.html" class="nav-btn">Sign Up</a>
-      <hr style="border-color:#334455;margin:10px 0;">
-      <button class="profile-btn" id="mobileProfileBtn">Profile</button>
-      <button class="logout-btn" id="mobileLogoutBtn">Logout</button>
-      <button class="refresh-btn" id="mobileRefreshBtn">Refresh</button>
+      <hr style="border-color:#334455; margin:10px 0;">
+      <button class="profile-btn">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
   </nav>
 </div>
 
+<!-- MAIN -->
 <div id="root" class="page-view dashboard-view">
   <h1>Dashboard</h1>
 
   <div id="dashboard-metrics" class="metrics-container">
-    <p class="loading-text">Loading metrics…</p>
+    <p class="loading-text">Loading metrics...</p>
   </div>
 
   <div class="charts-panel">
     <div class="filter-bar">
       <select id="time-filter" class="filter-select" onchange="refreshData()">
-        <option>Weekly</option><option selected>Monthly</option><option>Custom</option>
+        <option>Weekly</option>
+        <option>Monthly</option>
+        <option>Custom</option>
       </select>
       <select id="customer-filter" class="filter-select" onchange="refreshData()">
-        <option>All</option><option>New</option><option>Returning</option>
+        <option>All</option>
+        <option>New</option>
+        <option>Returning</option>
       </select>
     </div>
 
     <div class="chart-container">
       <h3>Revenue Trend</h3>
-      <canvas id="revenueChart"></canvas>
-      <p class="chart-caption" id="revenueCaption">Loading…</p>
+      <canvas id="revenueChart" class="chart-svg"></canvas>
+      <p class="chart-caption" id="revenueCaption">Loading...</p>
     </div>
   </div>
 
   <div class="bottom-panel">
-    <div class="ai-insights" id="ai-insights"><p class="loading-text">Loading AI insights…</p></div>
+    <div class="ai-insights" id="ai-insights">
+      <p class="loading-text">Loading AI insights...</p>
+    </div>
     <div class="chat-panel">
       <h3>AI Growth Coach</h3>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO…">
+        <input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO..." />
         <button class="send-btn" onclick="sendChat()">Send</button>
       </div>
     </div>
@@ -101,109 +112,16 @@
   <p>Beta v0.1 © 2025 GrowthEasy AI</p>
 </div>
 
-<script src="script.js?v=10"></script>
+<!-- SCRIPT -->
+<script src="script.js?v=9"></script>
+
+<!-- MOBILE MENU + DATA LOGIC (Integrated into script.js - no duplicate) -->
 <script>
-  // -------------------------------------------------
-  // 1. MOBILE MENU
-  // -------------------------------------------------
-  const menuBtn = document.getElementById('menuBtn');
-  const mobileMenu = document.getElementById('mobileMenu');
-  menuBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    const open = mobileMenu.classList.toggle('open');
-    menuBtn.textContent = open ? 'Close' : 'Menu';
-  });
-  document.addEventListener('click', e => {
-    if (!menuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
-      mobileMenu.classList.remove('open');
-      menuBtn.textContent = 'Menu';
-    }
-  });
-
-  // -------------------------------------------------
-  // 2. PROFILE / LOGOUT / REFRESH
-  // -------------------------------------------------
-  function goProfile() {
-    const token = localStorage.getItem('token');
-    if (token) window.location.href = 'profile.html';   // create a real profile page later
-    else window.location.href = 'signup.html';
-  }
-  function logout() {
-    localStorage.removeItem('token');
-    window.location.href = 'signup.html';
-  }
-  function refresh() { location.reload(); }
-
-  document.getElementById('profileBtn').onclick = goProfile;
-  document.getElementById('mobileProfileBtn').onclick = goProfile;
-  document.getElementById('logoutBtn').onclick = logout;
-  document.getElementById('mobileLogoutBtn').onclick = logout;
-  document.getElementById('refreshBtn').onclick = refresh;
-  document.getElementById('mobileRefreshBtn').onclick = refresh;
-
-  // -------------------------------------------------
-  // 3. FAKE METRICS (fallback when no token)
-  // -------------------------------------------------
-  const FAKE_DATA = {
-    revenue: { total: 12700, trend: '+6%' },
-    churn: { rate: 3.2, at_risk: 18 },
-    ga4: { acquisition_cost: 87, top_channel: 'Organic' },
-    ai_insight: 'Focus on Organic – highest ROI. Scale content 2×.'
+  // Logout listener added in script.js
+  window.onload = () => {
+    if (getToken()) refreshData();
   };
-
-  // -------------------------------------------------
-  // 4. REAL DATA + CHARTS (unchanged core logic)
-  // -------------------------------------------------
-  let revenueChart = null;
-  async function refreshData() {
-    const token = localStorage.getItem('token');
-    const time = document.getElementById('time-filter').value;
-    const customer = document.getElementById('customer-filter').value;
-
-    let data = token ? await (await fetch(`/api/metrics?time=${time}&customer=${customer}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })).json().catch(() => FAKE_DATA) : FAKE_DATA;
-
-    // ---- METRICS ----
-    document.getElementById('dashboard-metrics').innerHTML = `
-      <div class="metric-card"><strong>Revenue</strong><br>£${data.revenue?.total ?? 12700}</div>
-      <div class="metric-card"><strong>Churn</strong><br>${data.churn?.rate ?? 3.2}%</div>
-      <div class="metric-card"><strong>LTV:CAC</strong><br>${(150/50).toFixed(1)}:1</div>
-    `;
-
-    // ---- CHART ----
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    if (revenueChart) revenueChart.destroy();
-    revenueChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['W1','W2','W3','W4'],
-        datasets: [{ label:'Revenue', data:[11500,12000,12400,12700],
-          borderColor:'#00FFFF', backgroundColor:'rgba(0,255,255,0.1)', fill:true, tension:0.3 }]
-      },
-      options: { responsive:true, plugins:{legend:{display:false}},
-        scales:{ y:{grid:{color:'rgba(0,255,255,0.1)'}}, x:{grid:{display:false}} } }
-    });
-    document.getElementById('revenueCaption').textContent = `${data.revenue?.trend ?? '+6%'} this month`;
-
-    // ---- AI ----
-    document.getElementById('ai-insights').innerHTML = `<p><strong>AI Insight:</strong> ${data.ai_insight ?? FAKE_DATA.ai_insight}</p>`;
-  }
-
-  function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim(); if (!msg) return;
-    const chat = document.getElementById('chat-messages');
-    chat.innerHTML += `<div class="user-msg">${msg}</div>`;
-    input.value = '';
-    setTimeout(() => {
-      chat.innerHTML += `<div class="ai-msg">Recommendation: Send win-back emails to at-risk customers.</div>`;
-      chat.scrollTop = chat.scrollHeight;
-    }, 800);
-  }
-
-  // init
-  window.onload = () => refreshData();
 </script>
-</body> 
+
+</body>
 </html>
