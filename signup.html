@@ -69,9 +69,9 @@
     async function startTrial() {
       const email = document.getElementById('email').value.trim();
       const consent = document.getElementById('consent').checked;
-      if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent");
+      if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent to GDPR policy.");
       try {
-        const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {  // Backend URL
+        const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, consent })
