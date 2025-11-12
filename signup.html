@@ -65,35 +65,48 @@
     <button class="active" onclick="go('signup')">Signup</button>
   </div>
 
-  <script>
-    async function startTrial() {
-      const email = document.getElementById('email').value.trim();
-      const consent = document.getElementById('consent').checked;
-      if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent to GDPR policy.");
-      try {
-        const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, consent })
-        });
-        if (res.ok) {
-          const { url } = await res.json();
-          window.location = url;
-        } else {
-          const err = await res.json();
-          alert(err.error || "Try again");
-        }
-      } catch (e) {
-        alert('Connection error – try again.');
-      }
-    }
+<script>
+  function setToken(token) {
+    document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
+  }
 
-    function go(page) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(page).classList.add('active');
-      document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+  async function startTrial() {
+    const email = document.getElementById('email').value.trim();
+    const consent = document.getElementById('consent').checked;
+    if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent to GDPR policy.");
+    try {
+      console.log('Starting trial for:', email);  // Debug
+      const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, consent }),
+        credentials: 'include'
+      });
+      console.log('Response status:', res.status);  // Debug
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.token) {
+          setToken(data.token);
+          window.location.href = data.redirect || '/dashboard.html';
+        } else {
+          alert('Unexpected response – try again.');
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Try again");
+      }
+    } catch (e) {
+      console.error('Fetch error:', e);
+      alert('Connection error – try again.');
     }
-  </script>
+  }
+
+  function go(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+</script>
 </body>
 </html>
