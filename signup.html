@@ -24,6 +24,7 @@
     .mobile-nav { position:fixed; bottom:0; left:0; right:0; background:#0a0f2c; border-top:1px solid #00ffff; display:flex; z-index:1000; }
     .mobile-nav button { flex:1; padding:16px; background:transparent; color:#00ffff; border:none; font-weight:bold; }
     .mobile-nav button.active { background:rgba(0,255,255,0.2); }
+    .loading { opacity: 0.6; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -52,9 +53,9 @@
       <input type="email" id="email" placeholder="Your email" required />
       <label class="checkbox-label">
         <input type="checkbox" id="consent" required />
-        <span>I consent to data processing per our <a href="privacy.html">GDPR policy</a>.</span>
+        <span>I consent to data processing per our <a href="privacy.html" target="_blank">GDPR policy</a>.</span>
       </label>
-      <button onclick="startTrial()">Start 7-Day Free Trial</button>
+      <button id="trialBtn" onclick="startTrial()">Start 7-Day Free Trial</button>
     </div>
   </div>
 
@@ -66,47 +67,60 @@
   </div>
 
 <script>
+  // === SET COOKIE ===
   function setToken(token) {
     document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
   }
 
+  // === START TRIAL (FIXED: Relative URL) ===
   async function startTrial() {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
-    if (!email || !email.includes('@') || !consent) return alert("Enter valid email and consent to GDPR policy.");
+    const btn = document.getElementById('trialBtn');
+
+    if (!email || !email.includes('@') || !consent) {
+      return alert("Please enter a valid email and agree to the GDPR policy.");
+    }
+
+    // UI: Show loading
+    btn.classList.add('loading');
+    btn.textContent = "Creating Trial...";
+
     try {
-      console.log('Starting trial for:', email);  // Debug
-      const res = await fetch('https://growth-easy-analytics-2.onrender.com/create-trial', {
+      const res = await fetch('/create-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent }),
         credentials: 'include'
       });
-      console.log('Response status:', res.status);  // Debug
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.token) {
-          setToken(data.token);
-          window.location.href = data.redirect || '/dashboard.html';
-        } else {
-          alert('Unexpected response – try again.');
-        }
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.token) {
+        setToken(data.token);
+        window.location.href = data.redirect || '/dashboard.html';
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || "Try again");
+        alert(data.error || "Failed to start trial — try again.");
       }
     } catch (e) {
-      console.error('Fetch error:', e);
-      alert('Connection error – try again.');
+      console.error('Connection error:', e);
+      alert('Connection error – please check your internet and try again.');
+    } finally {
+      btn.classList.remove('loading');
+      btn.textContent = "Start 7-Day Free Trial";
     }
   }
 
+  // === NAVIGATION (Optional – if you have other pages) ===
   function go(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
+    const target = document.getElementById(page);
+    if (target) target.classList.add('active');
+
     document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
   }
 </script>
+
 </body>
 </html>
