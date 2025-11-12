@@ -5,9 +5,33 @@
   - Error alerts + fallbacks (fixes handling)
   - Mobile menu (slide-in)
   - Chart + AI chat
+  - STRIPE INTEGRATION: Loaded publishable key for future checkout/Elements
 ====================================================================*/
 
 const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com'; // LIVE BACKEND
+
+// === STRIPE INITIALIZATION (New: For checkout/Elements if needed) ===
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SQcBL7iaZUs16EUVxIe6hi8Ty9TwKrER1qJWulVcI0mrC8CkRp3nYRY0Y1eQx9gU8M59MaMEdpY000YIjipF0b300ihyqCYzb'; // Live PK
+let stripe; // Global for reuse
+
+async function loadStripe() {
+  if (!stripe) {
+    const { loadStripe } = await import('https://js.stripe.com/v3/');
+    stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
+    if (!stripe) {
+      console.warn('Stripe failed to load – check key.');
+    }
+  }
+  return stripe;
+}
+
+// Example usage (add to signup form if needed):
+// async function handleSignup() {
+//   const stripeInstance = await loadStripe();
+//   if (stripeInstance) {
+//     // e.g., stripeInstance.redirectToCheckout({ sessionId: 'from-backend' });
+//   }
+// }
 
 // === COOKIE TOKEN (Fixes Mismatch) ===
 function getToken() {
