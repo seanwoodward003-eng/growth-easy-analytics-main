@@ -1,5 +1,5 @@
 /*====================================================================
-  script.js – FINAL LIVE VERSION (FIXED)
+  script.js – FINAL LIVE VERSION (COMPLETE)
   - Cookie-based token (fixes mismatch)
   - Auto-sync + real data extraction (fixes integration)
   - Error alerts + fallbacks (fixes handling)
@@ -8,10 +8,10 @@
   - STRIPE INTEGRATION: Loaded publishable key for future checkout/Elements
 ====================================================================*/
 
-const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com'; // LIVE BACKEND
+const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com'; // LIVE BACKEND (matches your Render service)
 
-// === STRIPE INITIALIZATION (New: For checkout/Elements if needed) ===
-const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SQcBL7iaZUs16EUVxIe6hi8Ty9TwKrER1qJWulVcI0mrC8CkRp3nYRY0Y1eQx9gU8M59MaMEdpY000YIjipF0b300ihyqCYzb'; // Live PK
+// === STRIPE INITIALIZATION (For checkout/Elements if needed) ===
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51SQCbL7iaZUS16EUVxIe6hi8Ty9TwKrER1qJWulVcI0mrC8CkRp3nYRY0Y1eQx9gU8M59MaMEdpY000YIjipF0b300ihyqCYzb'; // Updated: Your live PK from screenshot
 let stripe; // Global for reuse
 
 async function loadStripe() {
@@ -25,11 +25,12 @@ async function loadStripe() {
   return stripe;
 }
 
-// Example usage (add to signup form if needed):
-// async function handleSignup() {
+// Example: Prompt for payment method post-trial (call in dashboard init if sub is trialing)
+// async function addPaymentMethod() {
 //   const stripeInstance = await loadStripe();
 //   if (stripeInstance) {
-//     // e.g., stripeInstance.redirectToCheckout({ sessionId: 'from-backend' });
+//     const { setupIntent, error } = await stripeInstance.confirmSetupIntent('si_from_backend');
+//     if (error) alert(`Setup failed: ${error.message}`);
 //   }
 // }
 
@@ -80,11 +81,17 @@ async function apiFetch(endpoint, options = {}) {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options.headers
-      }
+      },
+      credentials: 'include'  // Ensures cookies for auth
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert(`API Error: ${err.error || `HTTP ${res.status}`}. Retrying in 5s...`);  // User-friendly
+      let err;
+      try {
+        err = await res.json();
+      } catch {
+        err = { error: await res.text() || `HTTP ${res.status}` };
+      }
+      alert(`API Error: ${err.error}. Retrying in 5s...`);  // User-friendly
       throw new Error(err.error || `HTTP ${res.status}`);
     }
     return await res.json();
