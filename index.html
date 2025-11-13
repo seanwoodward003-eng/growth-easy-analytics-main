@@ -115,11 +115,18 @@
 <!-- SCRIPT -->
 <script src="script.js?v=9"></script>
 
-<!-- MOBILE MENU + DATA LOGIC (Integrated into script.js - no duplicate) -->
+<!-- MOBILE MENU + DATA LOGIC (Updated: Force demo on unauthorized, onload refresh with fallback) -->
 <script>
   // Logout listener added in script.js
   window.onload = () => {
-    if (getToken()) refreshData();
+    const token = getToken();
+    console.log('Onload token:', token ? 'present' : 'missing');  // Debug
+    if (token) {
+      refreshData();
+    } else {
+      console.log('No token on load – rendering demo');
+      renderDashboard(null, true);  // Immediate demo fallback
+    }
   };
 </script>
 
