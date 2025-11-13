@@ -75,7 +75,7 @@
     document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
   }
 
-  // === START TRIAL (Updated: Added mode: 'cors' for Safari + credentials: 'include') ===
+  // === START TRIAL (Updated: Added warm-up ping to prevent Render cold-start timeouts) ===
   async function startTrial() {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
@@ -89,9 +89,23 @@
     btn.textContent = "Creating Trial...";
 
     try {
+      // Pre-wake Render to avoid cold-start timeout (silent ping)
+      try {
+        await fetch(`${RENDER_URL}/health`, { 
+          method: 'GET', 
+          mode: 'no-cors',  // Quiet mode—no CORS fuss on mobile
+          cache: 'no-cache'  // Fresh ping every time
+        });
+        // Optional: Micro-delay for spin-up (Safari-safe)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (e) {
+        // Swallow warm-up fails—doesn't block the trial
+        console.warn('Warm-up ping skipped:', e);
+      }
+
       const res = await fetch(`${RENDER_URL}/create-trial`, {
         method: 'POST',
-        mode: 'cors',  // Fixed: Explicit CORS mode for Safari strictness
+        mode: 'cors',  // Explicit CORS mode for Safari strictness
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent }),
         credentials: 'include'  // Enables cookies across origins
