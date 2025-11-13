@@ -67,9 +67,12 @@ const FAKE = {
   ai_insight: 'Demo mode – connect accounts for real data.'
 };
 
-// === API FETCH (Enhanced with Error Handling) ===
+// === API FETCH (Enhanced with Error Handling + Logs) ===
 async function apiFetch(endpoint, options = {}) {
+  console.log('API Fetch:', endpoint, 'Token present?', !!token);  // Debug log
+
   if (!token) {
+    console.warn('No token – using demo');
     alert('Please sign up or log in to access data.');  // User-friendly error
     return { error: 'No token' };
   }
@@ -84,6 +87,8 @@ async function apiFetch(endpoint, options = {}) {
       },
       credentials: 'include'  // Ensures cookies for auth
     });
+    console.log('API Response Status:', res.status, endpoint);  // Debug log
+
     if (!res.ok) {
       let err;
       try {
@@ -91,21 +96,24 @@ async function apiFetch(endpoint, options = {}) {
       } catch {
         err = { error: await res.text() || `HTTP ${res.status}` };
       }
+      console.error('API Error Details:', err);  // Debug log
       alert(`API Error: ${err.error}. Retrying in 5s...`);  // User-friendly
       throw new Error(err.error || `HTTP ${res.status}`);
     }
     return await res.json();
   } catch (e) {
-    console.error('API Error:', e);
+    console.error('Full Fetch Error:', e);  // Debug log
     alert('Connection issue – check internet and retry.');  // Fallback
     return { error: 'Failed to connect' };
   }
 }
 
-// === RENDER DASHBOARD (Updated for Real Data) ===
+// === RENDER DASHBOARD (Updated for Real Data + Force Demo Timeout) ===
 function renderDashboard(data, isFake = false) {
   const metrics = document.getElementById('dashboard-metrics');
   const insights = document.getElementById('ai-insights');
+
+  console.log('Rendering dashboard with data:', data, 'isFake:', isFake);  // Debug log
 
   if (isFake || data.error) {
     metrics.innerHTML = `
@@ -271,27 +279,38 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// === REFRESH BUTTON (Fixed: Sync + Real Data) ===
+// === REFRESH BUTTON (Fixed: Sync + Real Data + Timeout Fallback) ===
 window.refreshData = async () => {
   const btn = document.querySelector('.refresh-btn');
   if (btn) btn.textContent = 'Syncing...';  // Spinner-like
 
   if (!token) {
+    console.warn('No token – rendering demo');
     renderDashboard(null, true);
-  } else {
-    try {
-      await apiFetch('api/sync', { method: 'POST' });  // NEW: Trigger sync
-      const data = await apiFetch('api/metrics');
-      renderDashboard(data);
-    } catch (e) {
-      alert('Refresh failed – showing demo data.');  // Error polish
-      renderDashboard(null, true);
-    }
+    return;
   }
 
-  setTimeout(() => {
-    if (btn) btn.textContent = 'Refresh';
-  }, 1000);
+  const timeoutId = setTimeout(() => {
+    console.warn('API timeout – forcing demo');
+    renderDashboard(null, true);  // Anti-hang fallback after 5s
+  }, 5000);
+
+  try {
+    console.log('Starting sync...');
+    await apiFetch('api/sync', { method: 'POST' });  // NEW: Trigger sync
+    const data = await apiFetch('api/metrics');
+    console.log('API data received:', data);
+    renderDashboard(data);
+  } catch (e) {
+    console.error('Refresh error:', e);
+    alert('Refresh failed – showing demo data.');  // Error polish
+    renderDashboard(null, true);
+  } finally {
+    clearTimeout(timeoutId);
+    setTimeout(() => {
+      if (btn) btn.textContent = 'Refresh';
+    }, 1000);
+  }
 };
 
 // === LOGOUT (Fixed: Clear Cookie) ===
@@ -316,10 +335,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   token = getToken();  // Re-fetch on load
+  console.log('Init token:', token ? 'present' : 'missing');  // Debug log
 
   if (!token) {
+    console.log('No token – rendering demo');
     renderDashboard(null, true); 
   } else {
+    console.log('Token OK – loading real data');
     await refreshData();  // Use fixed refresh
   }
 });
