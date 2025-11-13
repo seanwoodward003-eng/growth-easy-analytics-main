@@ -165,8 +165,8 @@ function drawChart(labels, values, caption) {
   if (cap) cap.textContent = `${caption} this month`;
 }
 
-// === AI CHAT (Unchanged) ===
-window.sendChat = () => {
+// === AI CHAT (Updated: Use backend /api/chat for real Grok replies) ===
+window.sendChat = async () => {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;
@@ -175,13 +175,26 @@ window.sendChat = () => {
   chat.innerHTML += `<div class="user-msg">${msg}</div>`;
   input.value = '';
 
-  setTimeout(() => {
-    const reply = token
-      ? "Win-back emails to 18 at-risk → save £2,400/mo."
-      : "Connect accounts to get real AI insights.";
-    chat.innerHTML += `<div class="ai-msg">${reply}</div>`;
+  if (!token) {
+    chat.innerHTML += `<div class="ai-msg">Connect accounts to get real AI insights.</div>`;
     chat.scrollTop = chat.scrollHeight;
-  }, 600);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ message: msg }),
+      credentials: 'include'
+    });
+    const data = await res.json();
+    chat.innerHTML += `<div class="ai-msg">${data.reply}</div>`;
+  } catch (e) {
+    console.error('Chat error:', e);
+    chat.innerHTML += `<div class="ai-msg">Sorry, AI chat unavailable – try again.</div>`;
+  }
+  chat.scrollTop = chat.scrollHeight;
 };
 
 // === MOBILE MENU (SLIDE-IN) (Unchanged) ===
