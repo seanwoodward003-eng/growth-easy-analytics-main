@@ -70,13 +70,13 @@
   // === RENDER BACKEND URL ===
   const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';
 
-  // === SET COOKIE ===
+  // === SET COOKIE (Updated: Broad domain for Vercel previews) ===
   function setToken(token) {
-    document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
+    document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax; domain=.vercel.app`;
   }
 
-  // === START TRIAL (Updated: Added warm-up ping to prevent Render cold-start timeouts) ===
-  async function startTrial() {
+  // === START TRIAL (Updated: Warm-up + retry for Safari flakes) ===
+  async function startTrial(retries = 0) {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
     const btn = document.getElementById('trialBtn');
@@ -89,29 +89,26 @@
     btn.textContent = "Creating Trial...";
 
     try {
-      // Pre-wake Render to avoid cold-start timeout (silent ping)
+      // Pre-wake Render
       try {
         await fetch(`${RENDER_URL}/health`, { 
           method: 'GET', 
-          mode: 'no-cors',  // Quiet mode—no CORS fuss on mobile
-          cache: 'no-cache'  // Fresh ping every time
+          mode: 'no-cors', 
+          cache: 'no-cache' 
         });
-        // Optional: Micro-delay for spin-up (Safari-safe)
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500));  // Spin-up buffer
       } catch (e) {
-        // Swallow warm-up fails—doesn't block the trial
-        console.warn('Warm-up ping skipped:', e);
+        console.warn('Warm-up skipped:', e);
       }
 
       const res = await fetch(`${RENDER_URL}/create-trial`, {
         method: 'POST',
-        mode: 'cors',  // Explicit CORS mode for Safari strictness
+        mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent }),
-        credentials: 'include'  // Enables cookies across origins
+        credentials: 'include'
       });
 
-      // Handle non-JSON errors (e.g., 500s) by reading as text
       let data;
       try {
         data = await res.json();
@@ -128,10 +125,17 @@
       }
     } catch (e) {
       console.error('Trial error:', e);
+      if (retries < 1 && e.message.includes('Load failed')) {  // Safari retry
+        console.log('Safari flake detected—retrying...');
+        btn.textContent = "Retrying...";
+        return setTimeout(() => startTrial(retries + 1), 1500);  // 1.5s retry
+      }
       alert(`Connection error: ${e.message} – please check your internet and try again.`);
     } finally {
-      btn.classList.remove('loading');
-      btn.textContent = "Start 7-Day Free Trial";
+      if (retries === 0) {  // Only reset on first try
+        btn.classList.remove('loading');
+        btn.textContent = "Start 7-Day Free Trial";
+      }
     }
   }
 
