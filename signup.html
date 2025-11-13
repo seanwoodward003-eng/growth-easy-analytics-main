@@ -39,7 +39,7 @@
 
       <div class="price-box">
         <div class="price">£0<span> for 7 days</span></div>
-        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
+        <p class="subtext"><strong>Card required</strong> — won't charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
       </div>
 
       <ul style="text-align:left; margin:15px 0; font-size:0.95rem;">
@@ -67,15 +67,15 @@
   </div>
 
 <script>
-  // === RENDER BACKEND URL (Updated: Full URL to your Render backend) ===
-  const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';  // Fixed: Matches your deployed backend
+  // === RENDER BACKEND URL ===
+  const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';
 
   // === SET COOKIE ===
   function setToken(token) {
     document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
   }
 
-  // === START TRIAL (Updated: Full backend URL + credentials: 'include' + robust error handling) ===
+  // === START TRIAL (Updated: Added mode: 'cors' for Safari + credentials: 'include') ===
   async function startTrial() {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
@@ -91,9 +91,10 @@
     try {
       const res = await fetch(`${RENDER_URL}/create-trial`, {
         method: 'POST',
+        mode: 'cors',  // Fixed: Explicit CORS mode for Safari strictness
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent }),
-        credentials: 'include'  // Fixed: Enables cookies across origins (for token)
+        credentials: 'include'  // Enables cookies across origins
       });
 
       // Handle non-JSON errors (e.g., 500s) by reading as text
@@ -120,7 +121,7 @@
     }
   }
 
-  // === NAVIGATION (Fixed: event.target for active button) ===
+  // === NAVIGATION ===
   function go(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(page);
