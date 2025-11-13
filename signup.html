@@ -67,12 +67,15 @@
   </div>
 
 <script>
+  // === RENDER BACKEND URL (Updated: Full URL to your Render backend) ===
+  const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';  // Fixed: Matches your deployed backend
+
   // === SET COOKIE ===
   function setToken(token) {
     document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
   }
 
-  // === START TRIAL (FIXED: Relative URL) ===
+  // === START TRIAL (Updated: Full backend URL + credentials: 'include' + robust error handling) ===
   async function startTrial() {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
@@ -82,19 +85,25 @@
       return alert("Please enter a valid email and agree to the GDPR policy.");
     }
 
-    // UI: Show loading
     btn.classList.add('loading');
     btn.textContent = "Creating Trial...";
 
     try {
-      const res = await fetch('/create-trial', {
+      const res = await fetch(`${RENDER_URL}/create-trial`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent }),
-        credentials: 'include'
+        credentials: 'include'  // Fixed: Enables cookies across origins (for token)
       });
 
-      const data = await res.json();
+      // Handle non-JSON errors (e.g., 500s) by reading as text
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}: Server error`);
+      }
 
       if (res.ok && data.success && data.token) {
         setToken(data.token);
@@ -103,20 +112,19 @@
         alert(data.error || "Failed to start trial — try again.");
       }
     } catch (e) {
-      console.error('Connection error:', e);
-      alert('Connection error – please check your internet and try again.');
+      console.error('Trial error:', e);
+      alert(`Connection error: ${e.message} – please check your internet and try again.`);
     } finally {
       btn.classList.remove('loading');
       btn.textContent = "Start 7-Day Free Trial";
     }
   }
 
-  // === NAVIGATION (Optional – if you have other pages) ===
+  // === NAVIGATION (Fixed: event.target for active button) ===
   function go(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(page);
     if (target) target.classList.add('active');
-
     document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
   }
