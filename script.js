@@ -47,7 +47,7 @@ function getToken() {
 }
 
 function setToken(token) {
-  document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax`;
+  document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax; domain=.vercel.app`;  // Broad domain for previews
 }
 
 let token = getToken();
@@ -303,8 +303,13 @@ window.refreshData = async () => {
     renderDashboard(data);
   } catch (e) {
     console.error('Refresh error:', e);
-    alert('Refresh failed – showing demo data.');  // Error polish
-    renderDashboard(null, true);
+    if (e.message.includes('Unauthorized')) {  // Specific fallback
+      console.log('Unauthorized – demo mode');
+      renderDashboard(null, true);
+    } else {
+      alert('Refresh failed – showing demo data.');
+      renderDashboard(null, true);
+    }
   } finally {
     clearTimeout(timeoutId);
     setTimeout(() => {
