@@ -349,4 +349,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('Token OK – loading real data');
     await refreshData();  // Use fixed refresh
   }
-}); 
+  // === INTEGRATION CONNECT (OAuth Popups)
+window.connectProvider = (provider) => {
+  let shop = '';
+  if (provider === 'shopify') {
+    shop = prompt('Enter your Shopify store URL (e.g., mystore.myshopify.com):');
+    if (!shop) return alert('Store URL required for Shopify.');
+  }
+  const url = `${BACKEND_URL}/auth/${provider}${shop ? `?shop=${shop}` : ''}`;
+  const popup = window.open(url, 'oauth', 'width=600,height=600,scrollbars=yes,resizable=yes');
+  if (!popup) return alert('Popup blocked—allow popups for OAuth.');
+
+  // Listen for callback (poll or postMessage if advanced)
+  const checkConnected = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(checkConnected);
+      refreshData();  // Reload data after connect
+      document.getElementById('integration-status').textContent = `${provider.charAt(0).toUpperCase() + provider.slice(1)} connected! Refresh for insights.`;
+      alert(`${provider} connected—refresh to see data!`);
+    }
+  }, 1000);
+};
+
+// Update onload to parse token for profile
+document.addEventListener('DOMContentLoaded', () => {
+  const token = getToken();
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      document.getElementById('user-email').textContent = `Welcome, ${payload.email}!`;
+      document.getElementById('profile-section').style.display = 'block';
+    } catch (e) {
+      console.error('Token parse error:', e);
+    }
+  }
+});
