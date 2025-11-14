@@ -10,9 +10,20 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .demo { opacity: 0.85; }
+    .metric-card { background: rgba(0, 255, 255, 0.05); border: 1px solid #00ffff33; padding: 1rem; border-radius: 12px; }
+    .trend.up { color: #00ff88; }
+    .trend.down { color: #ff6b6b; }
+  </style>
 </head>
 <body data-page="dashboard">
 
@@ -39,7 +50,7 @@
     <!-- ACTIONS -->
     <div class="nav-actions">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
-      <button class="logout-btn">Logout</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
 
@@ -47,15 +58,15 @@
     <div class="mobile-menu" id="mobileMenu">
       <a href="index.html" class="nav-btn">Dashboard</a>
       <a href="churn.html" class="nav-btn">Churn</a>
-      <a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-      <a href="retention.html" class="nav-btn">Retention</a></li>
-      <a href="revenue.html" class="nav-btn">Revenue</a></li>
-      <a href="performance.html" class="nav-btn">Performance</a></li>
-      <a href="about.html" class="nav-btn">About</a></li>
-      <a href="signup.html" class="nav-btn">Sign Up</a></li>
+      <a href="acquisition.html" class="nav-btn">Acquisition</a>
+      <a href="retention.html" class="nav-btn">Retention</a>
+      <a href="revenue.html" class="nav-btn">Revenue</a>
+      <a href="performance.html" class="nav-btn">Performance</a>
+      <a href="about.html" class="nav-btn">About</a>
+      <a href="signup.html" class="nav-btn">Sign Up</a>
       <hr style="border-color:#334455; margin:10px 0;">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
-      <button class="logout-btn">Logout</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
   </nav>
@@ -65,14 +76,14 @@
 <div id="root" class="page-view dashboard-view">
   <h1>Dashboard</h1>
 
-  <!-- PERSONALIZED PROFILE SECTION (Gated) -->
+  <!-- PERSONALIZED PROFILE SECTION (GATED) -->
   <div id="profile-section" class="profile-section" style="display:none;">
     <h3>Your Profile</h3>
     <p id="user-email">Loading...</p>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <!-- INTEGRATIONS ONBOARDING (Gated) -->
+  <!-- INTEGRATIONS ONBOARDING (GATED) -->
   <div id="integrations-section" class="integrations-section" style="display:none;">
     <h3>Connect Your Accounts for Real Insights</h3>
     <p>Link Shopify, GA4, or HubSpot to see AI-powered revenue, churn, and growth data.</p>
@@ -138,66 +149,266 @@
   <p>Beta v0.1 © 2025 GrowthEasy AI</p>
 </div>
 
-<!-- SCRIPT -->
-<script src="script.js?v=9"></script>
-
-<!-- MOBILE MENU + DATA LOGIC (Updated: Gate integrations, welcome overlay for new signups) -->
+<!-- MAIN SCRIPT -->
 <script>
-  // Logout listener added in script.js
-  window.onload = () => {
-    const token = getToken();
-    console.log('Onload token:', token ? 'present' : 'missing');  // Debug
+  // === TOKEN & AUTH HELPERS ===
+  function getToken() {
+    return localStorage.getItem('growseasy_token');
+  }
 
-    // Welcome overlay for new signups (3s delay, dismissible)
+  function isNewSignup() {
+    const flag = localStorage.getItem('growseasy_welcome_shown');
+    if (!flag && getToken()) {
+      localStorage.setItem('growseasy_welcome_shown', 'true');
+      return true;
+    }
+    return false;
+  }
+
+  function logout() {
+    localStorage.removeItem('growseasy_token');
+    localStorage.removeItem('growseasy_integrations');
+    alert('Logged out successfully.');
+    window.location.reload();
+  }
+
+  // === INTEGRATIONS ===
+  function connectProvider(provider) {
+    const token = getToken();
+    if (!token) {
+      alert('Please sign up or log in to connect accounts.');
+      window.location.href = 'signup.html';
+      return;
+    }
+
+    alert(`Connecting to ${provider.charAt(0).toUpperCase() + provider.slice(1)}...`);
+
+    setTimeout(() => {
+      const integrations = JSON.parse(localStorage.getItem('growseasy_integrations') || '{}');
+      integrations[provider] = true;
+      localStorage.setItem('growseasy_integrations', JSON.stringify(integrations));
+      document.getElementById('integration-status').innerText = 
+        `Connected: ${Object.keys(integrations).filter(k => integrations[k]).join(', ')}`;
+      refreshData();
+    }, 1000);
+  }
+
+  // === DATA RENDERING ===
+  function renderDashboard(data, isDemo = false) {
+    const container = document.getElementById('dashboard-metrics');
+    if (isDemo) {
+      container.innerHTML = `
+        <div class="metric-card demo">
+          <h3>Revenue</h3>
+          <p class="value">$12,483</p>
+          <p class="trend up">+18.2% vs last month</p>
+        </div>
+        <div class="metric-card demo">
+          <h3>Churn Rate</h3>
+          <p class="value">4.1%</p>
+          <p class="trend down">-0.8% improvement</p>
+        </div>
+        <div class="metric-card demo">
+          <h3>New Customers</h3>
+          <p class="value">342</p>
+          <p class="trend up">+22%</p>
+        </div>
+      `;
+      document.getElementById('revenueCaption').innerText = 'Demo data shown. Sign up to see your real metrics.';
+    } else if (data) {
+      container.innerHTML = `
+        <div class="metric-card">
+          <h3>Revenue</h3>
+          <p class="value">$${data.revenue.toLocaleString()}</p>
+          <p class="trend ${data.revenueTrend > 0 ? 'up' : 'down'}">
+            ${data.revenueTrend > 0 ? '+' : ''}${data.revenueTrend}%
+          </p>
+        </div>
+        <div class="metric-card">
+          <h3>Active Users</h3>
+          <p class="value">${data.activeUsers}</p>
+          <p class="trend up">+12%</p>
+        </div>
+        <div class="metric-card">
+          <h3>Conversion Rate</h3>
+          <p class="value">${data.conversion}%</p>
+          <p class="trend up">+3.1%</p>
+        </div>
+      `;
+      document.getElementById('revenueCaption').innerText = 'Live data from your connected accounts.';
+    } else {
+      container.innerHTML = '<p class="loading-text">Loading your data...</p>';
+    }
+  }
+
+  function renderChart() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const isDemo = !getToken();
+
+    // Destroy previous chart
+    if (window.revenueChartInstance) {
+      window.revenueChartInstance.destroy();
+    }
+
+    window.revenueChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: isDemo 
+          ? ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+          : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Revenue',
+          data: isDemo ? [8000, 9500, 11000, 12483] : [15000, 18000, 21000, 19500, 23000, 24830],
+          borderColor: '#00ffff',
+          backgroundColor: 'rgba(0, 255, 255, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { grid: { color: '#334455' }, ticks: { color: '#aaa' } },
+          x: { grid: { display: false }, ticks: { color: '#aaa' } }
+        }
+      }
+    });
+  }
+
+  function renderAIInsights(isDemo) {
+    const el = document.getElementById('ai-insights');
+    if (isDemo) {
+      el.innerHTML = `
+        <h4>AI Insight (Demo)</h4>
+        <p><strong>Opportunity:</strong> Returning customers spend 42% more. Try a re-engagement email campaign.</p>
+      `;
+    } else {
+      el.innerHTML = `
+        <h4>AI Growth Recommendation</h4>
+        <p><strong>High-impact:</strong> Reduce cart abandonment by adding trust badges → projected +12% revenue.</p>
+      `;
+    }
+  }
+
+  // === CHAT ===
+  function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML += `<div class="user-msg">${msg}</div>`;
+    input.value = '';
+
+    setTimeout(() => {
+      const response = getToken()
+        ? "Your GA4 data shows new customer acquisition cost down 11%. Scale top channels like Paid Search."
+        : "Sign up to get personalized AI coaching based on your real data.";
+      messages.innerHTML += `<div class="ai-msg">${response}</div>`;
+      messages.scrollTop = messages.scrollHeight;
+    }, 800);
+  }
+
+  // === REFRESH DATA ===
+  function refreshData() {
+    const token = getToken();
+    if (!token) {
+      renderDashboard(null, true);
+      renderChart();
+      renderAIInsights(true);
+      document.getElementById('user-email').innerText = 'Not signed in';
+      return;
+    }
+
+    // Mock API response
+    setTimeout(() => {
+      const mockData = {
+        revenue: 24830,
+        revenueTrend: 18.2,
+        activeUsers: 1847,
+        conversion: 3.8
+      };
+      renderDashboard(mockData, false);
+      renderChart();
+      renderAIInsights(false);
+      document.getElementById('user-email').innerText = 'you@company.com';
+
+      const integrations = JSON.parse(localStorage.getItem('growseasy_integrations') || '{}');
+      const connected = Object.keys(integrations).filter(k => integrations[k]);
+      document.getElementById('integration-status').innerText = 
+        connected.length > 0 
+          ? `Connected: ${connected.join(', ')}` 
+          : 'No accounts connected yet – start with one above!';
+    }, 800);
+  }
+
+  // === PROFILE TOGGLE ===
+  function toggleProfile() {
+    alert('Profile settings coming soon.');
+  }
+
+  // === WELCOME OVERLAY ===
+  function showWelcomeOverlay() {
     const welcome = document.createElement('div');
     welcome.id = 'welcome-overlay';
     welcome.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-      background: rgba(0, 0, 0, 0.9); color: #00ffff; display: flex; flex-direction: column; 
+      background: rgba(0, 0, 0, 0.95); color: #00ffff; display: flex; flex-direction: column; 
       justify-content: center; align-items: center; z-index: 9999; 
       font-family: Orbitron, sans-serif; text-align: center; padding: 2rem;
+      animation: fadeIn 0.5s;
     `;
     welcome.innerHTML = `
-      <h2>Welcome to GrowthEasy AI!</h2>
-      <p>Your 7-day free trial has started.</p>
-      <p>Connect your accounts → See real insights → Grow faster.</p>
-      <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background:#00ffff; color:#0a0f2c; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Go to Dashboard</button>
+      <h2 style="font-size:2.5rem; margin-bottom:1rem;">Welcome to GrowthEasy AI!</h2>
+      <p style="font-size:1.2rem; max-width:600px;">Your 7-day free trial has started.</p>
+      <p style="margin:1rem 0;">Connect your accounts → See real insights → Grow faster.</p>
+      <button onclick="dismissWelcome()" style="margin-top: 20px; padding: 14px 28px; background:#00ffff; color:#0a0f2c; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">
+        Go to Dashboard
+      </button>
     `;
     document.body.appendChild(welcome);
+    setTimeout(dismissWelcome, 3000);
+  }
 
-    // Auto-remove overlay after 3s
-    setTimeout(() => {
-      if (welcome.parentNode) welcome.remove();
-      if (!token) {
-        // No token: Show CTA, hide gated sections
-        document.getElementById('cta-section').style.display = 'block';
-        document.getElementById('profile-section').style.display = 'none';
-        document.getElementById('integrations-section').style.display = 'none';
-        renderDashboard(null, true);  // Demo teaser
-      } else {
-        // Token present: Show gated sections
-        document.getElementById('cta-section').style.display = 'none';
-        document.getElementById('profile-section').style.display = 'block';
-        document.getElementById('integrations-section').style.display = 'block';
-        refreshData();  // Load real data
-      }
-    }, 3000);
+  window.dismissWelcome = () => {
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) overlay.remove();
+    initDashboard();
+  };
 
-    // Manual dismiss
-    welcome.querySelector('button').onclick = () => {
-      welcome.remove();
-      if (!token) {
-        document.getElementById('cta-section').style.display = 'block';
-        document.getElementById('profile-section').style.display = 'none';
-        document.getElementById('integrations-section').style.display = 'none';
-        renderDashboard(null, true);
-      } else {
-        document.getElementById('cta-section').style.display = 'none';
-        document.getElementById('profile-section').style.display = 'block';
-        document.getElementById('integrations-section').style.display = 'block';
-        refreshData();
-      }
-    };
+  // === INIT DASHBOARD ===
+  function initDashboard() {
+    const token = getToken();
+
+    if (!token) {
+      document.getElementById('cta-section').style.display = 'block';
+      document.getElementById('profile-section').style.display = 'none';
+      document.getElementById('integrations-section').style.display = 'none';
+      renderDashboard(null, true);
+      renderChart();
+      renderAIInsights(true);
+    } else {
+      document.getElementById('cta-section').style.display = 'none';
+      document.getElementById('profile-section').style.display = 'block';
+      document.getElementById('integrations-section').style.display = 'block';
+      document.getElementById('user-email').innerText = 'Loading...';
+      refreshData();
+    }
+  }
+
+  // === ONLOAD ===
+  window.onload = () => {
+    if (isNewSignup()) {
+      showWelcomeOverlay();
+    } else {
+      initDashboard();
+    }
+
+    // Enter key for chat
+    document.getElementById('chat-input')?.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendChat();
+    });
   };
 </script>
 
