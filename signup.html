@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Start Free Trial – GrowthEasy AI</title>
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=12">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui,sans-serif; }
     body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; padding-bottom:80px; display:flex; flex-direction:column; }
@@ -68,25 +68,11 @@
   </div>
 
 <script>
-  // -------------------------------------------------
-  // CONFIG
-  // -------------------------------------------------
-  const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';
-  const DASHBOARD_URL = 'index.html';               // <-- your dashboard
+  // === CONFIG ===
+  const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
+  const FRONTEND_URL = 'https://growth-easy-analytics-main-26jk-pb10b9hc9.vercel.app';
 
-  // -------------------------------------------------
-  // HELPERS
-  // -------------------------------------------------
-  function setClientToken(token) {
-    localStorage.setItem('growseasy_token', token);
-    localStorage.setItem('growseasy_user_email', document.getElementById('email').value.trim());
-    // Force welcome overlay on first successful trial
-    localStorage.removeItem('growseasy_welcome_shown');
-  }
-
-  // -------------------------------------------------
-  // START TRIAL
-  // -------------------------------------------------
+  // === START TRIAL ===
   async function startTrial(retries = 0) {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
@@ -100,14 +86,13 @@
     btn.textContent = 'Creating Trial...';
 
     try {
-      // 1. Warm-up Render (no-cors, fire-and-forget)
-      fetch(`${RENDER_URL}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-      await new Promise(r => setTimeout(r, 600));   // give Render a moment
+      // Warm-up Render
+      fetch(`${BACKEND_URL}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+      await new Promise(r => setTimeout(r, 600));
 
-      // 2. Create trial
-      const res = await fetch(`${RENDER_URL}/create-trial`, {
+      const res = await fetch(`${BACKEND_URL}/create-trial`, {
         method: 'POST',
-        credentials: 'include',                     // send cookies
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent })
       });
@@ -117,12 +102,17 @@
       catch { data = { error: await res.text() || `HTTP ${res.status}` }; }
 
       if (res.ok && data.success && data.token) {
-        // Server should set an **HttpOnly** cookie named `token`
-        // We also store a copy in localStorage for the pure-HTML dashboard
-        setClientToken(data.token);
-        window.location.href = DASHBOARD_URL;
+        // Set secure cookie (works on Vercel + Render)
+        document.cookie = `token=${data.token}; path=/; max-age=${7*24*60*60}; secure; samesite=lax`;
+        
+        // Force welcome overlay on first login
+        localStorage.removeItem('growseasy_welcome_shown');
+        localStorage.setItem('growseasy_user_email', email);
+
+        // Redirect
+        window.location.href = data.redirect || `${FRONTEND_URL}/index.html`;
       } else {
-        throw new Error(data.error || 'Unknown server error');
+        throw new Error(data.error || 'Server error');
       }
     } catch (e) {
       console.error('Trial error:', e);
@@ -139,14 +129,11 @@
     }
   }
 
-  // -------------------------------------------------
-  // NAVIGATION (mobile tabs – optional)
-  // -------------------------------------------------
+  // === MOBILE NAV ===
   function go(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const el = document.getElementById(page);
     if (el) el.classList.add('active');
-
     document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
   }
