@@ -38,7 +38,7 @@
 
     <!-- ACTIONS -->
     <div class="nav-actions">
-      <button class="profile-btn">Profile</button>
+      <button class="profile-btn" onclick="toggleProfile()">Profile</button>
       <button class="logout-btn">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
@@ -54,7 +54,7 @@
       <a href="about.html" class="nav-btn">About</a>
       <a href="signup.html" class="nav-btn">Sign Up</a>
       <hr style="border-color:#334455; margin:10px 0;">
-      <button class="profile-btn">Profile</button>
+      <button class="profile-btn" onclick="toggleProfile()">Profile</button>
       <button class="logout-btn">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
@@ -64,6 +64,25 @@
 <!-- MAIN -->
 <div id="root" class="page-view dashboard-view">
   <h1>Dashboard</h1>
+
+  <!-- PERSONALIZED PROFILE SECTION -->
+  <div id="profile-section" class="profile-section" style="display:none;">
+    <h3>Your Profile</h3>
+    <p id="user-email">Loading...</p>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- INTEGRATIONS ONBOARDING -->
+  <div id="integrations-section" class="integrations-section">
+    <h3>Connect Your Accounts for Real Insights</h3>
+    <p>Link Shopify, GA4, or HubSpot to see AI-powered revenue, churn, and growth data.</p>
+    <div class="integration-buttons">
+      <button class="connect-btn" onclick="connectProvider('shopify')">Connect Shopify</button>
+      <button class="connect-btn" onclick="connectProvider('ga4')">Connect GA4</button>
+      <button class="connect-btn" onclick="connectProvider('hubspot')">Connect HubSpot</button>
+    </div>
+    <p class="status" id="integration-status">No accounts connected yet – start with one above!</p>
+  </div>
 
   <div id="dashboard-metrics" class="metrics-container">
     <p class="loading-text">Loading metrics...</p>
@@ -131,4 +150,4 @@
 </script>
 
 </body>
-</html> 
+</html>
