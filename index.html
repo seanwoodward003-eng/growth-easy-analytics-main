@@ -3,26 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GrowthEasy AI - AI Growth Analytics</title>
+  <title>GrowthEasy AI - Dashboard</title>
 
   <!-- NO CACHE -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .demo { opacity: 0.85; }
-    .metric-card { background: rgba(0, 255, 255, 0.05); border: 1px solid #00ffff33; padding: 1rem; border-radius: 12px; }
-    .trend.up { color: #00ff88; }
-    .trend.down { color: #ff6b6b; }
+    @keyframes fadeIn { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+    .demo { opacity:.85; }
+    .metric-card { background:rgba(0,255,255,.05); border:1px solid #00ffff33; padding:1rem; border-radius:12px; }
+    .trend.up { color:#00ff88; }
+    .trend.down { color:#ff6b6b; }
+    .at-risk { color:#ffcc00; font-size:.9rem; }
+    .user-msg, .ai-msg { margin:0.5rem 0; padding:0.6rem 1rem; border-radius:8px; max-width:80%; }
+    .user-msg { background:#00ffff; color:#0a0f2c; align-self:flex-end; }
+    .ai-msg { background:#334455; color:#e0e7ff; align-self:flex-start; }
+    .chat-messages { display:flex; flex-direction:column; gap:0.4rem; max-height:300px; overflow-y:auto; padding:0.5rem; }
   </style>
 </head>
 <body data-page="dashboard">
@@ -50,7 +52,7 @@
     <!-- ACTIONS -->
     <div class="nav-actions">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
 
@@ -66,7 +68,7 @@
       <a href="signup.html" class="nav-btn">Sign Up</a>
       <hr style="border-color:#334455; margin:10px 0;">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="logout-btn">Logout</button>
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
   </nav>
@@ -76,66 +78,66 @@
 <div id="root" class="page-view dashboard-view">
   <h1>Dashboard</h1>
 
-  <!-- PERSONALIZED PROFILE SECTION (GATED) -->
+  <!-- PROFILE (GATED) -->
   <div id="profile-section" class="profile-section" style="display:none;">
     <h3>Your Profile</h3>
-    <p id="user-email">Loading...</p>
+    <p id="user-email">Loading…</p>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <!-- INTEGRATIONS ONBOARDING (GATED) -->
+  <!-- INTEGRATIONS (GATED) -->
   <div id="integrations-section" class="integrations-section" style="display:none;">
-    <h3>Connect Your Accounts for Real Insights</h3>
-    <p>Link Shopify, GA4, or HubSpot to see AI-powered revenue, churn, and growth data.</p>
+    <h3>Connect Your Accounts</h3>
+    <p>Shopify, GA4, HubSpot – real data powers AI insights.</p>
     <div class="integration-buttons">
       <button class="connect-btn" onclick="connectProvider('shopify')">Connect Shopify</button>
       <button class="connect-btn" onclick="connectProvider('ga4')">Connect GA4</button>
       <button class="connect-btn" onclick="connectProvider('hubspot')">Connect HubSpot</button>
     </div>
-    <p class="status" id="integration-status">No accounts connected yet – start with one above!</p>
+    <p class="status" id="integration-status">No accounts connected yet.</p>
   </div>
 
-  <!-- GATED CTA (If No Token) -->
+  <!-- CTA (NO TOKEN) -->
   <div id="cta-section" class="cta-section">
     <h3>Unlock Full Insights</h3>
-    <p>Sign up for your 7-day free trial to connect accounts and get personalized AI recommendations.</p>
+    <p>Sign up for a 7-day free trial – no credit card needed.</p>
     <a href="signup.html" class="cta-btn">Start Free Trial</a>
   </div>
 
+  <!-- METRICS -->
   <div id="dashboard-metrics" class="metrics-container">
-    <p class="loading-text">Loading metrics...</p>
+    <p class="loading-text">Loading metrics…</p>
   </div>
 
+  <!-- CHARTS -->
   <div class="charts-panel">
     <div class="filter-bar">
       <select id="time-filter" class="filter-select" onchange="refreshData()">
-        <option>Weekly</option>
-        <option>Monthly</option>
-        <option>Custom</option>
+        <option>Weekly</option><option>Monthly</option><option>Custom</option>
       </select>
       <select id="customer-filter" class="filter-select" onchange="refreshData()">
-        <option>All</option>
-        <option>New</option>
-        <option>Returning</option>
+        <option>All</option><option>New</option><option>Returning</option>
       </select>
     </div>
 
     <div class="chart-container">
       <h3>Revenue Trend</h3>
       <canvas id="revenueChart" class="chart-svg"></canvas>
-      <p class="chart-caption" id="revenueCaption">Loading...</p>
+      <p class="chart-caption" id="revenueCaption">Loading…</p>
     </div>
   </div>
 
+  <!-- BOTTOM PANEL -->
   <div class="bottom-panel">
     <div class="ai-insights" id="ai-insights">
-      <p class="loading-text">Loading AI insights...</p>
+      <p class="loading-text">Loading AI insights…</p>
     </div>
+
     <div class="chat-panel">
       <h3>AI Growth Coach</h3>
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO..." />
+        <input type="text" id="chat-input" placeholder="Ask about churn, revenue, SEO…" />
         <button class="send-btn" onclick="sendChat()">Send</button>
       </div>
     </div>
@@ -149,13 +151,14 @@
   <p>Beta v0.1 © 2025 GrowthEasy AI</p>
 </div>
 
-<!-- MAIN SCRIPT -->
-<script>
-  // === TOKEN & AUTH HELPERS ===
-  function getToken() {
-    return localStorage.getItem('growseasy_token');
-  }
+<!-- MAIN SCRIPT (your script.js) -->
+<script src="script.js?v=11"></script>
 
+<!-- INLINE INIT – ONLY FOR THIS PAGE -->
+<script>
+  // -----------------------------------------------------------------
+  // 1. WELCOME OVERLAY (once per successful trial)
+  // -----------------------------------------------------------------
   function isNewSignup() {
     const flag = localStorage.getItem('growseasy_welcome_shown');
     if (!flag && getToken()) {
@@ -165,251 +168,91 @@
     return false;
   }
 
-  function logout() {
-    localStorage.removeItem('growseasy_token');
-    localStorage.removeItem('growseasy_integrations');
-    alert('Logged out successfully.');
-    window.location.reload();
-  }
-
-  // === INTEGRATIONS ===
-  function connectProvider(provider) {
-    const token = getToken();
-    if (!token) {
-      alert('Please sign up or log in to connect accounts.');
-      window.location.href = 'signup.html';
-      return;
-    }
-
-    alert(`Connecting to ${provider.charAt(0).toUpperCase() + provider.slice(1)}...`);
-
-    setTimeout(() => {
-      const integrations = JSON.parse(localStorage.getItem('growseasy_integrations') || '{}');
-      integrations[provider] = true;
-      localStorage.setItem('growseasy_integrations', JSON.stringify(integrations));
-      document.getElementById('integration-status').innerText = 
-        `Connected: ${Object.keys(integrations).filter(k => integrations[k]).join(', ')}`;
-      refreshData();
-    }, 1000);
-  }
-
-  // === DATA RENDERING ===
-  function renderDashboard(data, isDemo = false) {
-    const container = document.getElementById('dashboard-metrics');
-    if (isDemo) {
-      container.innerHTML = `
-        <div class="metric-card demo">
-          <h3>Revenue</h3>
-          <p class="value">$12,483</p>
-          <p class="trend up">+18.2% vs last month</p>
-        </div>
-        <div class="metric-card demo">
-          <h3>Churn Rate</h3>
-          <p class="value">4.1%</p>
-          <p class="trend down">-0.8% improvement</p>
-        </div>
-        <div class="metric-card demo">
-          <h3>New Customers</h3>
-          <p class="value">342</p>
-          <p class="trend up">+22%</p>
-        </div>
-      `;
-      document.getElementById('revenueCaption').innerText = 'Demo data shown. Sign up to see your real metrics.';
-    } else if (data) {
-      container.innerHTML = `
-        <div class="metric-card">
-          <h3>Revenue</h3>
-          <p class="value">$${data.revenue.toLocaleString()}</p>
-          <p class="trend ${data.revenueTrend > 0 ? 'up' : 'down'}">
-            ${data.revenueTrend > 0 ? '+' : ''}${data.revenueTrend}%
-          </p>
-        </div>
-        <div class="metric-card">
-          <h3>Active Users</h3>
-          <p class="value">${data.activeUsers}</p>
-          <p class="trend up">+12%</p>
-        </div>
-        <div class="metric-card">
-          <h3>Conversion Rate</h3>
-          <p class="value">${data.conversion}%</p>
-          <p class="trend up">+3.1%</p>
-        </div>
-      `;
-      document.getElementById('revenueCaption').innerText = 'Live data from your connected accounts.';
-    } else {
-      container.innerHTML = '<p class="loading-text">Loading your data...</p>';
-    }
-  }
-
-  function renderChart() {
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    const isDemo = !getToken();
-
-    // Destroy previous chart
-    if (window.revenueChartInstance) {
-      window.revenueChartInstance.destroy();
-    }
-
-    window.revenueChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: isDemo 
-          ? ['Week 1', 'Week 2', 'Week 3', 'Week 4']
-          : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{
-          label: 'Revenue',
-          data: isDemo ? [8000, 9500, 11000, 12483] : [15000, 18000, 21000, 19500, 23000, 24830],
-          borderColor: '#00ffff',
-          backgroundColor: 'rgba(0, 255, 255, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { grid: { color: '#334455' }, ticks: { color: '#aaa' } },
-          x: { grid: { display: false }, ticks: { color: '#aaa' } }
-        }
-      }
-    });
-  }
-
-  function renderAIInsights(isDemo) {
-    const el = document.getElementById('ai-insights');
-    if (isDemo) {
-      el.innerHTML = `
-        <h4>AI Insight (Demo)</h4>
-        <p><strong>Opportunity:</strong> Returning customers spend 42% more. Try a re-engagement email campaign.</p>
-      `;
-    } else {
-      el.innerHTML = `
-        <h4>AI Growth Recommendation</h4>
-        <p><strong>High-impact:</strong> Reduce cart abandonment by adding trust badges → projected +12% revenue.</p>
-      `;
-    }
-  }
-
-  // === CHAT ===
-  function sendChat() {
-    const input = document.getElementById('chat-input');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    const messages = document.getElementById('chat-messages');
-    messages.innerHTML += `<div class="user-msg">${msg}</div>`;
-    input.value = '';
-
-    setTimeout(() => {
-      const response = getToken()
-        ? "Your GA4 data shows new customer acquisition cost down 11%. Scale top channels like Paid Search."
-        : "Sign up to get personalized AI coaching based on your real data.";
-      messages.innerHTML += `<div class="ai-msg">${response}</div>`;
-      messages.scrollTop = messages.scrollHeight;
-    }, 800);
-  }
-
-  // === REFRESH DATA ===
-  function refreshData() {
-    const token = getToken();
-    if (!token) {
-      renderDashboard(null, true);
-      renderChart();
-      renderAIInsights(true);
-      document.getElementById('user-email').innerText = 'Not signed in';
-      return;
-    }
-
-    // Mock API response
-    setTimeout(() => {
-      const mockData = {
-        revenue: 24830,
-        revenueTrend: 18.2,
-        activeUsers: 1847,
-        conversion: 3.8
-      };
-      renderDashboard(mockData, false);
-      renderChart();
-      renderAIInsights(false);
-      document.getElementById('user-email').innerText = 'you@company.com';
-
-      const integrations = JSON.parse(localStorage.getItem('growseasy_integrations') || '{}');
-      const connected = Object.keys(integrations).filter(k => integrations[k]);
-      document.getElementById('integration-status').innerText = 
-        connected.length > 0 
-          ? `Connected: ${connected.join(', ')}` 
-          : 'No accounts connected yet – start with one above!';
-    }, 800);
-  }
-
-  // === PROFILE TOGGLE ===
-  function toggleProfile() {
-    alert('Profile settings coming soon.');
-  }
-
-  // === WELCOME OVERLAY ===
   function showWelcomeOverlay() {
-    const welcome = document.createElement('div');
-    welcome.id = 'welcome-overlay';
-    welcome.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-      background: rgba(0, 0, 0, 0.95); color: #00ffff; display: flex; flex-direction: column; 
-      justify-content: center; align-items: center; z-index: 9999; 
-      font-family: Orbitron, sans-serif; text-align: center; padding: 2rem;
-      animation: fadeIn 0.5s;
+    const overlay = document.createElement('div');
+    overlay.id = 'welcome-overlay';
+    overlay.style.cssText = `
+      position:fixed;top:0;left:0;width:100vw;height:100vh;
+      background:rgba(0,0,0,.96);color:#00ffff;display:flex;
+      flex-direction:column;justify-content:center;align-items:center;
+      z-index:9999;font-family:Orbitron,sans-serif;text-align:center;
+      padding:2rem;animation:fadeIn .5s;
     `;
-    welcome.innerHTML = `
-      <h2 style="font-size:2.5rem; margin-bottom:1rem;">Welcome to GrowthEasy AI!</h2>
-      <p style="font-size:1.2rem; max-width:600px;">Your 7-day free trial has started.</p>
-      <p style="margin:1rem 0;">Connect your accounts → See real insights → Grow faster.</p>
-      <button onclick="dismissWelcome()" style="margin-top: 20px; padding: 14px 28px; background:#00ffff; color:#0a0f2c; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem;">
+    overlay.innerHTML = `
+      <h2 style="font-size:2.6rem;margin-bottom:1rem;">Welcome to GrowthEasy AI!</h2>
+      <p style="font-size:1.2rem;max-width:600px;">Your 7-day free trial has started.</p>
+      <p style="margin:1rem 0;">Connect accounts → Real data → AI growth tips.</p>
+      <button onclick="dismissWelcome()" style="
+        margin-top:20px;padding:14px 28px;background:#00ffff;color:#0a0f2c;
+        border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:1rem;">
         Go to Dashboard
       </button>
     `;
-    document.body.appendChild(welcome);
+    document.body.appendChild(overlay);
     setTimeout(dismissWelcome, 3000);
   }
 
   window.dismissWelcome = () => {
-    const overlay = document.getElementById('welcome-overlay');
-    if (overlay) overlay.remove();
-    initDashboard();
+    const el = document.getElementById('welcome-overlay');
+    if (el) el.remove();
+    initPage();
   };
 
-  // === INIT DASHBOARD ===
-  function initDashboard() {
+  // -----------------------------------------------------------------
+  // 2. PAGE INITIALISATION (gating, email, demo)
+  // -----------------------------------------------------------------
+  function initPage() {
     const token = getToken();
 
-    if (!token) {
-      document.getElementById('cta-section').style.display = 'block';
-      document.getElementById('profile-section').style.display = 'none';
-      document.getElementById('integrations-section').style.display = 'none';
-      renderDashboard(null, true);
-      renderChart();
-      renderAIInsights(true);
+    // ----- GATING -----
+    document.getElementById('cta-section').style.display = token ? 'none' : 'block';
+    document.getElementById('profile-section').style.display = token ? 'block' : 'none';
+    document.getElementById('integrations-section').style.display = token ? 'block' : 'none';
+
+    // ----- EMAIL (backend first, fallback to localStorage) -----
+    if (token) {
+      // Try backend /api/user
+      fetch(`${BACKEND_URL}/api/user`, {
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(u => {
+          document.getElementById('user-email').textContent = u.email || 'you@company.com';
+          localStorage.setItem('growseasy_user_email', u.email);
+        })
+        .catch(() => {
+          // fallback
+          const saved = localStorage.getItem('growseasy_user_email');
+          document.getElementById('user-email').textContent = saved || 'you@company.com';
+        });
     } else {
-      document.getElementById('cta-section').style.display = 'none';
-      document.getElementById('profile-section').style.display = 'block';
-      document.getElementById('integrations-section').style.display = 'block';
-      document.getElementById('user-email').innerText = 'Loading...';
-      refreshData();
+      document.getElementById('user-email').textContent = 'Not signed in';
+    }
+
+    // ----- DATA -----
+    if (!token) {
+      renderDashboard(null, true);
+    } else {
+      refreshData();               // script.js will hit real API
     }
   }
 
-  // === ONLOAD ===
-  window.onload = () => {
+  // -----------------------------------------------------------------
+  // 3. ONLOAD
+  // -----------------------------------------------------------------
+  window.addEventListener('load', () => {
     if (isNewSignup()) {
       showWelcomeOverlay();
     } else {
-      initDashboard();
+      initPage();
     }
 
-    // Enter key for chat
+    // Enter → send chat
     document.getElementById('chat-input')?.addEventListener('keypress', e => {
       if (e.key === 'Enter') sendChat();
     });
-  };
+  });
 </script>
 
 </body>
