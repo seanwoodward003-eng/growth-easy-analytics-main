@@ -47,12 +47,12 @@
     <div class="mobile-menu" id="mobileMenu">
       <a href="index.html" class="nav-btn">Dashboard</a>
       <a href="churn.html" class="nav-btn">Churn</a>
-      <a href="acquisition.html" class="nav-btn">Acquisition</a>
-      <a href="retention.html" class="nav-btn">Retention</a>
-      <a href="revenue.html" class="nav-btn">Revenue</a>
-      <a href="performance.html" class="nav-btn">Performance</a>
-      <a href="about.html" class="nav-btn">About</a>
-      <a href="signup.html" class="nav-btn">Sign Up</a>
+      <a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+      <a href="retention.html" class="nav-btn">Retention</a></li>
+      <a href="revenue.html" class="nav-btn">Revenue</a></li>
+      <a href="performance.html" class="nav-btn">Performance</a></li>
+      <a href="about.html" class="nav-btn">About</a></li>
+      <a href="signup.html" class="nav-btn">Sign Up</a></li>
       <hr style="border-color:#334455; margin:10px 0;">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
       <button class="logout-btn">Logout</button>
@@ -65,15 +65,15 @@
 <div id="root" class="page-view dashboard-view">
   <h1>Dashboard</h1>
 
-  <!-- PERSONALIZED PROFILE SECTION -->
+  <!-- PERSONALIZED PROFILE SECTION (Gated) -->
   <div id="profile-section" class="profile-section" style="display:none;">
     <h3>Your Profile</h3>
     <p id="user-email">Loading...</p>
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
 
-  <!-- INTEGRATIONS ONBOARDING -->
-  <div id="integrations-section" class="integrations-section">
+  <!-- INTEGRATIONS ONBOARDING (Gated) -->
+  <div id="integrations-section" class="integrations-section" style="display:none;">
     <h3>Connect Your Accounts for Real Insights</h3>
     <p>Link Shopify, GA4, or HubSpot to see AI-powered revenue, churn, and growth data.</p>
     <div class="integration-buttons">
@@ -82,6 +82,13 @@
       <button class="connect-btn" onclick="connectProvider('hubspot')">Connect HubSpot</button>
     </div>
     <p class="status" id="integration-status">No accounts connected yet – start with one above!</p>
+  </div>
+
+  <!-- GATED CTA (If No Token) -->
+  <div id="cta-section" class="cta-section">
+    <h3>Unlock Full Insights</h3>
+    <p>Sign up for your 7-day free trial to connect accounts and get personalized AI recommendations.</p>
+    <a href="signup.html" class="cta-btn">Start Free Trial</a>
   </div>
 
   <div id="dashboard-metrics" class="metrics-container">
@@ -134,18 +141,63 @@
 <!-- SCRIPT -->
 <script src="script.js?v=9"></script>
 
-<!-- MOBILE MENU + DATA LOGIC (Updated: Force demo on unauthorized, onload refresh with fallback) -->
+<!-- MOBILE MENU + DATA LOGIC (Updated: Gate integrations, welcome overlay for new signups) -->
 <script>
   // Logout listener added in script.js
   window.onload = () => {
     const token = getToken();
     console.log('Onload token:', token ? 'present' : 'missing');  // Debug
-    if (token) {
-      refreshData();
-    } else {
-      console.log('No token on load – rendering demo');
-      renderDashboard(null, true);  // Immediate demo fallback
-    }
+
+    // Welcome overlay for new signups (3s delay, dismissible)
+    const welcome = document.createElement('div');
+    welcome.id = 'welcome-overlay';
+    welcome.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+      background: rgba(0, 0, 0, 0.9); color: #00ffff; display: flex; flex-direction: column; 
+      justify-content: center; align-items: center; z-index: 9999; 
+      font-family: Orbitron, sans-serif; text-align: center; padding: 2rem;
+    `;
+    welcome.innerHTML = `
+      <h2>Welcome to GrowthEasy AI!</h2>
+      <p>Your 7-day free trial has started.</p>
+      <p>Connect your accounts → See real insights → Grow faster.</p>
+      <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 12px 24px; background:#00ffff; color:#0a0f2c; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Go to Dashboard</button>
+    `;
+    document.body.appendChild(welcome);
+
+    // Auto-remove overlay after 3s
+    setTimeout(() => {
+      if (welcome.parentNode) welcome.remove();
+      if (!token) {
+        // No token: Show CTA, hide gated sections
+        document.getElementById('cta-section').style.display = 'block';
+        document.getElementById('profile-section').style.display = 'none';
+        document.getElementById('integrations-section').style.display = 'none';
+        renderDashboard(null, true);  // Demo teaser
+      } else {
+        // Token present: Show gated sections
+        document.getElementById('cta-section').style.display = 'none';
+        document.getElementById('profile-section').style.display = 'block';
+        document.getElementById('integrations-section').style.display = 'block';
+        refreshData();  // Load real data
+      }
+    }, 3000);
+
+    // Manual dismiss
+    welcome.querySelector('button').onclick = () => {
+      welcome.remove();
+      if (!token) {
+        document.getElementById('cta-section').style.display = 'block';
+        document.getElementById('profile-section').style.display = 'none';
+        document.getElementById('integrations-section').style.display = 'none';
+        renderDashboard(null, true);
+      } else {
+        document.getElementById('cta-section').style.display = 'none';
+        document.getElementById('profile-section').style.display = 'block';
+        document.getElementById('integrations-section').style.display = 'block';
+        refreshData();
+      }
+    };
   };
 </script>
 
