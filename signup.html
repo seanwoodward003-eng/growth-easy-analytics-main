@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Start Free Trial – GrowthEasy AI</title>
+  <link rel="stylesheet" href="styles.css?v=10">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui,sans-serif; }
     body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; padding-bottom:80px; display:flex; flex-direction:column; }
@@ -18,13 +19,13 @@
     input { width:100%; padding:14px; margin:12px 0; border:1px solid #00ffff; border-radius:8px; background:transparent; color:#e0e7ff; }
     button { width:100%; padding:16px; background:#00ffff; color:#0a0f2c; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:10px; }
     .subtext { margin-top:12px; color:#88c0ff; font-size:0.9rem; }
-    .checkbox-label { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.9rem; color: #E0E7FF; margin: 1.2rem 0; cursor: pointer; text-align: left; }
-    .checkbox-label input { margin-top: 0.2rem; }
-    .checkbox-label a { color: #00FFFF; text-decoration: underline; }
+    .checkbox-label { display:flex; align-items:flex-start; gap:.5rem; font-size:.9rem; color:#e0e7ff; margin:1.2rem 0; cursor:pointer; text-align:left; }
+    .checkbox-label input { margin-top:.2rem; }
+    .checkbox-label a { color:#00ffff; text-decoration:underline; }
     .mobile-nav { position:fixed; bottom:0; left:0; right:0; background:#0a0f2c; border-top:1px solid #00ffff; display:flex; z-index:1000; }
     .mobile-nav button { flex:1; padding:16px; background:transparent; color:#00ffff; border:none; font-weight:bold; }
     .mobile-nav button.active { background:rgba(0,255,255,0.2); }
-    .loading { opacity: 0.6; pointer-events: none; }
+    .loading { opacity:.6; pointer-events:none; }
   </style>
 </head>
 <body>
@@ -39,7 +40,7 @@
 
       <div class="price-box">
         <div class="price">£0<span> for 7 days</span></div>
-        <p class="subtext"><strong>Card required</strong> — won't charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
+        <p class="subtext"><strong>Card required</strong> — won’t charge until Day 8.<br>£25/month auto-charged after trial. Cancel anytime.</p>
       </div>
 
       <ul style="text-align:left; margin:15px 0; font-size:0.95rem;">
@@ -67,83 +68,85 @@
   </div>
 
 <script>
-  // === RENDER BACKEND URL ===
+  // -------------------------------------------------
+  // CONFIG
+  // -------------------------------------------------
   const RENDER_URL = 'https://growth-easy-analytics-2.onrender.com';
+  const DASHBOARD_URL = 'index.html';               // <-- your dashboard
 
-  // === SET COOKIE (Updated: Broad domain for Vercel previews) ===
-  function setToken(token) {
-    document.cookie = `token=${token}; expires=${new Date(Date.now() + 7*24*60*60*1000).toUTCString()}; path=/; secure; samesite=Lax; domain=.vercel.app`;
+  // -------------------------------------------------
+  // HELPERS
+  // -------------------------------------------------
+  function setClientToken(token) {
+    localStorage.setItem('growseasy_token', token);
+    localStorage.setItem('growseasy_user_email', document.getElementById('email').value.trim());
+    // Force welcome overlay on first successful trial
+    localStorage.removeItem('growseasy_welcome_shown');
   }
 
-  // === START TRIAL (Updated: Warm-up + retry for Safari flakes) ===
+  // -------------------------------------------------
+  // START TRIAL
+  // -------------------------------------------------
   async function startTrial(retries = 0) {
     const email = document.getElementById('email').value.trim();
     const consent = document.getElementById('consent').checked;
     const btn = document.getElementById('trialBtn');
 
-    if (!email || !email.includes('@') || !consent) {
-      return alert("Please enter a valid email and agree to the GDPR policy.");
+    if (!email.includes('@') || !consent) {
+      return alert('Please enter a valid email and agree to the GDPR policy.');
     }
 
     btn.classList.add('loading');
-    btn.textContent = "Creating Trial...";
+    btn.textContent = 'Creating Trial...';
 
     try {
-      // Pre-wake Render
-      try {
-        await fetch(`${RENDER_URL}/health`, { 
-          method: 'GET', 
-          mode: 'no-cors', 
-          cache: 'no-cache' 
-        });
-        await new Promise(resolve => setTimeout(resolve, 500));  // Spin-up buffer
-      } catch (e) {
-        console.warn('Warm-up skipped:', e);
-      }
+      // 1. Warm-up Render (no-cors, fire-and-forget)
+      fetch(`${RENDER_URL}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+      await new Promise(r => setTimeout(r, 600));   // give Render a moment
 
+      // 2. Create trial
       const res = await fetch(`${RENDER_URL}/create-trial`, {
         method: 'POST',
-        mode: 'cors',
+        credentials: 'include',                     // send cookies
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, consent }),
-        credentials: 'include'
+        body: JSON.stringify({ email, consent })
       });
 
       let data;
-      try {
-        data = await res.json();
-      } catch {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}: Server error`);
-      }
+      try { data = await res.json(); }
+      catch { data = { error: await res.text() || `HTTP ${res.status}` }; }
 
       if (res.ok && data.success && data.token) {
-        setToken(data.token);
-        window.location.href = data.redirect || '/dashboard.html';
+        // Server should set an **HttpOnly** cookie named `token`
+        // We also store a copy in localStorage for the pure-HTML dashboard
+        setClientToken(data.token);
+        window.location.href = DASHBOARD_URL;
       } else {
-        alert(data.error || "Failed to start trial — try again.");
+        throw new Error(data.error || 'Unknown server error');
       }
     } catch (e) {
       console.error('Trial error:', e);
-      if (retries < 1 && e.message.includes('Load failed')) {  // Safari retry
-        console.log('Safari flake detected—retrying...');
-        btn.textContent = "Retrying...";
-        return setTimeout(() => startTrial(retries + 1), 1500);  // 1.5s retry
+      if (retries < 1 && /Load failed|network/i.test(e.message)) {
+        btn.textContent = 'Retrying...';
+        return setTimeout(() => startTrial(retries + 1), 1500);
       }
-      alert(`Connection error: ${e.message} – please check your internet and try again.`);
+      alert(`Failed: ${e.message}`);
     } finally {
-      if (retries === 0) {  // Only reset on first try
+      if (retries === 0) {
         btn.classList.remove('loading');
-        btn.textContent = "Start 7-Day Free Trial";
+        btn.textContent = 'Start 7-Day Free Trial';
       }
     }
   }
 
-  // === NAVIGATION ===
+  // -------------------------------------------------
+  // NAVIGATION (mobile tabs – optional)
+  // -------------------------------------------------
   function go(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const target = document.getElementById(page);
-    if (target) target.classList.add('active');
+    const el = document.getElementById(page);
+    if (el) el.classList.add('active');
+
     document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
   }
