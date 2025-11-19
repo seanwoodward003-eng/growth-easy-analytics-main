@@ -29,6 +29,44 @@
   </style>
 </head>
 <body>
+  <!-- NAV -->
+<div class="navigation-bar">
+  <nav class="nav-container">
+    <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
+      <li><a href="churn.html" class="nav-btn">Churn</a></li>
+      <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+      <li><a href="retention.html" class="nav-btn">Retention</a></li>
+      <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+      <li><a href="performance.html" class="nav-btn">Performance</a></li>
+      <li><a href="about.html" class="nav-btn">About</a></li>
+      <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+    </ul>
+    <button class="mobile-menu-btn" id="menuBtn">Menu</button>
+    <div class="nav-actions">
+      <button class="profile-btn" onclick="toggleProfile()">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+    </div>
+
+    <!-- MOBILE MENU -->
+    <div id="mobileMenu" style="position:fixed;top:0;right:0;width:280px;height:100vh;background:#0a0f2c;z-index:1000;transform:translateX(100%);transition:transform .35s ease;border-left:3px solid #00ffff;padding:6rem 1.5rem 2rem;box-sizing:border-box;overflow-y:auto;">
+      <a href="index.html" class="nav-btn">Dashboard</a>
+      <a href="churn.html" class="nav-btn">Churn</a>
+      <a href="acquisition.html" class="nav-btn">Acquisition</a>
+      <a href="retention.html" class="nav-btn">Retention</a>
+      <a href="revenue.html" class="nav-btn">Revenue</a>
+      <a href="performance.html" class="nav-btn">Performance</a>
+      <a href="about.html" class="nav-btn">About</a>
+      <a href="signup.html" class="nav-btn">Sign Up</a>
+      <hr style="border-color:#334455; margin:20px 0;">
+      <button class="profile-btn" onclick="toggleProfile()">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="refreshData()">Refresh</button>
+    </div>
+  </nav>
+</div>
 
   <div class="header"><h1>GrowthEasy AI</h1></div>
 
@@ -60,13 +98,7 @@
     </div>
   </div>
 
-  <!-- MOBILE NAV -->
-  <div class="mobile-nav">
-    <button onclick="go('performance')">Performance</button>
-    <button onclick="go('acquisition')">Acquisition</button>
-    <button class="active" onclick="go('signup')">Signup</button>
-  </div>
-
+  
 <script>
   // === CONFIG ===
   const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
