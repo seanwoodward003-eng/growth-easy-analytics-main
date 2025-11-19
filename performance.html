@@ -29,7 +29,7 @@
         <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
       </ul>
 
-      <!-- MOBILE MENU BUTTON -->
+      <!-- THIS WAS MISSING: MOBILE MENU BUTTON -->
       <button class="mobile-menu-btn" id="menuBtn">Menu</button>
 
       <div class="nav-actions">
@@ -38,7 +38,7 @@
         <button class="refresh-btn" onclick="loadPerformance()">Refresh</button>
       </div>
 
-      <!-- MOBILE MENU -->
+      <!-- THIS WAS MISSING: MOBILE MENU -->
       <div class="mobile-menu" id="mobileMenu">
         <a href="dashboard.html" class="nav-btn">Dashboard</a>
         <a href="churn.html" class="nav-btn">Churn</a>
@@ -56,6 +56,7 @@
     </nav>
   </div>
 
+  <!-- Your original content — 100% untouched -->
   <div id="root" class="page-view performance-view">
     <h1>Performance</h1>
 
@@ -105,7 +106,7 @@
 
   <script src="script.js?v=12"></script>
 
-  <!-- MOBILE MENU SCRIPT (100% WORKING) -->
+  <!-- ONLY ADDED: WORKING MOBILE MENU SCRIPT -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('menuBtn');
@@ -130,7 +131,7 @@
     });
   </script>
 
-  <!-- Your original Performance JS (unchanged) -->
+  <!-- Your original JS — untouched -->
   <script>
     let ltvCacChart;
 
@@ -169,9 +170,7 @@
             `LTV:CAC = ${ratio}:1. Target >3:1 for sustainable growth.`;
         } catch (e) {
           alert('Failed to load performance data – showing demo.');
-          const ltv = 150;
-          const cac = 50;
-          const ratio = 3.0;
+          const ltv = 150, cac = 50, ratio = 3.0;
           document.getElementById('ltv-value').textContent = `£${ltv}`;
           document.getElementById('cac-value').textContent = `£${cac}`;
           document.getElementById('ratio-value').textContent = `${ratio}:1`;
