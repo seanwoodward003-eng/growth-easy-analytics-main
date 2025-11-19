@@ -15,120 +15,82 @@
 </head>
 <body>
 
-  <div class="navigation-bar">
-    <nav class="nav-container">
-      <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
-      <ul class="nav-links">
-        <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
-        <li><a href="churn.html" class="nav-btn">Churn</a></li>
-        <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
-        <li><a href="retention.html" class="nav-btn">Retention</a></li>
-        <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
-        <li><a href="performance.html" class="nav-btn active">Performance</a></li>
-        <li><a href="about.html" class="nav-btn">About</a></li>
-        <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
-      </ul>
-
-      <!-- THIS WAS MISSING: MOBILE MENU BUTTON -->
-      <button class="mobile-menu-btn" id="menuBtn">Menu</button>
-
-      <div class="nav-actions">
-        <button class="profile-btn">Profile</button>
-        <button class="logout-btn">Logout</button>
-        <button class="refresh-btn" onclick="loadPerformance()">Refresh</button>
-      </div>
-
-      <!-- THIS WAS MISSING: MOBILE MENU -->
-      <div class="mobile-menu" id="mobileMenu">
-        <a href="dashboard.html" class="nav-btn">Dashboard</a>
-        <a href="churn.html" class="nav-btn">Churn</a>
-        <a href="acquisition.html" class="nav-btn">Acquisition</a>
-        <a href="retention.html" class="nav-btn">Retention</a>
-        <a href="revenue.html" class="nav-btn">Revenue</a>
-        <a href="performance.html" class="nav-btn active">Performance</a>
-        <a href="about.html" class="nav-btn">About</a>
-        <a href="signup.html" class="nav-btn">Sign Up</a>
-        <hr style="border-color:#334455; margin:20px 0;">
-        <button class="profile-btn">Profile</button>
-        <button class="logout-btn">Logout</button>
-        <button class="refresh-btn" onclick="loadPerformance()">Refresh</button>
-      </div>
-    </nav>
-  </div>
-
-  <!-- Your original content — 100% untouched -->
-  <div id="root" class="page-view performance-view">
-    <h1>Performance</h1>
-
-    <div class="controls">
-      <select id="time-filter" onchange="loadPerformance()">
-        <option value="7">Last 7 days</option>
-        <option value="30" selected>Last 30 days</option>
-        <option value="90">Last 90 days</option>
-      </select>
-      <button onclick="exportCSV()">Export CSV</button>
+<!-- PERFECT NAVIGATION – COPY THIS INTO EVERY PAGE -->
+<div class="navigation-bar">
+  <nav class="nav-container">
+    <!-- LOGO -->
+    <div class="nav-logo">
+      <h1>GrowthEasy AI</h1>
     </div>
 
-    <div class="chart-container">
-      <canvas id="ltvCacChart"></canvas>
+    <!-- DESKTOP LINKS (hidden on mobile) -->
+    <ul class="nav-links">
+      <li><a href="dashboard.html" class="nav-btn">Dashboard</a></li>
+      <li><a href="churn.html" class="nav-btn">Churn</a></li>
+      <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+      <li><a href="retention.html" class="nav-btn">Retention</a></li>
+      <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
+      <li><a href="performance.html" class="nav-btn">Performance</a></li>
+      <li><a href="about.html" class="nav-btn">About</a></li>
+      <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+    </ul>
+
+    <!-- MOBILE MENU BUTTON (this is the rounded cyan one you want) -->
+    <button class="mobile-menu-btn" id="menuBtn">Menu</button>
+
+    <!-- ACTION BUTTONS (desktop only) -->
+    <div class="nav-actions">
+      <button class="profile-btn">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="location.reload()">Refresh</button>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>LTV</h3>
-        <p id="ltv-value">£--</p>
-      </div>
-      <div class="stat-card">
-        <h3>CAC</h3>
-        <p id="cac-value">£--</p>
-      </div>
-      <div class="stat-card">
-        <h3>LTV:CAC</h3>
-        <p id="ratio-value">--:1</p>
-      </div>
+    <!-- MOBILE slide-in MENU – exact match to your perfect screenshot -->
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="dashboard.html" class="nav-btn">Dashboard</a>
+      <a href="churn.html" class="nav-btn">Churn</a>
+      <a href="acquisition.html" class="nav-btn">Acquisition</a>
+      <a href="retention.html" class="nav-btn">Retention</a>
+      <a href="revenue.html" class="nav-btn">Revenue</a>
+      <a href="performance.html" class="nav-btn">Performance</a>
+      <a href="about.html" class="nav-btn">About</a>
+      <a href="signup.html" class="nav-btn">Sign Up</a>
+      <hr style="border-color:#334455;margin:20px 0;">
+      <button class="profile-btn">Profile</button>
+      <button class="logout-btn">Logout</button>
+      <button class="refresh-btn" onclick="location.reload()">Refresh</button>
     </div>
+  </nav>
+</div>
 
-    <div class="ai-insight">
-      <h3>AI Alert</h3>
-      <p id="ai-alert">Loading...</p>
-    </div>
+<!-- EXACT SCRIPT THAT MAKES IT WORK (put this once, right before </body>) -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('menuBtn');
+    const menu = document.getElementById('mobileMenu');
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);z-index:999;display:none;backdrop-filter:blur(8px);';
+    document.body.appendChild(overlay);
 
-    <div id="summary">
-      <h3>Summary</h3>
-      <p id="performance-summary">Loading summary...</p>
-    </div>
-  </div>
+    menu.style.cssText = 'position:fixed;top:0;right:0;width:280px;height:100vh;background:#0a0f2c;z-index:1000;transform:translateX(100%);transition:transform .35s ease;border-left:4px solid #00ffff;padding:6rem 1.5rem 2rem;box-sizing:border-box;overflow-y:auto;';
 
-  <div class="footer">
-    <a href="about.html">About</a><a href="contact.html">Contact</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a>
-    <p>Beta v0.1 © 2025 GrowthEasy</p>
-  </div>
+    btn.onclick = () => {
+      const isOpen = menu.style.transform === 'translateX(0%)';
+      menu.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
+      overlay.style.display = isOpen ? 'none' : 'block';
+    };
 
-  <script src="script.js?v=12"></script>
+    overlay.onclick = () => {
+      menu.style.transform = 'translateX(100%)';
+      overlay.style.display = 'none';
+    };
 
-  <!-- ONLY ADDED: WORKING MOBILE MENU SCRIPT -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('menuBtn');
-      const menu = document.getElementById('mobileMenu');
-      const overlay = document.createElement('div');
-      
-      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.92);z-index:999;display:none;backdrop-filter:blur(6px);';
-      document.body.appendChild(overlay);
-
-      menu.style.cssText = 'position:fixed;top:0;right:0;width:280px;height:100vh;background:#0a0f2c;z-index:1000;transform:translateX(100%);transition:transform .35s ease;border-left:3px solid #00ffff;padding:6rem 1.5rem 2rem;box-sizing:border-box;overflow-y:auto;';
-
-      btn.onclick = () => {
-        const isOpen = menu.style.transform === 'translateX(0%)';
-        menu.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
-        overlay.style.display = isOpen ? 'none' : 'block';
-      };
-
-      overlay.onclick = () => {
-        menu.style.transform = 'translateX(100%)';
-        overlay.style.display = 'none';
-      };
+    // Make current page active
+    const current = location.pathname.split('/').pop() || 'dashboard.html';
+    document.querySelectorAll('.nav-btn').forEach(link => {
+      if (link.getAttribute('href') === current) link.classList.add('active');
     });
+  });
   </script>
 
   <!-- Your original JS — untouched -->
