@@ -516,6 +516,26 @@ a:hover {
   color: #00ffff;
 }
 
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  background: #0a0f2c;
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.35s ease;
+  border-left: 3px solid #00ffff;
+  padding: 6rem 1.5rem 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.mobile-menu.open {
+  transform: translateX(0%);
+}
+
 .ai-insight, .ai-strategy, .ai-forecast, .ai-alert {
   background: rgba(0, 255, 255, 0.1);
   border: 1px solid #00ffff;
