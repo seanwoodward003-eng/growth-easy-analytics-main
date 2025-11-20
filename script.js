@@ -1,9 +1,11 @@
 /*====================================================================
-  script.js – FINAL LIVE VERSION
+  script.js – FINAL LIVE VERSION (WITH WORKING MOBILE MENU)
   - Cookie-based token
   - OAuth popups + localStorage sync
-  - Integration status
-  - Real data sync
+  - Real data sync + fake fallback
+  - Chart.js revenue graph
+  - AI chat
+  - Mobile menu toggle (now fully working!)
 ====================================================================*/
 
 const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
@@ -20,7 +22,7 @@ function getToken() {
   return null;
 }
 
-// === FAKE DATA ===
+// === FAKE DATA (DEMO MODE) ===
 const FAKE = {
   revenue: { total: 12700, trend: '+6%', history: { labels: ['W1','W2','W3','W4'], values: [11500,12000,12400,12700] } },
   churn: { rate: 3.2, at_risk: 18 },
@@ -58,7 +60,7 @@ function renderDashboard(data, isFake = false) {
   const metrics = document.getElementById('dashboard-metrics');
   const insights = document.getElementById('ai-insights');
 
-  if (isFake || data.error) {
+  if (isFake || data?.error) {
     metrics.innerHTML = `
       <div class="metric-card"><h3>Revenue</h3><p>£12,700</p><p class="trend">+6% (demo)</p></div>
       <div class="metric-card"><h3>Churn Rate</h3><p>3.2%</p><p class="at-risk">18 at risk</p></div>
@@ -75,10 +77,10 @@ function renderDashboard(data, isFake = false) {
     <div class="metric-card"><h3>Churn Rate</h3><p>${data.churn.rate}%</p><p class="at-risk">${data.churn.at_risk} at risk</p></div>
     <div class="metric-card"><h3>LTV:CAC</h3><p>${data.performance.ratio}:1</p></div>
   `;
-  insights.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight}</p>`;
+  insights.innerHTML = `<p class="ai-insight-text"><strong>AI:</strong> ${data.ai_insight || 'Analyzing your growth...'}</p>`;
   drawChart(rev.history.labels, rev.history.values, rev.trend);
 
-  // === UPDATE INTEGRATION STATUS ===
+  // Update integration status
   if (data.integrations) {
     const connected = Object.keys(data.integrations)
       .filter(p => data.integrations[p])
@@ -90,16 +92,36 @@ function renderDashboard(data, isFake = false) {
   }
 }
 
-// === CHART ===
+// === CHART.JS ===
 let revenueChart = null;
 function drawChart(labels, values, caption) {
   const ctx = document.getElementById('revenueChart')?.getContext('2d');
   if (!ctx) return;
   if (revenueChart) revenueChart.destroy();
+
   revenueChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ label: 'Revenue', data: values, borderColor: '#00FFFF', backgroundColor: 'rgba(0,255,255,0.1)', fill: true, tension: 0.3 }] },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(0,255,255,0.1)' }, ticks: { color: '#E0E7FF' } }, x: { grid: { display: false }, ticks: { color: '#E0E7FF' } } } }
+    data: {
+      labels,
+      datasets: [{
+        label: 'Revenue',
+        data: values,
+        borderColor: '#00FFFF',
+        backgroundColor: 'rgba(0,255,255,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointBackgroundColor: '#00FFFF',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(0,255,255,0.1)' }, ticks: { color: '#E0E7FF' } },
+        x: { grid: { display: false }, ticks: { color: '#E0E7FF' } }
+      }
+    }
   });
   document.getElementById('revenueCaption').textContent = `${caption} this month`;
 }
@@ -109,16 +131,20 @@ window.sendChat = async () => {
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;
+
   const chat = document.getElementById('chat-messages');
   chat.innerHTML += `<div class="user-msg">${msg}</div>`;
   input.value = '';
+  chat.scrollTop = chat.scrollHeight;
+
   if (!getToken()) {
-    chat.innerHTML += `<div class="ai-msg">Connect accounts to get real AI insights.</div>`;
+    chat.innerHTML += `<div class="ai-msg">Please sign up and connect your accounts to get real AI insights.</div>`;
     chat.scrollTop = chat.scrollHeight;
     return;
   }
+
   const data = await apiFetch('api/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
-  chat.innerHTML += `<div class="ai-msg">${data.reply || 'AI unavailable'}</div>`;
+  chat.innerHTML += `<div class="ai-msg">${data?.reply || 'AI is thinking...'}</div>`;
   chat.scrollTop = chat.scrollHeight;
 };
 
@@ -134,12 +160,12 @@ window.connectProvider = (provider) => {
   let url = `${BACKEND_URL}/auth/${provider}`;
   if (provider === 'shopify') {
     const shop = prompt('Enter your Shopify store (e.g. mystore.myshopify.com):');
-    if (!shop || !shop.includes('.')) return alert('Valid store URL required.');
+    if (!shop || !shop.includes('.')) return alert('Please enter a valid Shopify store URL.');
     url += `?shop=${encodeURIComponent(shop)}`;
   }
 
   const popup = window.open(url, 'oauth', 'width=600,height=700,scrollbars=yes');
-  if (!popup) return alert('Popup blocked – allow popups.');
+  if (!popup) return alert('Popup blocked – please allow popups for this site.');
 
   const handler = (e) => {
     if (e.key === provider && e.newValue === 'connected') {
@@ -165,26 +191,60 @@ window.connectProvider = (provider) => {
 window.refreshData = async () => {
   const btn = document.querySelector('.refresh-btn');
   if (btn) btn.textContent = 'Syncing...';
+
   const token = getToken();
   if (!token) {
     renderDashboard(null, true);
+    if (btn) btn.textContent = 'Refresh';
     return;
   }
-  const timeout = setTimeout(() => renderDashboard(null, true), 8000);
+
+  const timeout = setTimeout(() => {
+    renderDashboard(null, true);
+    if (btn) btn.textContent = 'Refresh';
+  }, 10000);
+
   try {
     await apiFetch('api/sync', { method: 'POST' });
     const data = await apiFetch('api/metrics');
     renderDashboard(data);
   } catch (e) {
+    console.error('Sync failed:', e);
     renderDashboard(null, true);
   } finally {
     clearTimeout(timeout);
-    setTimeout(() => { if (btn) btn.textContent = 'Refresh'; }, 1000);
+    setTimeout(() => { if (btn) btn.textContent = 'Refresh'; }, 800);
   }
 };
 
-// === LOGOUT ===
+// === MOBILE MENU TOGGLE (NOW INCLUDED & WORKING!) ===
 document.addEventListener('DOMContentLoaded', () => {
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+
+  if (menuBtn && mobileMenu) {
+    // Toggle menu
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mobileMenu.classList.toggle('open');
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!mobileMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+        mobileMenu.classList.remove('open');
+      }
+    });
+
+    // Close when clicking any link or button inside menu
+    mobileMenu.addEventListener('click', (e) => {
+      if (e.target.closest('a') || e.target.closest('button')) {
+        mobileMenu.classList.remove('open');
+      }
+    });
+  }
+
+  // === LOGOUT BUTTONS ===
   document.querySelectorAll('.logout-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -192,15 +252,13 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'signup.html';
     });
   });
-});
 
-// === INIT ===
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.body.dataset.page !== 'dashboard') return;
-  const token = getToken();
-  if (!token) {
-    renderDashboard(null, true);
-  } else {
-    refreshData();
+  // === INITIAL LOAD (DASHBOARD ONLY) ===
+  if (document.body.dataset.page === 'dashboard') {
+    if (!getToken()) {
+      renderDashboard(null, true);
+    } else {
+      refreshData();
+    }
   }
 });
