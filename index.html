@@ -135,6 +135,7 @@
 
 <script src="script.js?v=12"></script>
 
+<!-- Mobile menu toggle -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('menuBtn');
@@ -153,6 +154,7 @@
   });
 </script>
 
+<!-- Welcome overlay + page init -->
 <script>
   function isNewSignup() {
     const flag = localStorage.getItem('growseasy_welcome_shown');
@@ -237,15 +239,15 @@
   });
 </script>
 
-<!-- CORRECT BACKEND URL -->
+<!-- BACKEND URL -->
 <script>
   const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
 </script>
 
-<!-- CONNECT BUTTONS WORK NOW -->
+<!-- FIXED CONNECT FUNCTION (uses correct token) -->
 <script>
   function connectProvider(provider) {
-    const token = localStorage.getItem('growseasy_token');
+    const token = localStorage.getItem('token') || getToken();
     if (!token) {
       alert('Please sign in first');
       return;
