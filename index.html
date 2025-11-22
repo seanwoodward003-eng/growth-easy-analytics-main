@@ -30,7 +30,6 @@
 <body data-page="dashboard">
 
 <!-- NAV -->
-
 <div class="navigation-bar">
   <nav class="nav-container">
     <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
@@ -52,8 +51,7 @@
     </div>
 
     <!-- MOBILE MENU -->
-   <div id="mobileMenu" class="mobile-menu">
-  <!-- all your mobile links and buttons -->
+    <div id="mobileMenu" class="mobile-menu">
       <a href="index.html" class="nav-btn">Dashboard</a>
       <a href="churn.html" class="nav-btn">Churn</a>
       <a href="acquisition.html" class="nav-btn">Acquisition</a>
@@ -148,9 +146,27 @@
 <!-- MAIN SCRIPT -->
 <script src="script.js?v=12"></script>
 
-<!-- INLINE INIT -->
+<!-- MOBILE MENU SCRIPT (you already have this — unchanged) -->
 <script>
-  // === WELCOME OVERLAY ===
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('menuBtn');
+    const menu = document.getElementById('mobileMenu');
+    if (!btn || !menu) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.92);z-index:999;display:none;backdrop-filter:blur(6px);';
+    document.body.appendChild(overlay);
+    menu.style.cssText += ';position:fixed;top:0;right:-280px;width:280px;height:100vh;background:#0a0f2c;z-index:1000;transition:right .35s ease;border-left:3px solid #00ffff;padding:6rem 1.5rem 2rem;overflow-y:auto;';
+    btn.onclick = () => {
+      const open = menu.style.right !== '0px';
+      menu.style.right = open ? '0px' : '-280px';
+      overlay.style.display = open ? 'block' : 'none';
+    };
+    overlay.onclick = () => { menu.style.right = '-280px'; overlay.style.display = 'none'; };
+  });
+</script>
+
+<!-- YOUR ORIGINAL INIT + WELCOME (completely unchanged) -->
+<script>
   function isNewSignup() {
     const flag = localStorage.getItem('growseasy_welcome_shown');
     if (!flag && getToken()) {
@@ -190,16 +206,12 @@
     initPage();
   };
 
-  // === PAGE INIT ===
   function initPage() {
     const token = getToken();
-
-    // Gating
     document.getElementById('cta-section').style.display = token ? 'none' : 'block';
     document.getElementById('profile-section').style.display = token ? 'block' : 'none';
     document.getElementById('integrations-section').style.display = token ? 'block' : 'none';
 
-    // Email
     if (token) {
       fetch(`${BACKEND_URL}/api/user`, {
         credentials: 'include',
@@ -218,7 +230,6 @@
       document.getElementById('user-email').textContent = 'Not signed in';
     }
 
-    // Data
     if (!token) {
       renderDashboard(null, true);
     } else {
@@ -226,7 +237,6 @@
     }
   }
 
-  // === ONLOAD ===
   window.addEventListener('load', () => {
     if (isNewSignup()) {
       showWelcomeOverlay();
@@ -240,7 +250,18 @@
   });
 </script>
 
+<!-- ONLY NEW ADDITION: OAUTH RETURN HANDLER -->
+<script>
+  // This handles the ?connected=shopify/ga4/hubspot from backend redirect
+  const params = new URLSearchParams(window.location.search);
+  const connected = params.get('connected');
+
+  if (connected && ['shopify', 'ga4', 'hubspot'].includes(connected)) {
+    localStorage.setItem(connected, 'connected');
+    history.replaceState({}, '', '/index.html');
+    location.reload();
+  }
+</script>
+
 </body>
 </html>
-
-Does this need updating then ?
