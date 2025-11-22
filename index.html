@@ -51,12 +51,12 @@
     <div id="mobileMenu" class="mobile-menu">
       <a href="index.html" class="nav-btn">Dashboard</a>
       <a href="churn.html" class="nav-btn">Churn</a>
-      <a href="acquisition.html" class="nav-btn">Acquisition</a>
-      <a href="retention.html" class="nav-btn">Retention</a>
-      <a href="revenue.html" class="nav-btn">Revenue</a>
-      <a href="performance.html" class="nav-btn">Performance</a>
-      <a href="about.html" class="nav-btn">About</a>
-      <a href="signup.html" class="nav-btn">Sign Up</a>
+      <a href="acquisition.html" class="nav-btn">Acquisition</a></li>
+      <a href="retention.html" class="nav-btn">Retention</a></li>
+      <a href="revenue.html" class="nav-btn">Revenue</a></li>
+      <a href="performance.html" class="nav-btn">Performance</a></li>
+      <a href="about.html" class="nav-btn">About</a></li>
+      <a href="signup.html" class="nav-btn">Sign Up</a></li>
       <hr style="border-color:#334455; margin:20px 0;">
       <button class="profile-btn" onclick="toggleProfile()">Profile</button>
       <button class="logout-btn">Logout</button>
@@ -244,34 +244,7 @@
   const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
 </script>
 
-<!-- FIXED CONNECT FUNCTION (uses correct token) -->
-<script>
-  function connectProvider(provider) {
-    const token = localStorage.getItem('token') || getToken();
-    if (!token) {
-      alert('Please sign in first');
-      return;
-    }
-
-    let url = '';
-    if (provider === 'shopify') {
-      const shop = prompt('Enter your Shopify store (e.g. mystore.myshopify.com)');
-      if (!shop || !shop.includes('.myshopify.com')) {
-        alert('Please enter a valid .myshopify.com store');
-        return;
-      }
-      url = `${BACKEND_URL}/auth/shopify?shop=${encodeURIComponent(shop)}`;
-    } else if (provider === 'ga4') {
-      url = `${BACKEND_URL}/auth/ga4`;
-    } else if (provider === 'hubspot') {
-      url = `${BACKEND_URL}/auth/hubspot`;
-    }
-
-    window.location.href = url;
-  }
-</script>
-
-<!-- OAUTH RETURN HANDLER -->
+<!-- OAUTH RETURN HANDLER (kept – this one is fine) -->
 <script>
   const params = new URLSearchParams(window.location.search);
   const connected = params.get('connected');
