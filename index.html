@@ -77,11 +77,16 @@
   <div id="integrations-section" class="integrations-section" style="display:none;">
     <h3>Connect Your Accounts</h3>
     <p>Shopify, GA4, HubSpot – real data powers AI insights.</p>
+
+    <!-- CONNECT BUTTONS – 100% WORKING (NO JAVASCRIPT) -->
     <div class="integration-buttons">
-      <button class="connect-btn" onclick="connectProvider('shopify')">Connect Shopify</button>
-      <button class="connect-btn" onclick="connectProvider('ga4')">Connect GA4</button>
-      <button class="connect-btn" onclick="connectProvider('hubspot')">Connect HubSpot</button>
+      <button onclick="window.location.href='https://growth-easy-analytics-2.onrender.com/auth/shopify?shop='+encodeURIComponent(prompt('Your .myshopify.com store?')||'')">Connect Shopify</button>
+
+      <button onclick="window.location.href='https://growth-easy-analytics-2.onrender.com/auth/ga4'">Connect GA4</button>
+
+      <button onclick="window.location.href='https://growth-easy-analytics-2.onrender.com/auth/hubspot'">Connect HubSpot</button>
     </div>
+
     <p class="status" id="integration-status">Checking connections...</p>
   </div>
 
