@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Start Free Trial – GrowthEasy AI</title>
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui,sans-serif; }
     body { background:#0a0f2c; color:#e0e7ff; min-height:100vh; padding-bottom:80px; display:flex; flex-direction:column; }
@@ -29,19 +29,19 @@
   </style>
 </head>
 <body>
-  <!-- NAV -->
+
 <div class="navigation-bar">
   <nav class="nav-container">
     <div class="nav-logo"><h1>GrowthEasy AI</h1></div>
     <ul class="nav-links">
-      <li><a href="index.html" class="nav-btn active">Dashboard</a></li>
+      <li><a href="index.html" class="nav-btn">Dashboard</a></li>
       <li><a href="churn.html" class="nav-btn">Churn</a></li>
       <li><a href="acquisition.html" class="nav-btn">Acquisition</a></li>
       <li><a href="retention.html" class="nav-btn">Retention</a></li>
       <li><a href="revenue.html" class="nav-btn">Revenue</a></li>
       <li><a href="performance.html" class="nav-btn">Performance</a></li>
       <li><a href="about.html" class="nav-btn">About</a></li>
-      <li><a href="signup.html" class="nav-btn">Sign Up</a></li>
+      <li><a href="signup.html" class="nav-btn active">Sign Up</a></li>
     </ul>
     <button class="mobile-menu-btn" id="menuBtn">Menu</button>
     <div class="nav-actions">
@@ -50,7 +50,6 @@
       <button class="refresh-btn" onclick="refreshData()">Refresh</button>
     </div>
 
-    <!-- MOBILE MENU -->
     <div id="mobileMenu" style="position:fixed;top:0;right:0;width:280px;height:100vh;background:#0a0f2c;z-index:1000;transform:translateX(100%);transition:transform .35s ease;border-left:3px solid #00ffff;padding:6rem 1.5rem 2rem;box-sizing:border-box;overflow-y:auto;">
       <a href="index.html" class="nav-btn">Dashboard</a>
       <a href="churn.html" class="nav-btn">Churn</a>
@@ -70,7 +69,6 @@
 
   <div class="header"><h1>GrowthEasy AI</h1></div>
 
-  <!-- SIGNUP PAGE -->
   <div id="signup" class="page active">
     <div class="card">
       <h2 style="color:#00ffff;">AI Growth for Shopify</h2>
@@ -98,15 +96,11 @@
     </div>
   </div>
 
-  
 <script>
-  // === CONFIG ===
   const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
-  const FRONTEND_URL = 'https://growth-easy-analytics-main-26jk-pb10b9hc9.vercel.app';
 
-  // === START TRIAL ===
-  async function startTrial(retries = 0) {
-    const email = document.getElementById('email').value.trim();
+  async function startTrial() {
+    const email = document.getElementById('email').value.trim().toLowerCase();
     const consent = document.getElementById('consent').checked;
     const btn = document.getElementById('trialBtn');
 
@@ -118,56 +112,30 @@
     btn.textContent = 'Creating Trial...';
 
     try {
-      // Warm-up Render
-      fetch(`${BACKEND_URL}/health`, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-      await new Promise(r => setTimeout(r, 600));
-
       const res = await fetch(`${BACKEND_URL}/create-trial`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include',                 // ← Cookie set on Render domain
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, consent })
       });
 
-      let data;
-      try { data = await res.json(); }
-      catch { data = { error: await res.text() || `HTTP ${res.status}` }; }
+      const data = await res.json();
 
-      if (res.ok && data.success && data.token) {
-        // Set secure cookie (works on Vercel + Render)
-        document.cookie = `token=${data.token}; path=/; max-age=${7*24*60*60}; secure; samesite=lax`;
-        
-        // Force welcome overlay on first login
+      if (res.ok && data.success) {
+        // Cookie is automatically set by backend — NO MANUAL SETTING
         localStorage.removeItem('growseasy_welcome_shown');
         localStorage.setItem('growseasy_user_email', email);
-
-        // Redirect
-        window.location.href = data.redirect || `${FRONTEND_URL}/index.html`;
+        window.location.href = data.redirect || '/index.html';
       } else {
         throw new Error(data.error || 'Server error');
       }
     } catch (e) {
-      console.error('Trial error:', e);
-      if (retries < 1 && /Load failed|network/i.test(e.message)) {
-        btn.textContent = 'Retrying...';
-        return setTimeout(() => startTrial(retries + 1), 1500);
-      }
-      alert(`Failed: ${e.message}`);
+      console.error('Trial creation failed:', e);
+      alert('Signup failed: ' + (e.message || 'Please try again'));
     } finally {
-      if (retries === 0) {
-        btn.classList.remove('loading');
-        btn.textContent = 'Start 7-Day Free Trial';
-      }
+      btn.classList.remove('loading');
+      btn.textContent = 'Start 7-Day Free Trial';
     }
-  }
-
-  // === MOBILE NAV ===
-  function go(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const el = document.getElementById(page);
-    if (el) el.classList.add('active');
-    document.querySelectorAll('.mobile-nav button').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
   }
 </script>
 
