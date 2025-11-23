@@ -78,7 +78,7 @@
     <h3>Connect Your Accounts</h3>
     <p>Shopify, GA4, HubSpot – real data powers AI insights.</p>
     <div class="integration-buttons">
-      <!-- 100% UNBLOCKABLE DIRECT LINKS – NO JS, NO POPUPS -->
+      <!-- UNBLOCKABLE DIRECT LINKS – NO JS, NO POPUPS -->
       <button onclick="window.location.href='https://growth-easy-analytics-2.onrender.com/auth/shopify?shop='+encodeURIComponent(prompt('Enter your .myshopify.com store?')||'')" class="connect-btn">
         Connect Shopify
       </button>
@@ -209,19 +209,16 @@
     document.getElementById('integrations-section').style.display = loggedIn ? 'block' : 'none';
 
     if (loggedIn) {
-      // Fetch user email if needed
-      fetch(`${BACKEND_URL}/health`, { credentials: 'include' }).then(() => {
-        const saved = localStorage.getItem('growseasy_user_email');
-        document.getElementById('user-email').textContent = saved || 'you@company.com';
-      });
+      const saved = localStorage.getItem('growseasy_user_email');
+      document.getElementById('user-email').textContent = saved || 'you@company.com';
     } else {
       document.getElementById('user-email').textContent = 'Not signed in';
     }
 
-    if (!loggedIn) {
-      renderDashboard(null, true);
-    } else {
+    if (loggedIn) {
       refreshData();
+    } else {
+      renderDashboard(null, true);
     }
   }
 
@@ -232,12 +229,9 @@
       initPage();
     }
 
-    const chatInput = document.getElementById('chat-input');
-    if (chatInput) {
-      chatInput.addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendChat();
-      });
-    }
+    document.getElementById('chat-input')?.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendChat();
+    });
   });
 </script>
 
@@ -246,7 +240,7 @@
   const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
 </script>
 
-<!-- OAUTH RETURN HANDLER (kept – this one is fine) -->
+<!-- OAUTH RETURN HANDLER -->
 <script>
   const params = new URLSearchParams(window.location.search);
   const connected = params.get('connected');
