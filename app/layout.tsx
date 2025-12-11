@@ -1,7 +1,7 @@
 // app/layout.tsx
 import './globals.css';
 import type { Metadata } from 'next';
-import ChartProvider from '../components/ChartProvider';
+
 
 export const metadata: Metadata = {
   title: 'GrowthEasy AI',
