@@ -1,4 +1,4 @@
-lexport default function Home() {
+export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-dark to-black">
       <h1 className="text-6xl md:text-8xl font-black text-neon animate-glitch mb-8">
