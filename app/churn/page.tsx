@@ -1,4 +1,4 @@
-import ChurnChart from '@/components/charts/ChurnChart';
+import ChurnChart from '../components/charts/ChurnChart';
 
 export default function Churn() {
   return (
