@@ -1,3 +1,5 @@
+import RevenueChart from '../components/charts/RevenueChart';
+
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-dark to-black">
@@ -12,7 +14,6 @@ export default function Home() {
         <span className="text-xl text-cyan-400">No OpenAI • Real Grok answers</span>
       </div>
 
-      {/* ONE-CLICK CONNECT */}
       <div className="my-16">
         <p className="text-3xl mb-8">See your exact monthly leak in 17 seconds</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -34,7 +35,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* LIFETIME DEAL */}
       <div className="my-20 bg-black/70 border-4 border-neon rounded-3xl p-16 max-w-4xl">
         <h2 className="text-7xl font-black text-neon animate-glitch mb-6">
           £37 <span className="text-4xl">one-time</span>
