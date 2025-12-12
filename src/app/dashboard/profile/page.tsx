@@ -1,6 +1,4 @@
-// src/app/dashboard/profile/page.tsx
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+// src/app/dashboard/profile/page.tex
 import Link from "next/link";
 
 export default async function ProfilePage() {
