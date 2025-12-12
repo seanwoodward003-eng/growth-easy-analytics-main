@@ -6,13 +6,18 @@ export default function Dashboard() {
       <h1 className="text-6xl font-black text-neon my-12 animate-glitch">DASHBOARD</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         <div className="bg-black/40 border-2 border-neon rounded-2xl p-10">
-          <h3>Revenue</h3><p className="text-5xl font-bold my-4">£12,700</p><p className="text-green-400">+6%</p>
+          <h3>Revenue</h3>
+          <p className="text-5xl font-bold my-4">£12,700</p>
+          <p className="text-green-400">+6%</p>
         </div>
         <div className="bg-black/40 border-2 border-red-500 rounded-2xl p-10">
-          <h3>Churn Rate</h3><p className="text-5xl font-bold my-4 text-red-400">3.2%</p><p className="text-yellow-400">18 at risk</p>
+          <h3>Churn Rate</h3>
+          <p className="text-5xl font-bold my-4 text-red-400">3.2%</p>
+          <p className="text-yellow-400">18 at risk</p>
         </div>
         <div className="bg-black/40 border-2 border-neon rounded-2xl p-10">
-          <h3>LTV:CAC</h3><p className="text-5xl font-bold my-4">3:1</p>
+          <h3>LTV:CAC</h3>
+          <p className="text-5xl font-bold my-4">3:1</p>
         </div>
       </div>
 
