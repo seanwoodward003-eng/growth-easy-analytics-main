@@ -1,4 +1,3 @@
-// app/churn/page.tsx
 import ChurnChart from '../components/charts/ChurnChart';
 
 export default function Churn() {
