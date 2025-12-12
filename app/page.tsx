@@ -1,43 +1,32 @@
 import RevenueChart from '../components/charts/RevenueChart';
 
-export default function Home() {
+export default function Dashboard() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-dark to-black">
-      <h1 className="text-6xl md:text-8xl font-black text-neon animate-glitch mb-8">
-        GROWTHEASY AI
-      </h1>
-      <p className="text-2xl md:text-4xl mb-4 text-cyan-300">
-        Powered by Grok xAI • Real-time churn detection
-      </p>
-      <div className="flex items-center gap-6 mb-12">
-        <img src="https://x.ai/grok-badge.png" alt="Grok xAI" className="h-12" />
-        <span className="text-xl text-cyan-400">No OpenAI • Real Grok answers</span>
-      </div>
-
-      <div className="my-16">
-        <p className="text-3xl mb-8">See your exact monthly leak in 17 seconds</p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <input type="text" placeholder="yourstore.myshopify.com" className="px-8 py-5 text-black rounded-l-xl text-xl w-80" id="quickshop" />
-          <button 
-            onClick={() => {
-              const shop = (document.getElementById('quickshop') as HTMLInputElement)?.value.trim();
-              if (shop) window.location.href = `https://growth-easy-analytics-2.onrender.com/auth/shopify?shop=${shop}`;
-            }} 
-            className="bg-neon text-black px-12 py-5 rounded-r-xl sm:rounded-l-none text-2xl font-bold hover:scale-110 transition"
-          >
-            Connect & Show My Leaks
-          </button>
+    <div className="text-center">
+      <h1 className="text-6xl font-black text-neon my-12 animate-glitch">DASHBOARD</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="bg-black/40 border-2 border-neon rounded-2xl p-10">
+          <h3>Revenue</h3><p className="text-5xl font-bold my-4">£12,700</p><p className="text-green-400">+6%</p>
+        </div>
+        <div className="bg-black/40 border-2 border-red-500 rounded-2xl p-10">
+          <h3>Churn Rate</h3><p className="text-5xl font-bold my-4 text-red-400">3.2%</p><p className="text-yellow-400">18 at risk</p>
+        </div>
+        <div className="bg-black/40 border-2 border-neon rounded-2xl p-10">
+          <h3>LTV:CAC</h3><p className="text-5xl font-bold my-4">3:1</p>
         </div>
       </div>
 
-      <div className="my-20 bg-black/70 border-4 border-neon rounded-3xl p-16 max-w-4xl">
-        <h2 className="text-7xl font-black text-neon animate-glitch mb-6">£37 <span className="text-4xl">one-time</span></h2>
-        <p className="text-3xl mb-8">Lifetime access • 7-day money-back</p>
-        <p className="text-4xl text-red-400 animate-pulse mb-8">Only ~418 of 500 lifetime spots left</p>
-        <p className="text-2xl mb-10">When 500 sell → price becomes £97/month forever</p>
-        <a href="https://buy.stripe.com/your_link_here" className="inline-block bg-neon text-black px-20 py-8 rounded-2xl text-4xl font-bold hover:scale-110 transition shadow-2xl shadow-cyan-500/50">
-          Claim Lifetime Access → £37
-        </a>
+      <div className="my-20 bg-black/30 rounded-2xl p-8 border border-neon">
+        <RevenueChart />
+      </div>
+
+      <div className="my-20">
+        <h2 className="text-4xl mb-10">Connect Accounts</h2>
+        <div className="flex flex-wrap justify-center gap-8">
+          <a href="https://growth-easy-analytics-2.onrender.com/auth/shopify" target="_blank" className="bg-neon text-black px-10 py-5 rounded-xl text-xl font-bold hover:bg-cyan-300">Connect Shopify</a>
+          <a href="https://growth-easy-analytics-2.onrender.com/auth/ga4" target="_blank" className="bg-neon text-black px-10 py-5 rounded-xl text-xl font-bold hover:bg-cyan-300">Connect GA4</a>
+          <a href="https://growth-easy-analytics-2.onrender.com/auth/hubspot" target="_blank" className="bg-neon text-black px-10 py-5 rounded-xl text-xl font-bold hover:bg-cyan-300">Connect HubSpot</a>
+        </div>
       </div>
     </div>
   );
