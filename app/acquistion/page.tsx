@@ -1,4 +1,4 @@
-import AcquisitionChart from '../components/charts/AcquisitionChart';
+import AcquisitionChart from '../components/charts/acquisitionChart';
 
 export default function Acquisition() {
   return (
