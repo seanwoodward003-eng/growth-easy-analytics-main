@@ -1,8 +1,14 @@
-// src/app/dashboard/profile/page.tex
+// src/app/dashboard/profile/page.tsx
 import Link from "next/link";
+import { getServerSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
+
+  if (!session) {
+    redirect("/");
+  }
 
   return (
     <div className="min-h-screen py-20 px-6">
@@ -15,9 +21,9 @@ export default async function ProfilePage() {
         <div className="bg-cyber-card/60 backdrop-blur-xl border-4 border-cyber-neon rounded-3xl p-12 text-center">
           <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full border-4 border-cyber-neon" />
           <h2 className="text-4xl font-bold text-cyber-neon mb-4">
-            {session?.user?.name || "Cyber Operator"}
+            {session.user.email.split("@")[0] || "Cyber Operator"}
           </h2>
-          <p className="text-2xl text-cyan-300 mb-8">{session?.user?.email || "you@company.com"}</p>
+          <p className="text-2xl text-cyan-300 mb-8">{session.user.email || "you@company.com"}</p>
           
           <div className="space-y-4 text-left">
             <div className="flex justify-between text-xl">
@@ -44,8 +50,9 @@ export default async function ProfilePage() {
             Manage Billing
           </Link>
 
+          {/* Custom logout – redirect to backend logout if you have one, or just clear cookies */}
           <Link
-            href="/api/auth/signout"
+            href="/api/logout" // You can create a simple API route to clear cookies, or point to backend logout endpoint
             className="block border-4 border-red-500 text-red-400 px-10 py-6 rounded-2xl text-2xl font-bold text-center hover:bg-red-600 hover:text-white transition"
           >
             Logout
