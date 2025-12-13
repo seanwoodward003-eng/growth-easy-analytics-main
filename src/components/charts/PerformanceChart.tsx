@@ -17,7 +17,7 @@ export function PerformanceChart() {
           <XAxis dataKey="metric" stroke="#00ffff" />
           <YAxis stroke="#00ffff" />
           <Tooltip contentStyle={{ background: "#0a0f2c", border: "1px solid #f1c40f" }} />
-          <Bar dataKey="value" fill="#f1c40f" radius={[20, 20, 0, 0]}" />
+          <Bar dataKey="value" fill="#f1c40f" radius={[20, 20, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
