@@ -34,9 +34,33 @@ export default async function ProfilePage() {
               <span className="text-cyan-400">Status</span>
               <span className="text-green-400">Active • Trial Day 4/7</span>
             </div>
-            <div className="flex justify-between text-xl">
-              <span className="text-cyan-400">Connected</span>
-              <span className="text-cyber-neon">Shopify + GA4</span>
+          <div className="space-y-8">
+  <div className="text-center">
+    <h3 className="text-3xl text-cyan-300 mb-8">Connect Your Platforms</h3>
+    <div className="flex flex-wrap justify-center gap-8">
+      <button
+        onClick={() => window.location.href = "/api/auth/shopify"}
+        className="bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg"
+      >
+        Shopify {session?.user?.shopifyConnected ? "✓ Connected" : "Connect Now"}
+      </button>
+
+      <button
+        onClick={() => window.location.href = "/api/auth/ga4"}
+        className="bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg"
+      >
+        GA4 {session?.user?.ga4Connected ? "✓ Connected" : "Connect Now"}
+      </button>
+
+      <button
+        onClick={() => window.location.href = "/api/auth/hubspot"}
+        className="bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg"
+      >
+        HubSpot {session?.user?.hubspotConnected ? "✓ Connected" : "Connect Now"}
+      </button>
+    </div>
+  </div>
+</div>
             </div>
           </div>
         </div>
