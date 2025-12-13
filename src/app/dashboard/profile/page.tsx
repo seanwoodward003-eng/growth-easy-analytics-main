@@ -1,4 +1,5 @@
-// src/app/dashboard/profile/page.tsx
+"use client";  // ← IMPORTANT: Add this at the top so onClick works!
+
 import Link from "next/link";
 import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -25,7 +26,7 @@ export default async function ProfilePage() {
           </h2>
           <p className="text-2xl text-cyan-300 mb-8">{session.user.email || "you@company.com"}</p>
           
-          <div className="space-y-4 text-left">
+          <div className="space-y-6 text-left">
             <div className="flex justify-between text-xl">
               <span className="text-cyan-400">Plan</span>
               <span className="text-green-400 font-bold">Pro Tier</span>
@@ -34,33 +35,32 @@ export default async function ProfilePage() {
               <span className="text-cyan-400">Status</span>
               <span className="text-green-400">Active • Trial Day 4/7</span>
             </div>
-          <div className="space-y-8">
-  <div className="text-center">
-    <h3 className="text-3xl text-cyan-300 mb-8">Connect Your Platforms</h3>
-    <div className="flex flex-wrap justify-center gap-8">
-      <button
-        onClick={() => window.location.href = "/api/auth/shopify"}
-        className="bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg"
-      >
-        Shopify {session?.user?.shopifyConnected ? "✓ Connected" : "Connect Now"}
-      </button>
 
-      <button
-        onClick={() => window.location.href = "/api/auth/ga4"}
-        className="bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg"
-      >
-        GA4 {session?.user?.ga4Connected ? "✓ Connected" : "Connect Now"}
-      </button>
+            {/* Glowing OAuth Connect Buttons */}
+            <div className="mt-10">
+              <h3 className="text-3xl text-cyan-300 text-center mb-8">Connect Platforms</h3>
+              <div className="grid grid-cols-1 gap-6">
+                <button
+                  onClick={() => window.location.href = "/api/auth/shopify"}
+                  className="bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg"
+                >
+                  Shopify {session.user?.shopifyConnected ? "✓ Connected" : "Connect Now"}
+                </button>
 
-      <button
-        onClick={() => window.location.href = "/api/auth/hubspot"}
-        className="bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg"
-      >
-        HubSpot {session?.user?.hubspotConnected ? "✓ Connected" : "Connect Now"}
-      </button>
-    </div>
-  </div>
-</div>
+                <button
+                  onClick={() => window.location.href = "/api/auth/ga4"}
+                  className="bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg"
+                >
+                  GA4 {session.user?.ga4Connected ? "✓ Connected" : "Connect Now"}
+                </button>
+
+                <button
+                  onClick={() => window.location.href = "/api/auth/hubspot"}
+                  className="bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg"
+                >
+                  HubSpot {session.user?.hubspotConnected ? "✓ Connected" : "Connect Now"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -74,9 +74,8 @@ export default async function ProfilePage() {
             Manage Billing
           </Link>
 
-          {/* Custom logout – redirect to backend logout if you have one, or just clear cookies */}
           <Link
-            href="/api/logout" // You can create a simple API route to clear cookies, or point to backend logout endpoint
+            href="/api/logout"
             className="block border-4 border-red-500 text-red-400 px-10 py-6 rounded-2xl text-2xl font-bold text-center hover:bg-red-600 hover:text-white transition"
           >
             Logout
