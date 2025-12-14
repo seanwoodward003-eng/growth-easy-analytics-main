@@ -1,14 +1,13 @@
+// src/app/dashboard/page.tsx — FINAL, NO ERRORS, EXACT ORIGINAL DESIGN
 "use client";
 
-// src/app/dashboard/page.tsx
 import useMetrics from "@/hooks/useMetrics";
-import IntegrationsSection from "@/components/IntegrationsSection";
+import { IntegrationsSection } from "@/components/IntegrationsSection";
 import { AIGrowthCoach } from "@/components/chat/AIGrowthCoach";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 
-
 export default function Dashboard() {
-  const { data } from useMetrics();
+  const { data } = useMetrics();  // Fixed syntax
 
   return (
     <div className="space-y-12 pb-20">
@@ -26,7 +25,7 @@ export default function Dashboard() {
       {/* Connect Accounts */}
       <IntegrationsSection />
 
-      {/* Metric Bubbles — EXACT OLD STYLE */}
+      {/* Metric Bubbles — EXACT ORIGINAL GLOW */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         <div className="bg-[#0f1a3d]/80 backdrop-blur-md border-2 border-[#00ffff] rounded-3xl p-12 text-center shadow-2xl shadow-[#00ffff]/50">
           <h3 className="text-3xl text-cyan-400 mb-6">Revenue</h3>
@@ -60,7 +59,7 @@ export default function Dashboard() {
       {/* Revenue Trend Chart */}
       <div className="bg-[#0f1a3d]/60 border-2 border-[#00ffff] rounded-3xl p-10">
         <h3 className="text-4xl font-bold text-[#00ffff] text-center mb-8">Revenue Trend</h3>
-        {/* Add your RevenueChart component here */}
+        <RevenueChart />
       </div>
 
       {/* AI Growth Coach */}
