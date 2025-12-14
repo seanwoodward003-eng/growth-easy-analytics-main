@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 // Dynamically load the client-side metrics component
 const ChurnMetrics = dynamic(
   () => import("@/components/ChurnMetrics").then((mod) => mod.ChurnMetrics),
-  { ssr: false }  // This prevents prerender error
+  // This prevents prerender error
 );
 
 export default function ChurnPage() {
