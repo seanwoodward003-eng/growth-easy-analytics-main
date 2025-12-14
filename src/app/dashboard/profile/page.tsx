@@ -1,66 +1,16 @@
-"use client";  // Required for onClick interactivity
+// src/app/dashboard/profile/page.tsx
+// NOTE: "use client" has been REMOVED → this is now a Server Component
+// This is correct and recommended for authentication checks
 
 import Link from "next/link";
-import { cookies } from "next/headers";  // Direct import (safe here)
-import jwt from "jsonwebtoken";
-import { redirect } from "next/navigation";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("Missing JWT_SECRET in environment variables");
-}
-
-type Session = {
-  user: {
-    id: number;
-    email: string;
-    shopifyConnected?: boolean;
-    ga4Connected?: boolean;
-    hubspotConnected?: boolean;
-  };
-  expires: string;
-} | null;
-
-async function getServerSession(): Promise<Session> {
-  "use server";  // Marks this function as server-only
-
-  const cookieStore = cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) return null;
-
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
-      sub: string;
-      email: string;
-      exp: number;
-      shopifyConnected?: boolean;
-      ga4Connected?: boolean;
-      hubspotConnected?: boolean;
-    };
-
-    return {
-      user: {
-        id: Number(payload.sub),
-        email: payload.email,
-        shopifyConnected: payload.shopifyConnected,
-        ga4Connected: payload.ga4Connected,
-        hubspotConnected: payload.hubspotConnected,
-      },
-      expires: new Date(payload.exp * 1000).toISOString(),
-    };
-  } catch {
-    return null;
-  }
-}
+import { getServerSession } from "./actions";
 
 export default async function ProfilePage() {
   const session = await getServerSession();
 
-  if (!session) {
-    redirect("/");
-  }
+  // getServerSession already redirects if invalid/no token, so session is guaranteed here
+  // But TypeScript still needs the non-null assertion for safety
+  const user = session!.user;
 
   return (
     <div className="min-h-screen py-20 px-6">
@@ -73,9 +23,9 @@ export default async function ProfilePage() {
         <div className="bg-cyber-card/60 backdrop-blur-xl border-4 border-cyber-neon rounded-3xl p-12 text-center">
           <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full border-4 border-cyber-neon" />
           <h2 className="text-4xl font-bold text-cyber-neon mb-4">
-            {session.user.email.split("@")[0] || "Cyber Operator"}
+            {user.email.split("@")[0] || "Cyber Operator"}
           </h2>
-          <p className="text-2xl text-cyan-300 mb-8">{session.user.email || "you@company.com"}</p>
+          <p className="text-2xl text-cyan-300 mb-8">{user.email}</p>
           
           <div className="space-y-6 text-left">
             <div className="flex justify-between text-xl">
@@ -91,26 +41,26 @@ export default async function ProfilePage() {
             <div className="mt-10">
               <h3 className="text-3xl text-cyan-300 text-center mb-8">Connect Platforms</h3>
               <div className="grid grid-cols-1 gap-6">
-                <button
-                  onClick={() => window.location.href = "/api/auth/shopify"}
-                  className="bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg"
+                <a
+                  href="/api/auth/shopify"
+                  className="block bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg text-center"
                 >
-                  Shopify {session.user.shopifyConnected ? "✓ Connected" : "Connect Now"}
-                </button>
+                  Shopify {user.shopifyConnected ? "✓ Connected" : "Connect Now"}
+                </a>
 
-                <button
-                  onClick={() => window.location.href = "/api/auth/ga4"}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg"
+                <a
+                  href="/api/auth/ga4"
+                  className="block bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg text-center"
                 >
-                  GA4 {session.user.ga4Connected ? "✓ Connected" : "Connect Now"}
-                </button>
+                  GA4 {user.ga4Connected ? "✓ Connected" : "Connect Now"}
+                </a>
 
-                <button
-                  onClick={() => window.location.href = "/api/auth/hubspot"}
-                  className="bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg"
+                <a
+                  href="/api/auth/hubspot"
+                  className="block bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg text-center"
                 >
-                  HubSpot {session.user.hubspotConnected ? "✓ Connected" : "Connect Now"}
-                </button>
+                  HubSpot {user.hubspotConnected ? "✓ Connected" : "Connect Now"}
+                </a>
               </div>
             </div>
           </div>
