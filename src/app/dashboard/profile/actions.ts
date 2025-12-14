@@ -1,15 +1,9 @@
-// src/app/dashboard/profile/actions.ts
 "use server";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("Missing JWT_SECRET in environment variables");
-}
+import { unstable_noStore as noStore } from "next/cache"; // ← Add this import
 
 export type Session = {
   user: {
@@ -23,6 +17,8 @@ export type Session = {
 } | null;
 
 export async function getServerSession(): Promise<Session> {
+  noStore(); // ← Prevents any static analysis issues
+
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
 
@@ -30,8 +26,16 @@ export async function getServerSession(): Promise<Session> {
     redirect("/");
   }
 
+  // Move JWT_SECRET read INSIDE the function
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    // In production, this will only happen at runtime if misconfigured
+    console.error("JWT_SECRET is missing in environment");
+    redirect("/");
+  }
+
   try {
-    const verified = jwt.verify(token, JWT_SECRET!);
+    const verified = jwt.verify(token, JWT_SECRET);
 
     if (typeof verified === "string" || !verified || typeof verified !== "object") {
       redirect("/");
@@ -60,7 +64,7 @@ export async function getServerSession(): Promise<Session> {
       },
       expires: new Date(payload.exp * 1000).toISOString(),
     };
-  } catch {
+  } catch (error) {
     redirect("/");
   }
 }
