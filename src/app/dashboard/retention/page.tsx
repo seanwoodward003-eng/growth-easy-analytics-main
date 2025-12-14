@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 // Dynamically load the client-side metrics component (no prerender error)
 const RetentionMetrics = dynamic(
   () => import("@/components/RetentionMetrics").then((mod) => mod.RetentionMetrics),
-  { ssr: false }
+
 );
 
 export default function RetentionPage() {
