@@ -1,12 +1,9 @@
-// src/components/IntegrationsSection.tsx
 "use client";
 
-import React from "react";
-
-export default function IntegrationsSection() {
+export function IntegrationsSection() {
   const handleConnect = (provider: string) => {
     if (provider === "shopify") {
-      const shop = prompt("Enter your .myshopify.com store (e.g., my-store)");
+      const shop = prompt("Enter your .myshopify.com store name");
       if (!shop) return;
       window.location.href = `https://growth-easy-analytics-2.onrender.com/auth/shopify?shop=${encodeURIComponent(shop.trim())}`;
     } else {
