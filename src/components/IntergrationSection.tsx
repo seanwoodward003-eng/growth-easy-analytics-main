@@ -1,6 +1,9 @@
+// src/components/IntegrationsSection.tsx
 "use client";
 
-export function IntegrationsSection() {
+import React from "react";
+
+export default function IntegrationsSection() {
   const handleConnect = (provider: string) => {
     if (provider === "shopify") {
       const shop = prompt("Enter your .myshopify.com store (e.g., my-store)");
