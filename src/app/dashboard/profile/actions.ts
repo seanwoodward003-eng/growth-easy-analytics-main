@@ -23,7 +23,7 @@ export type Session = {
 } | null;
 
 export async function getServerSession(): Promise<Session> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();  // ← ADD "await" HERE
   const token = cookieStore.get("access_token")?.value;
 
   if (!token) {
