@@ -1,22 +1,43 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, ShoppingCart, Users, DollarSign, TrendingUp, BarChart3, User, Info } from "lucide-react";
 
-export function MobileNav() {
+const navItems = [
+  { name: "Home", href: "/dashboard", icon: Home },
+  { name: "Acquisition", href: "/dashboard/acquisition", icon: ShoppingCart },
+  { name: "Churn", href: "/dashboard/churn", icon: Users },
+  { name: "Retention", href: "/dashboard/retention", icon: Users },
+  { name: "Revenue", href: "/dashboard/revenue", icon: DollarSign },
+  { name: "Performance", href: "/dashboard/performance", icon: BarChart3 },
+  { name: "Profile", href: "/dashboard/profile", icon: User },
+  { name: "About", href: "/about", icon: Info },
+];
+
+export function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="bg-cyber-card/90 backdrop-blur-xl border-4 border-cyber-neon rounded-full px-8 py-4 flex gap-8">
-        <Link href="/dashboard" className={pathname === "/dashboard" ? "text-cyber-neon" : "text-cyan-300"}>
-          Home
-        </Link>
-        <Link href="/dashboard/churn" className={pathname.includes("churn") ? "text-red-400" : "text-cyan-300"}>
-          Churn
-        </Link>
-        <Link href="/pricing" className="text-purple-400">
-          Upgrade
-        </Link>
+    <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t-2 border-cyber-neon z-50 md:hidden">
+      <div className="grid grid-cols-4 gap-1 p-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all ${
+                isActive ? "bg-cyber-neon text-black shadow-lg shadow-cyber-neon/50" : "text-cyan-300 hover:bg-cyber-card"
+              }`}
+            >
+              <Icon className="w-6 h-6" />
+              <span className="text-xs mt-1">{item.name}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
