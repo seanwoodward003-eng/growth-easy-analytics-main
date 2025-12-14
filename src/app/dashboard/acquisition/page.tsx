@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 // Dynamically import a client component that uses the hook
 const AcquisitionMetrics = dynamic(
   () => import("@/components/AcquisitionMetrics").then((mod) => mod.AcquisitionMetrics),
-  { ssr: false }  // Disable server-side rendering for this part
+
 );
 
 export default function AcquisitionPage() {
