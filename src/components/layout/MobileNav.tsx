@@ -15,7 +15,7 @@ const navItems = [
   { name: "About", href: "/about", icon: Info },
 ];
 
-export function MobileBottomNav() {
+export function MobileNav() {
   const pathname = usePathname();
 
   return (
