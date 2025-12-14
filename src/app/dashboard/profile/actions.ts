@@ -31,7 +31,7 @@ export async function getServerSession(): Promise<Session> {
   }
 
   try {
-    const verified = jwt.verify(token, JWT_SECRET);
+    const verified = jwt.verify(token, JWT_SECRET!);
 
     if (typeof verified === "string" || !verified || typeof verified !== "object") {
       redirect("/");
