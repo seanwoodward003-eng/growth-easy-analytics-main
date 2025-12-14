@@ -1,6 +1,6 @@
 // src/lib/auth.ts
 
-import 'server-only'; // ← Critical: prevents client-side bundling
+
 
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
