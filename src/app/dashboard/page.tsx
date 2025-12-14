@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 // Dynamically load the client-side metrics component (no prerender error)
 const DashboardMetrics = dynamic(
   () => import("@/components/DashboardMetrics").then((mod) => mod.DashboardMetrics),
-  { ssr: false }
+  
 );
 
 export default function Dashboard() {
