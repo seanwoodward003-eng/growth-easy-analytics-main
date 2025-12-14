@@ -1,28 +1,56 @@
-// src/app/dashboard/profile/actions.ts  (or server-actions.ts)
+// src/app/dashboard/profile/actions.ts
 "use server";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
 
-interface Session {
-  user: any;
-  // add your actual user shape
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("Missing JWT_SECRET in environment variables");
 }
 
-export async function getServerSession(): Promise<Session | null> {
+export type Session = {
+  user: {
+    id: number;
+    email: string;
+    shopifyConnected?: boolean;
+    ga4Connected?: boolean;
+    hubspotConnected?: boolean;
+  };
+  expires: string;
+} | null;
+
+export async function getServerSession(): Promise<Session> {
   const cookieStore = cookies();
   const token = cookieStore.get("access_token")?.value;
 
   if (!token) {
-    redirect("/login"); // or your login route
+    redirect("/");
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    return { user: payload };
-  } catch (error) {
-    redirect("/login");
-    return null;
+    const payload = jwt.verify(token, JWT_SECRET) as {
+      sub: string;
+      email: string;
+      exp: number;
+      shopifyConnected?: boolean;
+      ga4Connected?: boolean;
+      hubspotConnected?: boolean;
+    };
+
+    return {
+      user: {
+        id: Number(payload.sub),
+        email: payload.email,
+        shopifyConnected: payload.shopifyConnected,
+        ga4Connected: payload.ga4Connected,
+        hubspotConnected: payload.hubspotConnected,
+      },
+      expires: new Date(payload.exp * 1000).toISOString(),
+    };
+  } catch {
+    redirect("/");
   }
 }
