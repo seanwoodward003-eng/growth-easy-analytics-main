@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx — FINAL COMPLETE VERSION (FIXED)
+// src/app/dashboard/page.tsx
 import useMetrics from "@/hooks/useMetrics";
 import IntegrationsSection from "@/components/IntegrationsSection";
 import { AIGrowthCoach } from "@/components/chat/AIGrowthCoach";
