@@ -1,6 +1,5 @@
 // src/app/dashboard/profile/page.tsx
-// NOTE: "use client" has been REMOVED → this is now a Server Component
-// This is correct and recommended for authentication checks
+// NO "use client" — this is a Server Component
 
 import Link from "next/link";
 import { getServerSession } from "./actions";
@@ -8,8 +7,7 @@ import { getServerSession } from "./actions";
 export default async function ProfilePage() {
   const session = await getServerSession();
 
-  // getServerSession already redirects if invalid/no token, so session is guaranteed here
-  // But TypeScript still needs the non-null assertion for safety
+  // getServerSession() already redirects on failure, so session is guaranteed
   const user = session!.user;
 
   return (
@@ -37,7 +35,7 @@ export default async function ProfilePage() {
               <span className="text-green-400">Active • Trial Day 4/7</span>
             </div>
 
-            {/* Glowing OAuth Connect Buttons */}
+            {/* OAuth Connect Buttons — now simple links */}
             <div className="mt-10">
               <h3 className="text-3xl text-cyan-300 text-center mb-8">Connect Platforms</h3>
               <div className="grid grid-cols-1 gap-6">
