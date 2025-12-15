@@ -67,26 +67,26 @@ export default function Dashboard() {
 
       {/* Metric Cards - All original content preserved */}
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <MetricCard
-          title="Revenue"
-          value="£12,700"
-          subtitle="+6% (demo)"
-          subtitleColor="#00ff00"
-        />
+      <MetricCard
+  title="Revenue"
+  value="£12,700"
+  trend="+6% (demo)"
+  color="green"
+/>
 
-        <MetricCard
-          title="Churn Rate"
-          value="3.2%"
-          subtitle="18 at risk"
-          subtitleColor="#ffff00"
-        />
+<MetricCard
+  title="Churn Rate"
+  value="3.2%"
+  trend="18 at risk"
+  color="red"  // or keep default cyan if you prefer
+/>
 
-        <MetricCard
-          title="LTV:CAC"
-          value="3.4:1"
-          subtitle="Healthy"
-          subtitleColor="#00ff00"
-        />
+<MetricCard
+  title="LTV:CAC"
+  value="3.4:1"
+  trend="Healthy"
+  color="green"
+/>
       </div>
     </div>
   );
