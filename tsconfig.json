@@ -13,11 +13,14 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],                    // Keep this for app/, pages/, etc. inside src (if you have any)
-      "@/components/*": ["./components/*"],  // This catches your UI components at root
-      "@/ui/*": ["./components/ui/*"]        // Optional: even cleaner for UI
+      "@/*": ["./src/*", "./*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
