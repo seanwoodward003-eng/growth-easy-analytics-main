@@ -1,5 +1,5 @@
 // src/app/dashboard/layout.tsx
-import { MobileNav } from "@/components/MobileNav";
+import { MobileNav } from "@/components/layout/MobileNav";
 
 export default function DashboardLayout({
   children,
