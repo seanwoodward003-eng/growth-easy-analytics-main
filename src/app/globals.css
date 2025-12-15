@@ -11,99 +11,74 @@ html, body, #__next {
   font-family: 'Orbitron', sans-serif;
 }
 
-/* Your original cyberpunk styles — this makes it look like the old version */
+/* Exact old glow effects */
+.glow-title {
+  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff, 0 0 80px #00ffff;
+}
+
 .glow-strong {
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 80px #00ffff;
+  text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 50px #00ffff;
 }
 
 .glow-medium {
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
 }
 
-.glow-soft {
-  text-shadow: 0 0 15px #00ffff;
-}
-
-.glitch {
-  animation: glitch 1.5s infinite;
-}
-
-@keyframes glitch {
-  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
-  50% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
-  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
-}
-
-.metric-card {
+/* Thick neon card (for profile, demo notice, etc.) */
+.neon-card {
   background: rgba(0, 255, 255, 0.05);
-  border: 2px solid #00ffff;
-  border-radius: 20px;
-  padding: 2rem;
+  border: 4px solid #00ffff;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  border-radius: 32px;
+  padding: 2.5rem;
   text-align: center;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-  margin: 1rem 0;
+  backdrop-filter: blur(10px);
 }
 
-.metric-value {
-  font-size: 4rem;
-  font-weight: bold;
+/* Big metric bubbles (exact old .metric-card look) */
+.metric-bubble {
+  background: rgba(0, 255, 255, 0.05);
+  border: 4px solid #00ffff44;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+  border-radius: 40px;
+  padding: 3rem;
+  text-align: center;
+}
+
+/* Massive AI Growth Coach panel (exact old chat-panel) */
+.ai-coach-panel {
+  background: rgba(10, 15, 44, 0.8);
+  border: 8px solid #00ffff;
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.8);
+  border-radius: 40px;
+  padding: 3rem;
+  backdrop-filter: blur(12px);
+}
+
+/* Buttons (connect, logout, menu, send) */
+.neon-btn {
+  background: transparent;
+  border: 4px solid #00ffff;
   color: #00ffff;
-  text-shadow: 0 0 20px #00ffff;
-}
-
-.cyber-btn {
-  background: linear-gradient(45deg, #00ffff, #00bfff);
-  color: #0a0f2c;
   padding: 1rem 2rem;
   border-radius: 50px;
   font-weight: bold;
-  box-shadow: 0 0 30px #00ffff;
-  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
   transition: all 0.3s;
 }
 
-.cyber-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 50px #00ffff;
-}
-
-.ai-insight {
-  background: rgba(0, 255, 255, 0.1);
-  border: 2px solid #00ffff;
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  margin: 2rem 0;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-}
-
-/* Navigation and other classes from old version */
-.navigation-bar {
-  background: rgba(10, 15, 44, 0.95);
-  border-bottom: 2px solid #00ffff;
-  box-shadow: 0 4px 30px rgba(0, 255, 255, 0.4);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.nav-btn {
-  color: #e0e7ff;
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  transition: all 0.3s;
-  font-weight: bold;
-}
-
-.nav-btn:hover, .nav-btn.active {
+.neon-btn:hover {
   background: #00ffff;
   color: #0a0f2c;
-  box-shadow: 0 0 30px #00ffff;
 }
 
-/* Mobile fixes from old version */
-@media (max-width: 768px) {
-  h1 { font-size: 2.5rem; }
-  .metric-value { font-size: 3rem; }
-  .grid { grid-template-columns: 1fr; }
+/* Send button in chat */
+.send-btn {
+  background: #00ffff;
+  color: #0a0f2c;
+  border: none;
+  padding: 1.2rem 2.5rem;
+  border-radius: 50px;
+  font-weight: bold;
+  box-shadow: 0 0 30px #00ffff;
 }
