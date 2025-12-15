@@ -9,17 +9,14 @@ type Props = {
 };
 
 export function MetricCard({ title, value, trend, color = "cyan", children }: Props) {
-  const colors = {
-    cyan: "border-cyber-neon text-cyber-neon",
-    red: "border-red-500 text-red-400",
-    green: "border-green-500 text-green-400",
-  };
+  const borderColor = color === "red" ? "border-red-500 shadow-red-500/70" : "border-cyber-neon shadow-cyber-neon/70";
+  const textColor = color === "red" ? "text-red-400" : color === "green" ? "text-green-400" : "text-cyber-neon";
 
   return (
-    <div className={`bg-cyber-card/80 backdrop-blur border-4 ${colors[color]} rounded-3xl p-10 text-center`}>
-      <h3 className="text-2xl mb-4 opacity-80">{title}</h3>
-      <p className="text-7xl font-black">{value}</p>
-      {trend && <p className="text-2xl mt-4 opacity-80">{trend}</p>}
+    <div className={`bg-cyber-card/90 backdrop-blur-xl border-6 ${borderColor} rounded-3xl p-16 text-center shadow-2xl`}>
+      <h3 className="text-5xl font-bold text-cyan-300 mb-8">{title}</h3>
+      <p className={`text-8xl md:text-9xl font-black ${textColor} glow-strong`}>{value}</p>
+      {trend && <p className="text-5xl font-bold text-cyan-200 mt-10">{trend}</p>}
       {children}
     </div>
   );
