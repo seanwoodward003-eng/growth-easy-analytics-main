@@ -11,7 +11,6 @@ export default function DashboardLayout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Updated nav items — now includes AI Insights in the correct position
   const navItems = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Acquisition", href: "/dashboard/acquisition" },
@@ -19,61 +18,67 @@ export default function DashboardLayout({
     { name: "Retention", href: "/dashboard/retention" },
     { name: "Revenue", href: "/dashboard/revenue" },
     { name: "Performance", href: "/dashboard/performance" },
-    { name: "AI Insights", href: "/dashboard/ai-insights" }, // ← NEW
+    { name: "AI Insights", href: "/dashboard/ai-insights" },
     { name: "Profile", href: "/dashboard/profile" },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyber-bg to-[#1a1f3d]">
-      {/* Mobile Top Bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-cyber-neon/40 shadow-2xl">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-3xl font-bold text-cyber-neon glow-strong tracking-wider">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%)' }}>
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,255,255,0.4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem' }}>
+          <h1 className="glow-medium" style={{ fontSize: '2.5rem', fontWeight: '900', color: '#00ffff' }}>
             GrowthEasy AI
           </h1>
 
+          {/* Styled Mobile Menu Button - using your existing styles */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="group relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-cyber-neon/10 border-2 border-cyber-neon/50 hover:border-cyber-neon hover:bg-cyber-neon/20 transition-all duration-300 shadow-lg hover:shadow-cyber-neon/50"
+            className="mobile-menu-btn"
           >
-            <div className="relative">
-              {mobileMenuOpen ? (
-                <X size={32} className="text-cyber-neon group-hover:scale-110 transition-transform" />
-              ) : (
-                <Menu size={32} className="text-cyber-neon group-hover:scale-110 transition-transform" />
-              )}
-              <span className="absolute inset-0 rounded-full bg-cyber-neon opacity-40 animate-ping"></span>
-            </div>
-
-            <span className="text-xl font-bold text-cyber-neon tracking-wide glow-medium uppercase">
+            {mobileMenuOpen ? (
+              <X size={32} style={{ color: '#00ffff' }} />
+            ) : (
+              <Menu size={32} style={{ color: '#00ffff' }} />
+            )}
+            <span className="glow-soft">
               {mobileMenuOpen ? "Close" : "Menu"}
             </span>
           </button>
         </div>
       </header>
 
-      {/* Mobile Full-Screen Menu Overlay */}
+      {/* Mobile Overlay Menu */}
       {mobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center"
+          className="lg:hidden fixed inset-0 z-40"
+          style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(16px)' }}
           onClick={() => setMobileMenuOpen(false)}
         >
-          <nav className="space-y-10" onClick={(e) => e.stopPropagation()}>
+          <nav style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '3rem' }} onClick={(e) => e.stopPropagation()}>
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="group block text-6xl sm:text-7xl font-black text-cyan-300 hover:text-cyber-neon glow-strong transition-all duration-500 text-center relative"
+                className="glow-strong"
+                style={{ fontSize: '4.5rem', fontWeight: '900', color: '#00ffff', textAlign: 'center', position: 'relative' }}
               >
                 {item.name}
-
-                {/* Underline hover effect */}
-                <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-0 group-hover:w-full h-1 bg-cyber-neon/60 transition-all duration-500 rounded-full"></span>
-
-                {/* Optional: "NEW" badge on AI Insights */}
                 {item.name === "AI Insights" && (
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-black text-lg font-bold px-6 py-2 rounded-full shadow-lg animate-pulse">
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'linear-gradient(to right, #ff00ff, #aa00ff)',
+                    color: 'black',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '999px',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    animation: 'pulse 2s infinite'
+                  }}>
                     NEW
                   </span>
                 )}
@@ -83,18 +88,12 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* Desktop Sidebar + Main Content */}
-      <div className="flex">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30">
-          <Sidebar />
-        </aside>
-
-        {/* Main Content Area */}
-        <main className="flex-1 pt-20 lg:pt-0 lg:pl-72 p-6 lg:p-12 max-w-7xl mx-auto w-full">
+      {/* Main Content - full width */}
+      <main style={{ paddingTop: '6rem', padding: '2rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
