@@ -1,6 +1,7 @@
 // src/app/api/chat/route.ts
 
 import { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';  // ← THIS WAS MISSING!
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
@@ -10,8 +11,7 @@ interface User {
   email: string;
 }
 
-async function getUserFromCookie(req: NextRequest): Promise<User | null> {
-  // Next.js 15: cookies() is now async!
+async function getUserFromCookie(): Promise<User | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('access_token')?.value;
 
@@ -28,8 +28,8 @@ async function getUserFromCookie(req: NextRequest): Promise<User | null> {
 async function fetchUserMetrics(userId: number) {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, '') || 'https://your-backend.onrender.com';
 
-  // Forward cookies properly
-  const cookieHeader = (await cookies())
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
     .getAll()
     .map(({ name, value }) => `${name}=${value}`)
     .join('; ');
@@ -50,7 +50,9 @@ function createFallbackResponse(text: string) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
-      controller.enqueue(encoder.encode(`data: {"content": "${text.replace(/\n/g, '\\n')}"}\n\n`));
+      // Escape newlines properly for SSE
+      const escapedText = text.replace(/\n/g, '\\n');
+      controller.enqueue(encoder.encode(`data: {"content": "${escapedText}"}\n\n`));
       controller.close();
     },
   });
@@ -64,14 +66,14 @@ function createFallbackResponse(text: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getUserFromCookie(req);
+  const user = await getUserFromCookie();
   if (!user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
 
   const { messages } = await req.json();
 
-  // Teaser if no Grok key yet
+  // Teaser when no Grok key
   if (!process.env.GROK_API_KEY || process.env.GROK_API_KEY.trim() === '') {
     return createFallbackResponse(
       "🔮 AI Insights is powering up!\\n\\nGrok integration launching very soon — you’ll get real-time, personalized growth advice based on your actual revenue, churn, CAC, LTV, and more.\\n\\nStay tuned… this is going to be game-changing. 🚀"
