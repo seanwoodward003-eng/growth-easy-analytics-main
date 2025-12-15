@@ -1,92 +1,97 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MetricCard } from "@/components/ui/MetricCard";
-
-const revenueData = [
-  { week: 'Week 1', value: 11500 },
-  { week: 'Week 2', value: 12000 },
-  { week: 'Week 3', value: 12400 },
-  { week: 'Week 4', value: 12700 },
-];
+import { RevenueChart } from "@/components/charts/RevenueChart";
+import useMetrics from "@/hooks/useMetrics";
 
 export default function Dashboard() {
+  const { data, isLoading } = useMetrics();
+
   return (
-    <div style={{ textAlign: 'center', padding: '40px 20px', background: '#0a0f2c', minHeight: '100vh', color: '#ffffff' }}>
-      <p style={{ fontSize: '28px', color: '#00ffff', marginBottom: '60px' }}>
+    <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
+      {/* Demo mode banner */}
+      <p className="text-center text-cyan-300 text-xl sm:text-2xl md:text-3xl mb-12 glow-medium">
         AI: Demo mode – connect accounts for real data.
       </p>
 
-      <h2 className="glow-title" style={{ fontSize: '80px', marginBottom: '30px' }}>
+      {/* Your Profile Section */}
+      <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
         Your Profile
       </h2>
-      <p style={{ fontSize: '40px', marginBottom: '40px' }}>
+      <p className="text-center text-3xl sm:text-4xl md:text-5xl mb-8 text-cyan-200">
         seanwoodward2023@gmail.com
       </p>
-      <button className="connect-btn" style={{ marginBottom: '80px' }}>
-        Logout
-      </button>
+      <div className="text-center mb-16">
+        <button className="cyber-btn text-2xl sm:text-3xl px-10 py-5">
+          Logout
+        </button>
+      </div>
 
-      <h2 className="glow-title" style={{ fontSize: '80px', marginBottom: '40px' }}>
+      {/* Connect Accounts */}
+      <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-8">
         Connect Your Accounts
       </h2>
-      <p style={{ fontSize: '36px', marginBottom: '60px' }}>
+      <p className="text-center text-xl sm:text-2xl md:text-3xl mb-10 text-gray-300">
         Shopify, GA4, HubSpot – real data powers AI insights.
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', marginBottom: '60px', flexWrap: 'wrap' }}>
-        <button className="connect-btn">Connect Shopify</button>
-        <button className="connect-btn">Connect GA4</button>
-        <button className="connect-btn">Connect HubSpot</button>
+      <div className="flex flex-wrap justify-center gap-6 mb-12">
+        <button className="cyber-btn text-xl sm:text-2xl px-8 py-4">Connect Shopify</button>
+        <button className="cyber-btn text-xl sm:text-2xl px-8 py-4">Connect GA4</button>
+        <button className="cyber-btn text-xl sm:text-2xl px-8 py-4">Connect HubSpot</button>
       </div>
 
-      <p style={{ fontSize: '32px', color: '#00ffff', marginBottom: '80px' }}>
+      <p className="text-center text-cyan-400 text-lg sm:text-xl md:text-2xl mb-16 glow-medium">
         Checking connections...
       </p>
 
-      {/* Revenue Chart */}
-      <div className="chart-container" style={{ maxWidth: '900px', margin: '0 auto 100px auto' }}>
-        <h3 style={{ fontSize: '48px', color: '#00ffff', marginBottom: '30px' }}>Revenue Trend</h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={revenueData}>
-            <CartesianGrid stroke="#334455" />
-            <XAxis dataKey="week" stroke="#00ffff" />
-            <YAxis stroke="#00ffff" />
-            <Tooltip contentStyle={{ background: '#0a0f2c', border: '2px solid #00ffff' }} />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="#00ffff"
-              strokeWidth={6}
-              dot={{ fill: '#00ffff', r: 8 }}
-              activeDot={{ r: 12 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      {/* Metrics Section */}
+      <div className="max-w-7xl mx-auto mb-20">
+        {isLoading ? (
+          <p className="text-center text-4xl text-cyan-300 glow-medium">Loading real-time data...</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="metric-bubble">
+              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Revenue</h3>
+              <p className="metric-value">
+                £{data?.revenue?.total?.toLocaleString() || '12,700'}
+              </p>
+              <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
+                {data?.revenue?.trend || '+6% (demo)'}
+              </p>
+            </div>
+
+            <div className="metric-bubble">
+              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
+              <p className="metric-value text-red-400">
+                {data?.churn?.rate || '3.2'}%
+              </p>
+              <p className="text-3xl sm:text-4xl text-red-400 mt-6 glow-medium">
+                {data?.churn?.at_risk || '18'} at risk
+              </p>
+            </div>
+
+            <div className="metric-bubble">
+              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
+              <p className="metric-value text-green-400">
+                {data?.performance?.ratio || '3.4'}:1
+              </p>
+              <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
+                Healthy
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Metric Cards - All original content preserved */}
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <MetricCard
-  title="Revenue"
-  value="£12,700"
-  trend="+6% (demo)"
-  color="green"
-/>
-
-<MetricCard
-  title="Churn Rate"
-  value="3.2%"
-  trend="18 at risk"
-  color="red"  // or keep default cyan if you prefer
-/>
-
-<MetricCard
-  title="LTV:CAC"
-  value="3.4:1"
-  trend="Healthy"
-  color="green"
-/>
+      {/* Revenue Chart */}
+      <div className="max-w-5xl mx-auto">
+        <h3 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl mb-10">
+          Revenue Trend
+        </h3>
+        <div className="chart-container bg-cyber-card/30 backdrop-blur-md border-4 border-cyber-neon rounded-3xl p-6 shadow-2xl">
+          <RevenueChart />
+        </div>
       </div>
     </div>
   );
