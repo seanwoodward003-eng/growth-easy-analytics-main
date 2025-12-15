@@ -4,81 +4,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-html, body, #__next {
-  height: 100%;
-  background: linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%);
-  color: #e0e7ff;
-  font-family: 'Orbitron', sans-serif;
+.glow {
+  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
 }
 
-/* Exact old glow effects */
-.glow-title {
-  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff, 0 0 80px #00ffff;
-}
-
-.glow-strong {
-  text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 50px #00ffff;
-}
-
-.glow-medium {
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-}
-
-/* Thick neon card (for profile, demo notice, etc.) */
-.neon-card {
-  background: rgba(0, 255, 255, 0.05);
-  border: 4px solid #00ffff;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-  border-radius: 32px;
-  padding: 2.5rem;
-  text-align: center;
-  backdrop-filter: blur(10px);
-}
-
-/* Big metric bubbles (exact old .metric-card look) */
-.metric-bubble {
-  background: rgba(0, 255, 255, 0.05);
-  border: 4px solid #00ffff44;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
-  border-radius: 40px;
-  padding: 3rem;
-  text-align: center;
-}
-
-/* Massive AI Growth Coach panel (exact old chat-panel) */
-.ai-coach-panel {
-  background: rgba(10, 15, 44, 0.8);
-  border: 8px solid #00ffff;
-  box-shadow: 0 0 50px rgba(0, 255, 255, 0.8);
-  border-radius: 40px;
-  padding: 3rem;
-  backdrop-filter: blur(12px);
-}
-
-/* Buttons (connect, logout, menu, send) */
-.neon-btn {
-  background: transparent;
-  border: 4px solid #00ffff;
-  color: #00ffff;
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  font-weight: bold;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
-  transition: all 0.3s;
-}
-
-.neon-btn:hover {
-  background: #00ffff;
-  color: #0a0f2c;
-}
-
-/* Send button in chat */
-.send-btn {
-  background: #00ffff;
-  color: #0a0f2c;
-  border: none;
-  padding: 1.2rem 2.5rem;
-  border-radius: 50px;
-  font-weight: bold;
-  box-shadow: 0 0 30px #00ffff;
+@layer base {
+  body {
+    font-family: 'Orbitron', sans-serif;
+  }
 }
