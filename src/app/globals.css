@@ -9,14 +9,16 @@
     0 0 20px #00ffff,
     0 0 40px #00ffff,
     0 0 60px #00ffff,
-    0 0 80px #00ffff;
+    0 0 80px #00ffff,
+    0 0 100px #00ffff;
 }
 
 .glow-number {
   text-shadow: 
     0 0 30px #00ffff,
     0 0 60px #00ffff,
-    0 0 90px #00ffff;
+    0 0 90px #00ffff,
+    0 0 120px #00ffff;
 }
 
 @layer base {
