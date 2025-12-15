@@ -11,20 +11,27 @@ html, body, #__next {
   font-family: 'Orbitron', sans-serif;
 }
 
-/* Your original cyberpunk styles — restored */
-h1 {
-  font-size: 3.5rem;
-  color: #00ffff;
-  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
-  text-align: center;
-  margin: 2rem 0;
-  animation: glitch 2s infinite alternate;
+/* Your original cyberpunk styles — this makes it look like the old version */
+.glow-strong {
+  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 80px #00ffff;
 }
 
-h3 {
-  font-size: 2rem;
-  color: #00ffff;
+.glow-medium {
+  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff;
+}
+
+.glow-soft {
   text-shadow: 0 0 15px #00ffff;
+}
+
+.glitch {
+  animation: glitch 1.5s infinite;
+}
+
+@keyframes glitch {
+  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
+  50% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
+  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
 }
 
 .metric-card {
@@ -44,7 +51,7 @@ h3 {
   text-shadow: 0 0 20px #00ffff;
 }
 
-.cyber-btn, .connect-btn {
+.cyber-btn {
   background: linear-gradient(45deg, #00ffff, #00bfff);
   color: #0a0f2c;
   padding: 1rem 2rem;
@@ -70,19 +77,33 @@ h3 {
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
 }
 
-.glitch {
-  animation: glitch 1.5s infinite;
+/* Navigation and other classes from old version */
+.navigation-bar {
+  background: rgba(10, 15, 44, 0.95);
+  border-bottom: 2px solid #00ffff;
+  box-shadow: 0 4px 30px rgba(0, 255, 255, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-@keyframes glitch {
-  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
-  50% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
-  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
+.nav-btn {
+  color: #e0e7ff;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+  font-weight: bold;
 }
 
-/* Mobile adjustments */
+.nav-btn:hover, .nav-btn.active {
+  background: #00ffff;
+  color: #0a0f2c;
+  box-shadow: 0 0 30px #00ffff;
+}
+
+/* Mobile fixes from old version */
 @media (max-width: 768px) {
   h1 { font-size: 2.5rem; }
   .metric-value { font-size: 3rem; }
-  .grid, .stats-grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
 }
