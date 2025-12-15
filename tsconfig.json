@@ -15,7 +15,9 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]   // ← Changed from ./src/* to ./*
+      "@/*": ["./src/*"],                    // Keep this for app/, pages/, etc. inside src (if you have any)
+      "@/components/*": ["./components/*"],  // This catches your UI components at root
+      "@/ui/*": ["./components/ui/*"]        // Optional: even cleaner for UI
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
