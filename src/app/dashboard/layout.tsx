@@ -1,5 +1,5 @@
 // src/app/dashboard/layout.tsx
-import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function DashboardLayout({
   children,
@@ -9,7 +9,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen pb-20 md:pb-0"> {/* pb-20 gives space for mobile bottom nav */}
       {children}
-      <MobileBottomNav />
+      <MobileNav />
     </div>
   );
 }
