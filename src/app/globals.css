@@ -4,25 +4,92 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-.glow-title {
+html, body, #__next {
+  height: 100%;
+  background: linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%);
+  color: #e0e7ff;
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Strong Neon Glows */
+.glow-strong {
   text-shadow: 
+    0 0 10px #00ffff,
     0 0 20px #00ffff,
     0 0 40px #00ffff,
-    0 0 60px #00ffff,
-    0 0 80px #00ffff,
-    0 0 100px #00ffff;
+    0 0 80px #00ffff;
 }
 
-.glow-number {
+.glow-medium {
   text-shadow: 
-    0 0 30px #00ffff,
-    0 0 60px #00ffff,
-    0 0 90px #00ffff,
-    0 0 120px #00ffff;
+    0 0 10px #00ffff,
+    0 0 20px #00ffff,
+    0 0 40px #00ffff;
 }
 
-@layer base {
-  body {
-    font-family: 'Orbitron', sans-serif;
-  }
+.glow-soft {
+  text-shadow: 0 0 15px #00ffff;
+}
+
+.glitch {
+  animation: glitch 1.5s infinite;
+}
+
+@keyframes glitch {
+  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
+  50% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
+  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
+}
+
+/* Metric Bubbles */
+.metric-card {
+  background: rgba(0, 255, 255, 0.05);
+  border: 2px solid #00ffff;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+  margin: 1rem 0;
+}
+
+.metric-value {
+  font-size: 4rem;
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 20px #00ffff;
+}
+
+/* Buttons */
+.cyber-btn {
+  background: linear-gradient(45deg, #00ffff, #00bfff);
+  color: #0a0f2c;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: bold;
+  box-shadow: 0 0 30px #00ffff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cyber-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 50px #00ffff;
+}
+
+/* AI Insight Box */
+.ai-insight {
+  background: rgba(0, 255, 255, 0.1);
+  border: 2px solid #00ffff;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  margin: 2rem 0;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+/* Mobile fixes */
+@media (max-width: 768px) {
+  h1 { font-size: 2.5rem; }
+  .metric-value { font-size: 3rem; }
+  .grid { grid-template-columns: 1fr; }
 }
