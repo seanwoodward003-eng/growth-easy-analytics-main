@@ -1,26 +1,14 @@
-import "@/app/globals.css";
-import { Header } from "@/components/layout/Header";
-import { MobileNav } from "@/components/layout/MobileNav";
+import { Sidebar } from "@/components/layout/Sidebar";
 
-export const metadata = {
-  title: "GrowthEasy AI",
-  description: "AI Growth Analytics for Shopify",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="font-orbitron min-h-screen bg-gradient-to-br from-cyber-bg to-black text-cyber-text antialiased">
-        <Header />
-        <main className="pt-20 lg:pt-24 pb-24 lg:pb-8"> {/* Space for fixed header & mobile nav */}
+    <div className="min-h-screen bg-gradient-to-br from-cyber-bg to-[#1a1f3d]">
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full">
           {children}
         </main>
-        <MobileNav />
-      </body>
-    </html>
+      </div>
+    </div>
   );
 }
