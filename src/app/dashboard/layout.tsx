@@ -1,6 +1,5 @@
 'use client';
 
-import { Sidebar } from "@/components/layout/Sidebar";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
