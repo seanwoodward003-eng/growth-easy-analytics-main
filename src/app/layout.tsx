@@ -1,81 +1,60 @@
-// src/app/layout.tsx
-import type { Metadata } from "next";
-import { Orbitron } from "next/font/google";
-import "./globals.css";
+import './globals.css';
+import { Orbitron } from 'next/font/google';
 
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-});
+const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
-export const metadata: Metadata = {
-  title: "GrowthEasy AI",
-  description: "AI-powered growth analytics for e-commerce",
+export const metadata = {
+  title: 'GrowthEasy AI',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
-        {/* Fixed Top Bar */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-xl border-b-4 border-cyan-400 shadow-2xl shadow-cyan-400/30">
-          <div className="px-6 py-8 flex items-center justify-between">
-            <h1 className="text-5xl md:text-7xl font-black text-cyan-400 glow-strong glitch">
+      <body className={orbitron.className}>
+        {/* Top Bar */}
+        <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(10,15,44,0.95)', backdropFilter: 'blur(10px)', borderBottom: '4px solid #00ffff', padding: '20px' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 style={{ fontSize: '60px', fontWeight: '900', color: '#00ffff', textShadow: '0 0 40px #00ffff' }}>
               GrowthEasy AI
             </h1>
-            <button id="menuBtn" className="px-10 py-5 border-4 border-cyan-400 rounded-full text-3xl font-bold text-cyan-400 glow-medium bg-transparent hover:bg-cyan-400 hover:text-black transition-all duration-300 hover:scale-105">
+            <button id="menuBtn" style={{ background: 'transparent', border: '4px solid #00ffff', color: '#00ffff', padding: '16px 40px', borderRadius: '50px', fontSize: '28px', cursor: 'pointer' }}>
               Menu
             </button>
           </div>
         </header>
 
-        {/* Mobile Slide-In Menu */}
-        <div id="mobileMenu" className="fixed top-0 right-0 w-80 h-full bg-[#0a0f2c]/98 backdrop-blur-2xl z-50 transform translate-x-full transition-transform duration-500 ease-in-out border-l-4 border-cyan-400 pt-32 px-8 overflow-y-auto">
-          <div className="space-y-6">
-            <a href="/dashboard" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Dashboard</a>
-            <a href="/dashboard/acquisition" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Acquisition</a>
-            <a href="/dashboard/churn" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Churn</a>
-            <a href="/dashboard/retention" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Retention</a>
-            <a href="/dashboard/revenue" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Revenue</a>
-            <a href="/dashboard/performance" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">Performance</a>
-            <a href="/about" className="block text-4xl font-medium text-cyan-300 py-5 border-b-2 border-cyan-600/50 hover:text-cyan-100 transition">About</a>
-            <button className="w-full text-left text-4xl font-medium text-red-400 py-5 hover:text-red-300 transition">Logout</button>
-          </div>
+        {/* Mobile Menu */}
+        <div id="mobileMenu" style={{ position: 'fixed', top: 0, right: 0, width: '300px', height: '100%', background: '#0a0f2c', zIndex: 60, transform: 'translateX(100%)', transition: 'transform 0.4s ease', borderLeft: '4px solid #00ffff', paddingTop: '120px', paddingLeft: '40px' }}>
+          <a href="/" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Dashboard</a>
+          <a href="/churn" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Churn</a>
+          <a href="/revenue" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Revenue</a>
+          <a href="/acquisition" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Acquisition</a>
+          <a href="/retention" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Retention</a>
+          <a href="/performance" style={{ display: 'block', fontSize: '32px', color: '#00ffff', margin: '20px 0' }}>Performance</a>
+          <button style={{ display: 'block', fontSize: '32px', color: '#ff4444', background: 'none', border: 'none', margin: '40px 0', cursor: 'pointer' }}>Logout</button>
         </div>
 
-        {/* Overlay */}
-        <div id="overlay" className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40 hidden"></div>
-
-        <main className="pt-32 px-6 pb-20">
+        <main style={{ paddingTop: '140px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '1400px', margin: '0 auto' }}>
           {children}
         </main>
 
-        {/* Mobile Menu Script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.addEventListener('DOMContentLoaded', () => {
-                const btn = document.getElementById('menuBtn');
-                const menu = document.getElementById('mobileMenu');
-                const overlay = document.getElementById('overlay');
-
-                btn.onclick = () => {
-                  menu.classList.toggle('translate-x-full');
-                  overlay.classList.toggle('hidden');
-                };
-
-                overlay.onclick = () => {
-                  menu.classList.add('translate-x-full');
-                  overlay.classList.add('hidden');
-                };
-              });
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('menuBtn');
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:40;display:none;backdrop-filter:blur(10px);';
+            document.body.appendChild(overlay);
+            btn.onclick = () => {
+              menu.style.transform = menu.style.transform === 'translateX(0%)' ? 'translateX(100%)' : 'translateX(0%)';
+              overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+            };
+            overlay.onclick = () => {
+              menu.style.transform = 'translateX(100%)';
+              overlay.style.display = 'none';
+            };
+          });
+        ` }} />
       </body>
     </html>
   );
