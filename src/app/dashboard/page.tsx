@@ -1,7 +1,7 @@
 'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import MetricCard from "@/components/ui/MetricCard";
+import { MetricCard } from "@/components/ui/MetricCard";
 
 const revenueData = [
   { week: 'Week 1', value: 11500 },
