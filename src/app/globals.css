@@ -4,26 +4,14 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-/* Your exact old cyberpunk style — this restores the look */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 html, body, #__next {
   height: 100%;
-  background: #0a0f2c;
+  background: linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%);
   color: #e0e7ff;
   font-family: 'Orbitron', sans-serif;
 }
 
-body {
-  background: linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%);
-  line-height: 1.6;
-}
-
-/* Glow classes */
+/* Glow */
 .glow-strong {
   text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 80px #00ffff;
 }
@@ -42,6 +30,70 @@ body {
   100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
 }
 
-/* Bubble metric cards */
-.metric-card {
+/* Metric Bubbles (your old "bubbles") */
+.metric-bubble {
   background: rgba(0, 255, 255, 0.05);
+  border: 4px solid #00ffff;
+  border-radius: 30px;
+  padding: 3rem;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+  margin: 2rem 0;
+  backdrop-filter: blur(10px);
+}
+
+.metric-value {
+  font-size: 5rem;
+  font-weight: 900;
+  color: #00ffff;
+  text-shadow: 0 0 30px #00ffff;
+}
+
+/* Buttons (your old rounded glowing buttons) */
+.cyber-btn {
+  background: linear-gradient(45deg, #00ffff, #00bfff);
+  color: #0a0f2c;
+  padding: 1.2rem 2.5rem;
+  border-radius: 50px;
+  font-weight: bold;
+  font-size: 1.5rem;
+  box-shadow: 0 0 30px #00ffff;
+  transition: all 0.3s;
+}
+
+.cyber-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 50px #00ffff;
+}
+
+/* AI Chat Box */
+.ai-chat-box {
+  background: rgba(0, 255, 255, 0.1);
+  border: 3px solid #00ffff;
+  border-radius: 30px;
+  padding: 2rem;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+  margin: 3rem 0;
+}
+
+/* Navigation Buttons (your old style) */
+.nav-btn {
+  color: #e0e7ff;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  transition: all 0.3s;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.nav-btn:hover, .nav-btn.active {
+  background: #00ffff;
+  color: #0a0f2c;
+  box-shadow: 0 0 30px #00ffff;
+}
+
+/* Mobile fixes */
+@media (max-width: 768px) {
+  .metric-value { font-size: 3.5rem; }
+  h1 { font-size: 3rem; }
+}
