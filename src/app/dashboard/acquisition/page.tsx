@@ -3,6 +3,7 @@
 import useMetrics from "@/hooks/useMetrics";
 import { AcquisitionChart } from "@/components/charts/AcquisitionChart";
 import { CostTrendChart } from "@/components/charts/CostTrendChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function AcquisitionPage() {
   const { metrics, isLoading, isError } = useMetrics();
@@ -16,18 +17,19 @@ export default function AcquisitionPage() {
         Acquisition
       </h1>
 
-      {/* Top Channel & CAC */}
-      <div className="max-w-4xl mx-auto mb-20 text-center">
-        <p className="text-4xl text-cyan-300 mb-4">Top Channel</p>
-        <p className="metric-value">{metrics.acquisition?.top_channel || 'Organic'}</p>
-        <p className="text-4xl text-cyan-300 mt-8">Acquisition Cost</p>
-        <p className="metric-value">£{metrics.acquisition?.cac || 87}</p>
+      <div className="max-w-4xl mx-auto text-center mb-20">
+        <p className="text-5xl text-cyan-300 mb-4">Top Channel</p>
+        <p className="metric-value text-7xl">{metrics.acquisition?.top_channel || 'Organic'}</p>
+        <p className="text-5xl text-cyan-300 mt-8">Acquisition Cost</p>
+        <p className="metric-value text-7xl">£{metrics.acquisition?.cac || 87}</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-10 max-w-7xl mx-auto">
+      <div className="grid lg:grid-cols-2 gap-10 max-w-7xl mx-auto mb-20">
         <AcquisitionChart />
         <CostTrendChart />
       </div>
+
+      <AIInsights />
     </div>
   );
 }
