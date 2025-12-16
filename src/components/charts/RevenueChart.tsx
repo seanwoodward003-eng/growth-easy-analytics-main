@@ -26,13 +26,13 @@ const allData = {
     { date: 'Nov', value: 11500 },
     { date: 'Dec', value: 12700 },
   ],
-};
+} as const;
 
-const currency = '£'; // Can be dynamic later: const currency = storeCurrency === 'GBP' ? '£' : storeCurrency === 'EUR' ? '€' : '$';
+const currency = '£';
 
 export function RevenueChart() {
-  const [range, setRange] = useState('30');
-  const data = allData[range];
+  const [range, setRange] = useState<'7' | '30' | '90'>('30');
+  const data = allData[range] ?? [];
 
   return (
     <div className="bg-cyber-card/60 border-4 border-cyber-neon rounded-3xl p-6 md:p-10 shadow-2xl shadow-cyber-neon/50">
@@ -42,7 +42,7 @@ export function RevenueChart() {
         </h3>
         <select
           value={range}
-          onChange={(e) => setRange(e.target.value)}
+          onChange={(e) => setRange(e.target.value as '7' | '30' | '90')}
           className="mt-4 md:mt-0 bg-transparent border-2 border-cyber-neon rounded-full px-6 py-3 text-cyan-300 text-lg glow-soft"
         >
           <option value="7">Last 7 days</option>
@@ -58,7 +58,7 @@ export function RevenueChart() {
           <YAxis stroke="#00ffff" tick={{ fill: '#00ffff' }} tickFormatter={(value) => `${currency}${value.toLocaleString()}`} />
           <Tooltip 
             contentStyle={{ backgroundColor: '#0a0f2c', border: '2px solid #00ffff', borderRadius: '12px' }}
-            formatter={(value) => [`${currency}${Number(value).toLocaleString()}`, 'Revenue']}
+            formatter={(value: number) => [`${currency}${value.toLocaleString()}`, 'Revenue']}
             labelStyle={{ color: '#00ffff' }}
           />
           <Line type="monotone" dataKey="value" stroke="#00ffff" strokeWidth={5} dot={{ fill: '#00ffff', r: 8 }} activeDot={{ r: 12 }} />
