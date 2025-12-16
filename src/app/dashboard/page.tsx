@@ -1,20 +1,37 @@
 'use client';
- 
-import { MetricCard } from "@/components/ui/MetricCard";
-import { RevenueChart } from "@/components/charts/RevenueChart";
+
 import useMetrics from "@/hooks/useMetrics";
+import { RevenueChart } from "@/components/charts/RevenueChart";
 
 export default function Dashboard() {
-  const { data, isLoading } = useMetrics();
+  const { metrics, isLoading, isError } = useMetrics();
+
+  if (isLoading) {
+    return (
+      <div className="text-center text-4xl mt-40 text-cyan-300 glow-medium">
+        Loading real-time data...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center text-3xl mt-40 text-red-400 glow-medium">
+        Unable to load data — please connect your accounts
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
-      {/* Demo mode banner */}
-      <p className="text-center text-cyan-300 text-xl sm:text-2xl md:text-3xl mb-12 glow-medium">
-        AI: Demo mode – connect accounts for real data.
-      </p>
+      {/* Demo mode banner only if no real data */}
+      {!metrics?.revenue?.total && (
+        <p className="text-center text-cyan-300 text-xl sm:text-2xl md:text-3xl mb-12 glow-medium">
+          AI: Demo mode – connect accounts for real data.
+        </p>
+      )}
 
-      {/* Your Profile Section */}
+      {/* Your Profile */}
       <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
         Your Profile
       </h2>
@@ -45,43 +62,39 @@ export default function Dashboard() {
         Checking connections...
       </p>
 
-      {/* Metrics Section */}
+      {/* Metrics */}
       <div className="max-w-7xl mx-auto mb-20">
-        {isLoading ? (
-          <p className="text-center text-4xl text-cyan-300 glow-medium">Loading real-time data...</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div className="metric-bubble">
-              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Revenue</h3>
-              <p className="metric-value">
-                £{data?.revenue?.total?.toLocaleString() || '12,700'}
-              </p>
-              <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
-                {data?.revenue?.trend || '+6% (demo)'}
-              </p>
-            </div>
-
-            <div className="metric-bubble">
-              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
-              <p className="metric-value text-red-400">
-                {data?.churn?.rate || '3.2'}%
-              </p>
-              <p className="text-3xl sm:text-4xl text-red-400 mt-6 glow-medium">
-                {data?.churn?.at_risk || '18'} at risk
-              </p>
-            </div>
-
-            <div className="metric-bubble">
-              <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
-              <p className="metric-value text-green-400">
-                {data?.performance?.ratio || '3.4'}:1
-              </p>
-              <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
-                Healthy
-              </p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="metric-bubble">
+            <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Revenue</h3>
+            <p className="metric-value">
+              £{(metrics.revenue?.total || 12700).toLocaleString()}
+            </p>
+            <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
+              {metrics.revenue?.trend || '+6% (demo)'}
+            </p>
           </div>
-        )}
+
+          <div className="metric-bubble">
+            <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
+            <p className="metric-value text-red-400">
+              {metrics.churn?.rate || 3.2}%
+            </p>
+            <p className="text-3xl sm:text-4xl text-red-400 mt-6 glow-medium">
+              {metrics.churn?.at_risk || 18} at risk
+            </p>
+          </div>
+
+          <div className="metric-bubble">
+            <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
+            <p className="metric-value text-green-400">
+              {metrics.performance?.ratio || '3.4'}:1
+            </p>
+            <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
+              Healthy
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Revenue Chart */}
