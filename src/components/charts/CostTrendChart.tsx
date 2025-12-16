@@ -15,9 +15,15 @@ const allData = {
   ],
 } as const;
 
+// Define mutable types for Recharts
+type CostDataPoint = { month: string; cost: number };
+type CostData = CostDataPoint[];
+
 export function CostTrendChart() {
   const [range, setRange] = useState<'30' | '90'>('30');
-  const data = allData[range] ?? [];
+  
+  // Spread to create a new mutable array — removes readonly
+  const data: CostData = [...allData[range]] as CostData;
 
   return (
     <div className="bg-cyber-card/60 border-4 border-purple-500 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-500/50">
@@ -41,7 +47,14 @@ export function CostTrendChart() {
           <XAxis dataKey="month" stroke="#9b59b6" />
           <YAxis stroke="#9b59b6" tickFormatter={(value) => `£${value}`} />
           <Tooltip contentStyle={{ background: '#0a0f2c', border: '2px solid #9b59b6' }} />
-          <Area type="monotone" dataKey="cost" stroke="#9b59b6" fill="#9b59b6" fillOpacity={0.4} strokeWidth={5} />
+          <Area 
+            type="monotone" 
+            dataKey="cost" 
+            stroke="#9b59b6" 
+            fill="#9b59b6" 
+            fillOpacity={0.4} 
+            strokeWidth={5} 
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
