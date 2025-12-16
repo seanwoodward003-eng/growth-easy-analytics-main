@@ -2,6 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function Dashboard() {
   const { metrics, isLoading, isError } = useMetrics();
@@ -24,14 +25,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
-      {/* Demo mode banner only if no real data */}
-      {!metrics?.revenue?.total && (
+      {metrics.revenue?.trend?.includes('demo') && (
         <p className="text-center text-cyan-300 text-xl sm:text-2xl md:text-3xl mb-12 glow-medium">
           AI: Demo mode – connect accounts for real data.
         </p>
       )}
 
-      {/* Your Profile */}
       <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
         Your Profile
       </h2>
@@ -44,7 +43,6 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Connect Accounts */}
       <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-8">
         Connect Your Accounts
       </h2>
@@ -62,7 +60,6 @@ export default function Dashboard() {
         Checking connections...
       </p>
 
-      {/* Metrics */}
       <div className="max-w-7xl mx-auto mb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="metric-bubble">
@@ -97,8 +94,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Revenue Chart */}
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto mb-20">
         <h3 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl mb-10">
           Revenue Trend
         </h3>
@@ -106,6 +102,8 @@ export default function Dashboard() {
           <RevenueChart />
         </div>
       </div>
+
+      <AIInsights />
     </div>
   );
 }
