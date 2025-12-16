@@ -1,24 +1,23 @@
-"use client";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+'use client';
+
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+const data = [ /* your data */ ];
 
 export function RevenueChart() {
-  const data = [
-    { name: "Week 1", revenue: 11500 },
-    { name: "Week 2", revenue: 12000 },
-    { name: "Week 3", revenue: 12400 },
-    { name: "Week 4", revenue: 12700 },
-  ];
-
   return (
-    <div className="bg-cyber-card/60 border border-cyber-neon rounded-2xl p-8">
-      <h2 className="text-3xl font-bold text-green-400 mb-6">Revenue Trend</h2>
-      <ResponsiveContainer width="100%" height={420}>
+    <div className="bg-cyber-card/80 border-4 border-cyber-neon rounded-3xl p-8 shadow-2xl shadow-cyber-neon/50">
+      <h3 className="text-4xl font-bold text-cyber-neon mb-8 text-center">Revenue Trend</h3>
+      <ResponsiveContainer width="100%" height={450}>
         <LineChart data={data}>
-          <CartesianGrid stroke="#334455" />
-          <XAxis dataKey="name" stroke="#00ffff" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#334455" />
+          <XAxis dataKey="week" stroke="#00ffff" />
           <YAxis stroke="#00ffff" />
-          <Tooltip contentStyle={{ background: "#0a0f2c", border: "1px solid #00ffff" }} />
-          <Line type="monotone" dataKey="revenue" stroke="#2ecc71" strokeWidth={5} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#0a0f2c', border: '2px solid #00ffff', borderRadius: '12px' }}
+            labelStyle={{ color: '#00ffff' }}
+          />
+          <Line type="monotone" dataKey="value" stroke="#00ffff" strokeWidth={6} dot={{ fill: '#00ffff', r: 8 }} activeDot={{ r: 12 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
