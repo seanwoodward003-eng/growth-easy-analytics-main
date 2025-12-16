@@ -1,5 +1,5 @@
 'use client';
-
+ 
 import { MetricCard } from "@/components/ui/MetricCard";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import useMetrics from "@/hooks/useMetrics";
