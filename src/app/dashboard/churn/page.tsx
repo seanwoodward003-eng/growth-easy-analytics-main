@@ -1,23 +1,32 @@
-// src/app/dashboard/churn/page.tsx
-import { ChurnChart } from "@/components/charts/ChurnChart";
-import dynamic from "next/dynamic";
+'use client';
 
-// Dynamically load the client-side metrics component
-const ChurnMetrics = dynamic(
-  () => import("@/components/ChurnMetrics").then((mod) => mod.ChurnMetrics),
-  // This prevents prerender error
-);
+import useMetrics from "@/hooks/useMetrics";
+import { ChurnChart } from "@/components/charts/ChurnChart";
 
 export default function ChurnPage() {
+  const { metrics, isLoading, isError } = useMetrics();
+
+  if (isLoading) return <div className="text-center text-4xl mt-40 text-cyan-300 glow-medium">Loading data...</div>;
+  if (isError) return <div className="text-center text-red-400 text-3xl mt-40">Check connections</div>;
+
   return (
-    <>
-      <h1 className="text-7xl font-bold text-red-400 text-center mb-12 glitch" data-text="CHURN RATE">
+    <div className="px-6 py-20">
+      <h1 className="glow-title text-center text-7xl md:text-9xl font-black mb-16 text-red-400 glitch" data-text="CHURN RATE">
         CHURN RATE
       </h1>
 
-      <ChurnMetrics />
+      <div className="max-w-4xl mx-auto text-center mb-20">
+        <p className="metric-value text-red-400 text-8xl">
+          {metrics.churn?.rate || 3.2}%
+        </p>
+        <p className="text-4xl text-red-400 mt-8 glow-medium">
+          {metrics.churn?.at_risk || 18} customers at risk
+        </p>
+      </div>
 
-      <ChurnChart />
-    </>
+      <div className="max-w-5xl mx-auto">
+        <ChurnChart />
+      </div>
+    </div>
   );
 }
