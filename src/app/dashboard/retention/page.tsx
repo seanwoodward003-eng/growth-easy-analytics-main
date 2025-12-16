@@ -2,6 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RetentionChart } from "@/components/charts/RetentionChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function RetentionPage() {
   const { metrics, isLoading, isError } = useMetrics();
@@ -22,9 +23,11 @@ export default function RetentionPage() {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto mb-20">
         <RetentionChart />
       </div>
+
+      <AIInsights />
     </div>
   );
 }
