@@ -1,6 +1,7 @@
 import "./globals.css";
 import '../styles/charts.css'; // Tailwind for charts only
 import { Orbitron } from 'next/font/google';
+import { AICoach } from "@/components/AICoach"; // <-- ADD THIS IMPORT
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -20,7 +21,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
-        {/* Fixed Top Header - always at the very top */}
+        {/* Fixed Top Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
           <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
             <h1 className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
@@ -46,10 +47,13 @@ export default function RootLayout({
           </div>
         </div>
 
-        {/* Main content - starts below fixed header */}
-        <main className="pt-32 px-6 pb-20">
+        {/* Main content */}
+        <main className="pt-32 px-6 pb-40"> {/* pb-40 to make room for fixed AI Coach */}
           {children}
         </main>
+
+        {/* AI Growth Coach — fixed at bottom on EVERY page */}
+        <AICoach />
 
         {/* Mobile Menu Script */}
         <script
