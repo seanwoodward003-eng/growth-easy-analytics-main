@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
+import '../styles/charts.css';  // Only loads Tailwind for pages that import charts
+
 
 export const metadata = {
   title: "GrowthEasy AI",
