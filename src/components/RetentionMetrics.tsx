@@ -15,7 +15,6 @@ export function RevenueMetrics() {
 
   return (
     <>
-      {/* Example layout — adjust to match your design */}
       <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto mb-12">
         <div className="bg-cyber-card border-2 border-green-500 rounded-2xl p-10 text-center">
           <h3 className="text-3xl mb-4">Monthly Revenue</h3>
