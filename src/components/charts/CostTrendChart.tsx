@@ -13,11 +13,11 @@ const allData = {
     { month: "Nov", cost: 95 },
     { month: "Dec", cost: 87 },
   ],
-} as const; // Optional but helpful – makes keys readonly literals
+} as const;
 
 export function CostTrendChart() {
-  const [range, setRange] = useState<'30' | '90'>('30'); // This is the key fix
-  const data = allData[range];
+  const [range, setRange] = useState<'30' | '90'>('30');
+  const data = allData[range] ?? [];
 
   return (
     <div className="bg-cyber-card/60 border-4 border-purple-500 rounded-3xl p-6 md:p-10 shadow-2xl shadow-purple-500/50">
@@ -27,7 +27,7 @@ export function CostTrendChart() {
         </h2>
         <select
           value={range}
-          onChange={(e) => setRange(e.target.value as '30' | '90')} // Also type-assert here for safety
+          onChange={(e) => setRange(e.target.value as '30' | '90')}
           className="mt-4 md:mt-0 bg-transparent border-2 border-purple-500 rounded-full px-6 py-3 text-purple-300 text-lg"
         >
           <option value="30">Last 30 days</option>
