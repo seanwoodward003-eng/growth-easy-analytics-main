@@ -1,63 +1,101 @@
-// src/app/pricing/page.tsx
-import Link from "next/link";
+'use client';
 
-export const metadata = {
-  title: "Pricing • GrowthEasy AI",
-  description: "£29.99/mo • 7-day free trial • Cancel anytime",
-};
+import { useState, useEffect } from 'react';
 
-export default function PricingPage() {
+const LTD_EARLY_BIRD_LIMIT = 400;
+const LTD_TOTAL_LIMIT = 1000;
+
+export default function Pricing() {
+  const [earlyBirdSold, setEarlyBirdSold] = useState(0); // fetch from backend later
+  const [totalLTDsSold, setTotalLTDsSold] = useState(0);
+
+  // In real app, fetch from your back-end API
+  useEffect(() => {
+    // Example mock fetch — replace with real /api/pricing/counters
+    setEarlyBirdSold(312); // demo
+    setTotalLTDsSold(712);
+  }, []);
+
+  const earlyBirdLeft = LTD_EARLY_BIRD_LIMIT - earlyBirdSold;
+  const totalLeft = LTD_TOTAL_LIMIT - totalLTDsSold;
+  const showEarlyBird = earlyBirdSold < LTD_EARLY_BIRD_LIMIT;
+  const showLTD = totalLTDsSold < LTD_TOTAL_LIMIT;
+
   return (
-    <main className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-cyber-bg via-[#0f1a3d] to-black">
-      <div className="text-center max-w-4xl">
-        {/* Main Pricing Card */}
-        <div className="bg-black/60 backdrop-blur-2xl border-4 border-cyber-neon rounded-3xl p-16 shadow-2xl shadow-cyan-500/20">
-          <h1 className="text-8xl md:text-9xl font-black text-cyber-neon animate-glitch mb-8 tracking-tighter">
-            £29.<span className="text-6xl">99</span>
-            <span className="text-4xl opacity-80">/mo</span>
-          </h1>
+    <div className="min-h-screen px-6 py-20 text-center">
+      <h1 className="glow-title text-6xl md:text-8xl font-black mb-16">
+        Upgrade Plan
+      </h1>
 
-          <div className="space-y-6 text-2xl md:text-3xl text-cyan-300 mb-16">
-            <p>7-day free trial</p>
-            <p>No card required</p>
-            <p>Cancel anytime</p>
+      <div className="max-w-5xl mx-auto space-y-16">
+        {/* Early Bird Lifetime */}
+        {showEarlyBird && (
+          <div className="metric-bubble">
+            <h2 className="text-5xl md:text-6xl font-bold mb-4">
+              Early Bird Lifetime Deal
+            </h2>
+            <p className="text-7xl md:text-8xl font-black text-cyan-400 glow-number mb-6">
+              £67
+            </p>
+            <p className="text-3xl text-red-400 mb-8">
+              Only {earlyBirdLeft} left!
+            </p>
+            <button className="cyber-btn text-3xl px-12 py-6">
+              Buy Lifetime £67 (One-time)
+            </button>
           </div>
+        )}
 
-          <Link
-            href="/login"
-            className="inline-block bg-cyber-neon text-black px-20 py-8 rounded-2xl text-4xl font-black hover:scale-110 hover:shadow-cyan-500/50 transition-all duration-300 shadow-2xl"
-          >
-            Start Free Trial
-          </Link>
+        {/* Regular Lifetime */}
+        {showLTD && !showEarlyBird && (
+          <div className="metric-bubble">
+            <h2 className="text-5xl md:text-6xl font-bold mb-4">
+              Lifetime Deal
+            </h2>
+            <p className="text-7xl md:text-8xl font-black text-cyan-400 glow-number mb-6">
+              £97
+            </p>
+            <p className="text-3xl text-red-400 mb-8">
+              Only {totalLeft} lifetime deals left ever
+            </p>
+            <button className="cyber-btn text-3xl px-12 py-6">
+              Buy Lifetime £97 (One-time)
+            </button>
+          </div>
+        )}
 
-          <p className="text-cyan-500 text-lg mt-10 opacity-70">
-            One price. Unlimited stores. All features forever.
+        {/* Monthly */}
+        <div className="metric-bubble">
+          <h2 className="text-5xl md:text-6xl font-bold mb-4">Monthly</h2>
+          <p className="text-4xl line-through text-gray-500 mb-2">£37/month</p>
+          <p className="text-7xl md:text-8xl font-black text-cyan-400 glow-number">
+            £1 <span className="text-4xl">first 7 days</span>
           </p>
+          <p className="text-3xl mt-6 mb-8">Then £37/month</p>
+          <button className="cyber-btn text-3xl px-12 py-6">
+            Start £1 Trial
+          </button>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mt-20">
-          {[
-            "Real-time Shopify + GA4 + HubSpot",
-            "AI-powered growth insights",
-            "Churn prediction & win-back",
-            "Revenue forecasting",
-            "Unlimited team members",
-            "24-hour support",
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="bg-cyber-card/40 border-2 border-cyber-neon rounded-2xl p-8 text-xl backdrop-blur-sm hover:border-cyan-300 transition"
-            >
-              {feature}
-            </div>
-          ))}
+        {/* Annual */}
+        <div className="metric-bubble">
+          <h2 className="text-5xl md:text-6xl font-bold mb-4">Annual <span className="text-green-400 text-4xl">(Save 33%)</span></h2>
+          <p className="text-4xl line-through text-gray-500 mb-2">£444/year</p>
+          <p className="text-7xl md:text-8xl font-black text-cyan-400 glow-number">
+            £1 <span className="text-4xl">first 7 days</span>
+          </p>
+          <p className="text-3xl mt-6 mb-8">Then £297/year</p>
+          <button className="cyber-btn text-3xl px-12 py-6">
+            Start £1 Trial
+          </button>
         </div>
-
-        <p className="text-center text-cyan-600 text-xl mt-20 opacity-60">
-          Built for winners • 2025
-        </p>
       </div>
-    </main>
+
+      {/* Small print */}
+      <p className="text-xl md:text-2xl text-gray-400 mt-20 max-w-4xl mx-auto leading-relaxed">
+        Lifetime = current version forever + bug fixes. After we close lifetime deals, you get 12 months of all future features free. After that, upgrade or stay on your version forever.<br /><br />
+        Try Monthly or Annual for 7 days at £1 – full access, then auto-billed your selected plan. (card required)
+      </p>
+    </div>
   );
 }
