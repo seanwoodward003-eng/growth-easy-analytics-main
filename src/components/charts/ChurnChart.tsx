@@ -25,11 +25,11 @@ const demoData = {
     { date: 'Nov', rate: 4.2 },
     { date: 'Dec', rate: 3.2 },
   ],
-};
+} as const;
 
 export function ChurnChart() {
   const [range, setRange] = useState<'7' | '30' | '90'>('30');
-  const data = demoData[range];
+  const data = demoData[range] ?? [];
 
   return (
     <div className="bg-cyber-card/60 border-4 border-red-500 rounded-3xl p-6 md:p-10 shadow-2xl shadow-red-500/50">
