@@ -2,6 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { PerformanceChart } from "@/components/charts/PerformanceChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function PerformancePage() {
   const { metrics, isLoading, isError } = useMetrics();
@@ -22,9 +23,11 @@ export default function PerformancePage() {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto mb-20">
         <PerformanceChart />
       </div>
+
+      <AIInsights />
     </div>
   );
 }
