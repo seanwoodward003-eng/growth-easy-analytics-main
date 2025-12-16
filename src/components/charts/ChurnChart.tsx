@@ -28,7 +28,7 @@ const demoData = {
 } as const;
 
 export function ChurnChart() {
-  const [range, setRange] = useState<'7' | '30' | '90'>('30');
+  const [range, setRange] = useState<'7' | '30' | '90'>('7'); // ← Changed to '7' so Dec 9–15 shows by default
   const data = demoData[range] ?? [];
 
   return (
@@ -53,8 +53,18 @@ export function ChurnChart() {
           <CartesianGrid strokeDasharray="3 3" stroke="#334455" />
           <XAxis dataKey="date" stroke="#e74c3c" />
           <YAxis stroke="#e74c3c" tickFormatter={(value) => `${value}%`} />
-          <Tooltip contentStyle={{ backgroundColor: '#0a0f2c', border: '2px solid #e74c3c', borderRadius: '12px' }} formatter={(value: number) => `${value}%`} />
-          <Line type="monotone" dataKey="rate" stroke="#e74c3c" strokeWidth={6} dot={{ fill: '#e74c3c', r: 8 }} activeDot={{ r: 12 }} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#0a0f2c', border: '2px solid #e74c3c', borderRadius: '12px' }} 
+            formatter={(value: number) => `${value}%`} 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="rate" 
+            stroke="#e74c3c" 
+            strokeWidth={6} 
+            dot={{ fill: '#e74c3c', r: 8 }} 
+            activeDot={{ r: 12 }} 
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
