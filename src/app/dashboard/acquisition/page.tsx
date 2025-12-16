@@ -1,25 +1,33 @@
-// src/app/dashboard/acquisition/page.tsx
+'use client';
+
+import useMetrics from "@/hooks/useMetrics";
 import { AcquisitionChart } from "@/components/charts/AcquisitionChart";
 import { CostTrendChart } from "@/components/charts/CostTrendChart";
-import dynamic from "next/dynamic";
-
-// Dynamically import a client component that uses the hook
-const AcquisitionMetrics = dynamic(
-  () => import("@/components/AcquisitionMetrics").then((mod) => mod.AcquisitionMetrics),
-
-);
 
 export default function AcquisitionPage() {
+  const { metrics, isLoading, isError } = useMetrics();
+
+  if (isLoading) return <div className="text-center text-4xl mt-40 text-cyan-300 glow-medium">Loading data...</div>;
+  if (isError) return <div className="text-center text-red-400 text-3xl mt-40">Check connections</div>;
+
   return (
-    <>
-      <h1 className="text-5xl font-bold text-cyan-400 mb-10">Acquisition</h1>
+    <div className="px-6 py-20">
+      <h1 className="glow-title text-center text-6xl md:text-8xl font-black mb-16 text-cyan-400">
+        Acquisition
+      </h1>
 
-      <AcquisitionMetrics />
+      {/* Top Channel & CAC */}
+      <div className="max-w-4xl mx-auto mb-20 text-center">
+        <p className="text-4xl text-cyan-300 mb-4">Top Channel</p>
+        <p className="metric-value">{metrics.acquisition?.top_channel || 'Organic'}</p>
+        <p className="text-4xl text-cyan-300 mt-8">Acquisition Cost</p>
+        <p className="metric-value">£{metrics.acquisition?.cac || 87}</p>
+      </div>
 
-      <div className="grid lg:grid-cols-2 gap-10">
+      <div className="grid lg:grid-cols-2 gap-10 max-w-7xl mx-auto">
         <AcquisitionChart />
         <CostTrendChart />
       </div>
-    </>
+    </div>
   );
 }
