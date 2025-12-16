@@ -2,6 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function RevenuePage() {
   const { metrics, isLoading, isError } = useMetrics();
@@ -24,9 +25,11 @@ export default function RevenuePage() {
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto mb-20">
         <RevenueChart />
       </div>
+
+      <AIInsights />
     </div>
   );
 }
