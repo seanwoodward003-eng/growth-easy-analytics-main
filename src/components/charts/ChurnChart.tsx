@@ -27,9 +27,15 @@ const demoData = {
   ],
 } as const;
 
+// Extract the type but remove readonly
+type ChartDataPoint = { date: string; rate: number };
+type ChartData = ChartDataPoint[];
+
 export function ChurnChart() {
-  const [range, setRange] = useState<'7' | '30' | '90'>('7'); // ← Changed to '7' so Dec 9–15 shows by default
-  const data = demoData[range] ?? [];
+  const [range, setRange] = useState<'7' | '30' | '90'>('7');
+  
+  // Cast to mutable array — safe here because we never mutate the data
+  const data: ChartData = [...demoData[range]] as ChartData;
 
   return (
     <div className="bg-cyber-card/60 border-4 border-red-500 rounded-3xl p-6 md:p-10 shadow-2xl shadow-red-500/50">
