@@ -2,6 +2,7 @@ import "./globals.css";
 import '../styles/charts.css'; // Tailwind for charts only
 import { Orbitron } from 'next/font/google';
 import { AICoach } from "@/components/AICoach"; // AI Coach on all pages
+import { OnboardingModal } from "@/components/OnboardingModal"; // <-- Added
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -20,7 +21,10 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
-      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
+      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
+        {/* Onboarding Modal — renders on every page, at the very top */}
+        <OnboardingModal />
+
         {/* Fixed Top Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
           <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
