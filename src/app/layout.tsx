@@ -1,7 +1,7 @@
 import "./globals.css";
 import '../styles/charts.css'; // Tailwind for charts only
 import { Orbitron } from 'next/font/google';
-import { AICoach } from "@/components/AICoach"; // <-- ADD THIS IMPORT
+import { AICoach } from "@/components/AICoach"; // AI Coach on all pages
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -42,13 +42,14 @@ export default function RootLayout({
             <a href="/acquisition" className="block text-3xl text-cyan-300 py-4 border-b border-cyan-600/50">Acquisition</a>
             <a href="/retention" className="block text-3xl text-cyan-300 py-4 border-b border-cyan-600/50">Retention</a>
             <a href="/performance" className="block text-3xl text-cyan-300 py-4 border-b border-cyan-600/50">Performance</a>
-            <a href="/about" className="block text-3xl text-cyan-300 py-4">About</a>
+            <a href="/about" className="block text-3xl text-cyan-300 py-4 border-b border-cyan-600/50">About</a>
+            <a href="/privacy" className="block text-3xl text-cyan-300 py-4 border-b border-cyan-600/50">Privacy Policy</a>
             <button className="w-full text-left text-3xl text-red-400 py-4 bg-transparent border-none">Logout</button>
           </div>
         </div>
 
         {/* Main content */}
-        <main className="pt-32 px-6 pb-40"> {/* pb-40 to make room for fixed AI Coach */}
+        <main className="pt-32 px-6 pb-40"> {/* pb-40 for AI Coach space */}
           {children}
         </main>
 
