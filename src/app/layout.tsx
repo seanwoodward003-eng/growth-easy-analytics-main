@@ -10,11 +10,6 @@ import { useState } from 'react';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
-export const metadata = {
-  title: "GrowthEasy AI",
-  description: "AI Growth Analytics for Shopify",
-};
-
 export default function RootLayout({
   children,
 }: {
@@ -29,6 +24,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>GrowthEasy AI</title>
+        <meta name="description" content="AI Growth Analytics for Shopify" />
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
         {/* Fixed Header */}
