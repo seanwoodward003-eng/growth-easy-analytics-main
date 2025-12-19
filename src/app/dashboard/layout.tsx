@@ -11,26 +11,7 @@ export default function DashboardLayout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  /* const navItems = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Acquisition", href: "/dashboard/acquisition" },
-    { name: "Churn", href: "/dashboard/churn" },
-    { name: "Retention", href: "/dashboard/retention" },
-    { name: "Revenue", href: "/dashboard/revenue" },
-    { name: "Performance", href: "/dashboard/performance" },
-    { name: "AI Insights", href: "/dashboard/ai-insights" },
-    { name: "Profile", href: "/dashboard/profile" },
-  ]; */
-
-  /* return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%)' }}>
-      {/* Mobile Header */}
-      /*<header className="lg:hidden fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,255,255,0.4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem' }}>
-          <h1 className="glow-medium" style={{ fontSize: '2.5rem', fontWeight: '900', color: '#00ffff' }}>
-            GrowthEasy AI
-          </h1>*/
-
+  
           {/* Styled Mobile Menu Button - using your existing styles */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
