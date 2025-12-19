@@ -20,9 +20,9 @@ export default function DashboardLayout({
     { name: "Performance", href: "/dashboard/performance" },
     { name: "AI Insights", href: "/dashboard/ai-insights" },
     { name: "Profile", href: "/dashboard/profile" },
-  ];
+  ]; */
 
-  return (
+  /* return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%)' }}>
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,255,255,0.4)' }}>
