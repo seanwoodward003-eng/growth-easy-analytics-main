@@ -29,7 +29,7 @@ export default function RootLayout({
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
         {/* Fixed Header */}
-        /* <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
           <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
             <Link href="/dashboard" className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
               GrowthEasy AI
@@ -41,10 +41,10 @@ export default function RootLayout({
               Menu
             </button>
           </div>
-        </header> */
+        </header> 
 
         {/* Mobile Menu */}
-        /* {menuOpen && (
+        {menuOpen && (
           <>
             <div 
               className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
@@ -85,7 +85,7 @@ export default function RootLayout({
               </div>
             </nav>
           </>
-        )} */
+        )} 
 
         {/* Main content */}
         <main className="pt-32 px-6 pb-40">
