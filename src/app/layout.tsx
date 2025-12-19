@@ -44,7 +44,7 @@ export default function RootLayout({
         </header> */
 
         {/* Mobile Menu */}
-        {menuOpen && (
+        /* {menuOpen && (
           <>
             <div 
               className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40"
@@ -85,7 +85,7 @@ export default function RootLayout({
               </div>
             </nav>
           </>
-        )}
+        )} */
 
         {/* Main content */}
         <main className="pt-32 px-6 pb-40">
