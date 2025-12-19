@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
+  /* const navItems = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Acquisition", href: "/dashboard/acquisition" },
     { name: "Churn", href: "/dashboard/churn" },
@@ -29,7 +29,7 @@ export default function DashboardLayout({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem' }}>
           <h1 className="glow-medium" style={{ fontSize: '2.5rem', fontWeight: '900', color: '#00ffff' }}>
             GrowthEasy AI
-          </h1>
+          </h1> */
 
           {/* Styled Mobile Menu Button - using your existing styles */}
           <button
