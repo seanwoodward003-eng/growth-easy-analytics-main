@@ -2,14 +2,14 @@
 
 import useSWR from 'swr';
 
-const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com';
+const BACKEND_URL = '/api';
 
 const fetcher = async (url: string) => {
   const res = await fetch(`${BACKEND_URL}${url}`, {
     credentials: 'include',
   });
 
-  if (!res.ok) throw new Error('Failed to fetch');
+  if (!res.ok) throw new Err('Failed to fetch');
   return res.json();
 };
 
