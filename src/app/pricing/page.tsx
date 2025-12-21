@@ -8,6 +8,7 @@ const TOTAL_LTD_LIMIT = 1000;
 export default function Pricing() {
   const [earlyBirdSold] = useState(312); // replace with real fetch later
   const [totalLTDsSold] = useState(712);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const earlyBirdLeft = EARLY_BIRD_LIMIT - earlyBirdSold;
   const totalLeft = TOTAL_LTD_LIMIT - totalLTDsSold;
@@ -15,9 +16,37 @@ export default function Pricing() {
   const showEarlyBird = earlyBirdSold < EARLY_BIRD_LIMIT;
   const showLTD = totalLTDsSold < TOTAL_LTD_LIMIT;
 
-  const handleCheckout = (plan: string) => {
-    // Will connect to Stripe later
-    alert(`Checkout for ${plan} coming soon!`);
+  const handleCheckout = async (plan: 'lifetime_early' | 'lifetime' | 'monthly' | 'annual') => {
+    setLoading(plan);
+
+    try {
+      const res = await fetch('https://growth-easy-analytics-2.onrender.com/api/create-checkout', {
+        method: 'POST',
+        credentials: 'include', // Critical: sends/receives cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      if (data.sessionId) {
+        // Redirect to Stripe Checkout
+        const stripe = await (window as any).Stripe('pk_live_51...'); // Use your live or test publishable key
+        await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      } else {
+        alert('Error: No session ID returned');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Checkout failed: ' + err.message);
+      setLoading(null);
+    }
   };
 
   return (
@@ -37,8 +66,12 @@ export default function Pricing() {
             <p className="text-3xl md:text-4xl text-red-400 mb-10">
               Only {earlyBirdLeft} left!
             </p>
-            <button onClick={() => handleCheckout('early_bird')} className="cyber-btn text-3xl px-12 py-6">
-              Buy Lifetime £67 (One-time)
+            <button
+              onClick={() => handleCheckout('lifetime_early')}
+              disabled={loading === 'lifetime_early'}
+              className="cyber-btn text-3xl px-12 py-6 disabled:opacity-70"
+            >
+              {loading === 'lifetime_early' ? 'Loading...' : 'Buy Lifetime £67 (One-time)'}
             </button>
           </div>
         )}
@@ -53,8 +86,12 @@ export default function Pricing() {
             <p className="text-3xl md:text-4xl text-red-400 mb-10">
               Only {totalLeft} lifetime deals left ever
             </p>
-            <button onClick={() => handleCheckout('lifetime')} className="cyber-btn text-3xl px-12 py-6">
-              Buy Lifetime £97 (One-time)
+            <button
+              onClick={() => handleCheckout('lifetime')}
+              disabled={loading === 'lifetime'}
+              className="cyber-btn text-3xl px-12 py-6 disabled:opacity-70"
+            >
+              {loading === 'lifetime' ? 'Loading...' : 'Buy Lifetime £97 (One-time)'}
             </button>
           </div>
         )}
@@ -67,8 +104,12 @@ export default function Pricing() {
             £1 <span className="text-4xl md:text-5xl">first 7 days</span>
           </p>
           <p className="text-3xl md:text-4xl mb-10">Then £37/month</p>
-          <button onClick={() => handleCheckout('monthly')} className="cyber-btn text-3xl px-12 py-6">
-            Start £1 Trial
+          <button
+            onClick={() => handleCheckout('monthly')}
+            disabled={loading === 'monthly'}
+            className="cyber-btn text-3xl px-12 py-6 disabled:opacity-70"
+          >
+            {loading === 'monthly' ? 'Loading...' : 'Start £1 Trial'}
           </button>
         </div>
 
@@ -82,8 +123,12 @@ export default function Pricing() {
             £1 <span className="text-4xl md:text-5xl">first 7 days</span>
           </p>
           <p className="text-3xl md:text-4xl mb-10">Then £297/year</p>
-          <button onClick={() => handleCheckout('annual')} className="cyber-btn text-3xl px-12 py-6">
-            Start £1 Trial
+          <button
+            onClick={() => handleCheckout('annual')}
+            disabled={loading === 'annual'}
+            className="cyber-btn text-3xl px-12 py-6 disabled:opacity-70"
+          >
+            {loading === 'annual' ? 'Loading...' : 'Start £1 Trial'}
           </button>
         </div>
       </div>
