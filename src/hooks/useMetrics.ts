@@ -9,7 +9,7 @@ const fetcher = async (url: string) => {
     credentials: 'include',
   });
 
-  if (!res.ok) throw new Err('Failed to fetch');
+  if (!res.ok) throw new Error ('Failed to fetch');
   return res.json();
 };
 
