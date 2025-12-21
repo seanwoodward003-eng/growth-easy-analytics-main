@@ -5,30 +5,17 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { AIInsights } from "@/components/AIInsights";
 
 export default function Dashboard() {
-  const { metrics, isLoading, isError } = useMetrics();
-
-  if (isLoading) {
-    return (
-      <div className="text-center text-4xl mt-40 text-cyan-300 glow-medium">
-        Loading real-time data...
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="text-center text-3xl mt-40 text-red-400 glow-medium">
-        Unable to load data — please connect your accounts
-      </div>
-    );
-  }
+  const { metrics, isLoading, isError, isConnected } = useMetrics();
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
-      {metrics.revenue?.trend?.includes('demo') && (
-        <p className="text-center text-cyan-300 text-xl sm:text-2xl md:text-3xl mb-12 glow-medium">
-          AI: Demo mode – connect accounts for real data.
-        </p>
+      {/* Banner */}
+      {!isConnected && (
+        <div className="text-center mb-12">
+          <p className="text-3xl text-cyan-300 glow-medium mb-4">
+            {isError ? "Unable to load real data — please connect your accounts" : "Demo mode active — connect accounts for real data"}
+          </p>
+        </div>
       )}
 
       <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
@@ -65,27 +52,27 @@ export default function Dashboard() {
           <div className="metric-bubble">
             <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Revenue</h3>
             <p className="metric-value">
-              £{(metrics.revenue?.total || 12700).toLocaleString()}
+              £{metrics.revenue.total.toLocaleString()}
             </p>
             <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
-              {metrics.revenue?.trend || '+6% (demo)'}
+              {metrics.revenue.trend}
             </p>
           </div>
 
           <div className="metric-bubble">
             <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
             <p className="metric-value text-red-400">
-              {metrics.churn?.rate || 3.2}%
+              {metrics.churn.rate}%
             </p>
             <p className="text-3xl sm:text-4xl text-red-400 mt-6 glow-medium">
-              {metrics.churn?.at_risk || 18} at risk
+              {metrics.churn.at_risk} at risk
             </p>
           </div>
 
           <div className="metric-bubble">
             <h3 className="text-4xl sm:text-5xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
             <p className="metric-value text-green-400">
-              {metrics.performance?.ratio || '3.4'}:1
+              {metrics.performance.ratio}:1
             </p>
             <p className="text-3xl sm:text-4xl text-green-400 mt-6 glow-medium">
               Healthy
