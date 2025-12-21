@@ -5,10 +5,7 @@ import { ChurnChart } from "@/components/charts/ChurnChart";
 import { AIInsights } from "@/components/AIInsights";
 
 export default function ChurnPage() {
-  const { metrics, isLoading, isError } = useMetrics();
-
-  if (isLoading) return <div className="text-center text-4xl mt-40 text-cyan-300 glow-medium">Loading data...</div>;
-  if (isError) return <div className="text-center text-red-400 text-3xl mt-40">Check connections</div>;
+  const { metrics, isLoading, isError, isConnected } = useMetrics();
 
   return (
     <div className="px-6 py-20">
@@ -16,12 +13,20 @@ export default function ChurnPage() {
         CHURN RATE
       </h1>
 
+      {!isConnected && (
+        <div className="text-center mb-12">
+          <p className="text-3xl text-cyan-300 glow-medium mb-4">
+            {isError ? "Unable to load real data — please connect your accounts" : "Demo mode active — connect accounts for real data"}
+          </p>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="metric-value text-8xl text-red-400">
-          {metrics.churn?.rate || 3.2}%
+          {metrics.churn.rate}%
         </p>
         <p className="text-5xl text-red-400 mt-8 glow-medium">
-          {metrics.churn?.at_risk || 18} at risk
+          {metrics.churn.at_risk} at risk
         </p>
       </div>
 
