@@ -86,11 +86,21 @@ export default function Dashboard() {
         <p className="text-center text-3xl sm:text-4xl md:text-5xl mb-8 text-cyan-200">
           seanwoodward2023@gmail.com
         </p>
-        <div className="text-center mb-16">
-          <button className="cyber-btn text-2xl sm:text-3xl px-10 py-5">
-            Logout
-          </button>
-        </div>
+      <div className="text-center mb-16">
+  <button 
+    onClick={() => {
+      // Clear all cookies
+      document.cookie = 'access_token=; Max-Age=0; path=/';
+      document.cookie = 'refresh_token=; Max-Age=0; path=/';
+      document.cookie = 'csrf_token=; Max-Age=0; path=/';
+      // Redirect to landing page
+      window.location.href = '/';
+    }}
+    className="cyber-btn text-2xl sm:text-3xl px-10 py-5"
+  >
+    Logout
+  </button>
+</div>
 
         <h2 className="glow-title text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-8">
           Connect Your Accounts
