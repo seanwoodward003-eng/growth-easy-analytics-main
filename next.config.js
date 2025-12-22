@@ -4,4 +4,4 @@ const nextConfig = {
   trailingSlash: true,  // keep if you have it
 };
 
-module.exports = nextConfig;
+module.exports = nextConfig; 
