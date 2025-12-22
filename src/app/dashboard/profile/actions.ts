@@ -1,9 +1,7 @@
-"use server";
+// lib/auth-client.ts  ← New file (or replace your old session file with this)
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import jwt from "jsonwebtoken";
-import { unstable_noStore as noStore } from "next/cache"; // ← Add this import
+import jwtDecode from "jwt-decode"; // Install if needed: npm install jwt-decode
+// Or use: import { jwtDecode } from "jwt-decode";
 
 export type Session = {
   user: {
@@ -16,42 +14,37 @@ export type Session = {
   expires: string;
 } | null;
 
-export async function getServerSession(): Promise<Session> {
-  noStore(); // ← Prevents any static analysis issues
+/**
+ * Client-side only session checker
+ * Works in static export — reads token from localStorage OR readable cookie
+ */
+export function getClientSession(): Session {
+  // Option 1: Token stored in localStorage (recommended for JWT)
+  let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    redirect("/");
+  // Option 2: If you prefer cookies (Flask must set httpOnly=false)
+  if (!token && typeof document !== "undefined") {
+    token =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("access_token="))
+        ?.split("=")[1] ?? null;
   }
 
-  // Move JWT_SECRET read INSIDE the function
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    // In production, this will only happen at runtime if misconfigured
-    console.error("JWT_SECRET is missing in environment");
-    redirect("/");
+  if (!token) {
+    return null;
   }
 
   try {
-    const verified = jwt.verify(token, JWT_SECRET);
+    const payload: any = jwtDecode(token);
 
-    if (typeof verified === "string" || !verified || typeof verified !== "object") {
-      redirect("/");
-    }
-
-    const payload = verified as {
-      sub: string;
-      email: string;
-      exp: number;
-      shopifyConnected?: boolean;
-      ga4Connected?: boolean;
-      hubspotConnected?: boolean;
-    };
-
-    if (!payload.sub || !payload.email || typeof payload.exp !== "number") {
-      redirect("/");
+    // Check expiration
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      // Expired → clean up
+      localStorage.removeItem("access_token");
+      // Optional: clear cookie too
+      document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      return null;
     }
 
     return {
@@ -65,6 +58,8 @@ export async function getServerSession(): Promise<Session> {
       expires: new Date(payload.exp * 1000).toISOString(),
     };
   } catch (error) {
-    redirect("/");
+    // Invalid token
+    localStorage.removeItem("access_token");
+    return null;
   }
 }
