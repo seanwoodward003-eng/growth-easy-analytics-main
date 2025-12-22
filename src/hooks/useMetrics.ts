@@ -2,14 +2,14 @@
 
 import useSWR from 'swr';
 
-const BACKEND_URL = '/api';
+const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com/api';  // your back-end URL + /api
 
 const fetcher = async (url: string) => {
   const res = await fetch(`${BACKEND_URL}${url}`, {
     credentials: 'include',
   });
 
-  if (!res.ok) throw new Error ('Failed to fetch');
+  if (!res.ok) throw new Error('Failed to fetch');
   return res.json();
 };
 
@@ -22,7 +22,7 @@ const DEMO_DATA = {
 };
 
 export default function useMetrics() {
-  const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
+  const { data, error, isLoading, mutate } = useSWR('/metrics', fetcher, {  // path without /api
     refreshInterval: 30000,
     fallbackData: DEMO_DATA,
   });
