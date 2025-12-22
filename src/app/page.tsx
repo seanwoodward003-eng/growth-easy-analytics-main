@@ -19,7 +19,7 @@ export default function LandingPage() {
     setMessage('');
 
     try {
-      const res = await fetch('/api/signup', {
+      const res = await fetch('https://growth-easy-analytics-2.onrender.com/api/signup', {  // <-- your back-end Render URL
         method: 'POST',
         credentials: 'include',
         headers: {
