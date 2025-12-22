@@ -17,10 +17,7 @@ export default function ProfilePage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const session = getClientSession();
-
-    if (!session) {
+  if (!session) {
       // Not logged in → redirect to login/home
       router.push("/login"); // or "/" depending on your flow
       return;
