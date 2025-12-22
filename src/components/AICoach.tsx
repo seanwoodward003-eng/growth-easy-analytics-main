@@ -29,11 +29,13 @@ export function AICoach() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('https://growth-easy-analytics-2.onrender.com/api/chat', {  // ← FULL BACK-END URL
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input.trim() }),
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input.trim() }),
       });
 
       if (!res.ok) throw new Error('Failed');
@@ -41,7 +43,7 @@ export function AICoach() {
       const data = await res.json();
       const assistantMessage = { role: 'assistant' as const, content: data.reply };
 
-      // Simulate streaming (typewriter effect)
+      // Typewriter effect
       let displayed = '';
       const interval = setInterval(() => {
         if (displayed.length < assistantMessage.content.length) {
@@ -61,7 +63,7 @@ export function AICoach() {
         }
       }, 30);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Try again.' }]);
+      setMessages(prev => [...prev, { role: 'assistant' as const, content: 'Sorry, something went wrong. Try again.' }]);
       setLoading(false);
     }
   };
@@ -72,7 +74,7 @@ export function AICoach() {
         AI Growth Coach
       </h2>
 
-      {/* Chat messages (scrollable) */}
+      {/* Messages */}
       <div className="max-w-4xl mx-auto max-h-60 overflow-y-auto mb-6 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`text-left ${msg.role === 'user' ? 'text-right' : ''}`}>
