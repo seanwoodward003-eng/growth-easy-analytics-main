@@ -1,14 +1,50 @@
 // src/app/dashboard/profile/page.tsx
-// NO "use client" — this is a Server Component
+"use client";  // ← NOW A CLIENT COMPONENT
 
 import Link from "next/link";
-import { getServerSession } from "./actions";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getClientSession } from "@/lib/auth-client"; // ← Adjust path if needed
+// Example: "@/lib/auth-client" or "../../../lib/auth-client"
 
-export default async function ProfilePage() {
-  const session = await getServerSession();
+export default function ProfilePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<{
+    id: number;
+    email: string;
+    shopifyConnected?: boolean;
+    ga4Connected?: boolean;
+    hubspotConnected?: boolean;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // getServerSession() already redirects on failure, so session is guaranteed
-  const user = session!.user;
+  useEffect(() => {
+    const session = getClientSession();
+
+    if (!session) {
+      // Not logged in → redirect to login/home
+      router.push("/login"); // or "/" depending on your flow
+      return;
+    }
+
+    // Logged in → safe to use
+    setUser(session.user);
+    setLoading(false);
+  }, [router]);
+
+  // Optional loading state while checking session
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-4xl text-cyber-neon animate-pulse">Loading profile...</p>
+      </div>
+    );
+  }
+
+  // If somehow user is still null after loading (edge case)
+  if (!user) {
+    return null; // redirect already triggered
+  }
 
   return (
     <div className="min-h-screen py-20 px-6">
@@ -35,26 +71,26 @@ export default async function ProfilePage() {
               <span className="text-green-400">Active • Trial Day 4/7</span>
             </div>
 
-            {/* OAuth Connect Buttons — now simple links */}
+            {/* OAuth Connect Buttons — simple links (pointing to your Flask backend) */}
             <div className="mt-10">
               <h3 className="text-3xl text-cyan-300 text-center mb-8">Connect Platforms</h3>
               <div className="grid grid-cols-1 gap-6">
                 <a
-                  href="/api/auth/shopify"
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/shopify`}
                   className="block bg-gradient-to-r from-green-600 to-green-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-green-500/80 transition-all duration-300 shadow-lg text-center"
                 >
                   Shopify {user.shopifyConnected ? "✓ Connected" : "Connect Now"}
                 </a>
 
                 <a
-                  href="/api/auth/ga4"
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/ga4`}
                   className="block bg-gradient-to-r from-blue-600 to-cyan-400 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/80 transition-all duration-300 shadow-lg text-center"
                 >
                   GA4 {user.ga4Connected ? "✓ Connected" : "Connect Now"}
                 </a>
 
                 <a
-                  href="/api/auth/hubspot"
+                  href={`${process.env.NEXT_PUBLIC_API_URL}/api/auth/hubspot`}
                   className="block bg-gradient-to-r from-orange-600 to-red-500 text-black px-12 py-6 rounded-2xl text-2xl font-bold hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/80 transition-all duration-300 shadow-lg text-center"
                 >
                   HubSpot {user.hubspotConnected ? "✓ Connected" : "Connect Now"}
@@ -73,12 +109,12 @@ export default async function ProfilePage() {
             Manage Billing
           </Link>
 
-          <Link
-            href="/api/logout"
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_URL}/api/logout`}
             className="block border-4 border-red-500 text-red-400 px-10 py-6 rounded-2xl text-2xl font-bold text-center hover:bg-red-600 hover:text-white transition"
           >
             Logout
-          </Link>
+          </a>
 
           <div className="bg-black/40 border-2 border-cyber-neon rounded-2xl p-8 text-center">
             <p className="text-xl text-cyan-300">Need help?</p>
