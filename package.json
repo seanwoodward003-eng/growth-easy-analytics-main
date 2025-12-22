@@ -2,11 +2,12 @@
   "name": "growtheasy-ai",
   "version": "1.0.0",
   "private": true,
- "scripts": {
+"scripts": {
   "dev": "next dev",
   "build": "next build",
   "start": "next start",
-  "lint": "next lint"
+  "lint": "next lint",
+  "export": "next export"
 },
   "dependencies": {
   "ai": "^3.4.5",
