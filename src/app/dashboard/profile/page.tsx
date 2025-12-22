@@ -4,8 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getClientSession } from "@/lib/auth-client"; // ← Adjust path if needed
-// Example: "@/lib/auth-client" or "../../../lib/auth-client"
+
 
 export default function ProfilePage() {
   const router = useRouter();
