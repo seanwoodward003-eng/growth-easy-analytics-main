@@ -1,4 +1,3 @@
-// src/app/page.tsx — Public Landing Page with Working Signup Form
 'use client';
 
 import { useState } from 'react';
@@ -22,28 +21,28 @@ export default function LandingPage() {
     try {
       const res = await fetch('/api/signup', {
         method: 'POST',
-        credentials: 'include', // Required for Flask to set cookies
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: email.toLowerCase().trim(),
-          consent: true, // Required by your backend
+          consent: true,
         }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setMessage('Success! Account created – redirecting to dashboard...');
+        setMessage('Success! Redirecting to your dashboard...');
         setTimeout(() => {
-          window.location.href = '/dashboard'; // Change if your dashboard route is different
+          window.location.href = '/dashboard';
         }, 1500);
       } else {
         setMessage(data.error || 'Signup failed — please try again');
       }
     } catch (err) {
-      setMessage('Connection error — try refreshing the page');
+      setMessage('Connection error — refresh and try again');
       console.error(err);
     } finally {
       setLoading(false);
@@ -63,9 +62,7 @@ export default function LandingPage() {
         Optimize churn, acquisition, retention, revenue, and performance for your Shopify store — with real-time AI insights and cyberpunk style.
       </p>
 
-      {/* Signup Form + Log In Button */}
       <div className="space-y-8 max-w-lg w-full">
-        {/* Email Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <input
             type="email"
@@ -79,30 +76,17 @@ export default function LandingPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#00ffff] text-black px-12 py-6 rounded-xl text-2xl font-bold hover:scale-110 transition shadow-2xl shadow-[#00ffff]/50 disabled:opacity-70 disabled:scale-100"
+            className="w-full bg-[#00ffff] text-black px-12 py-6 rounded-xl text-2xl font-bold hover:scale-110 transition shadow-2xl shadow-[#00ffff]/50 disabled:opacity-70"
           >
             {loading ? 'Creating Account...' : 'Start Free Trial'}
           </button>
         </form>
 
-        {/* Success / Error Message */}
         {message && (
-          <p
-            className={`text-xl font-medium ${
-              message.includes('Success') ? 'text-green-400' : 'text-red-400'
-            }`}
-          >
+          <p className={`text-xl font-medium ${message.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>
             {message}
           </p>
         )}
-
-        {/* Log In Link */}
-        <a
-          href="/login"
-          className="block border-2 border-[#00ffff] text-[#00ffff] px-12 py-6 rounded-xl text-2xl font-bold hover:bg-[#00ffff] hover:text-black transition inline-block"
-        >
-          Log In
-        </a>
       </div>
 
       <p className="absolute bottom-8 text-cyan-500 text-sm">
