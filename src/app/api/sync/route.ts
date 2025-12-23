@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   if ('error' in auth) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-  const userId = auth.id;
+  const userId = auth.user.id;
 
   const user = await getRow<{
     shopify_shop: string | null;
