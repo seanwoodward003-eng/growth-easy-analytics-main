@@ -1,12 +1,30 @@
 // lib/db.ts
 import { createClient } from '@libsql/client';
+import type { Client } from '@libsql/client';
 
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN!,
-});
+// Lazy-loaded client — only created when first needed (at runtime)
+let client: Client | null = null;
+
+function getClient(): Client {
+  const url = process.env.TURSO_DATABASE_URL;
+  const token = process.env.TURSO_AUTH_TOKEN;
+
+  if (!url || !token) {
+    throw new Error('Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables');
+  }
+
+  if (!client) {
+    client = createClient({
+      url,
+      authToken: token,
+    });
+  }
+
+  return client;
+}
 
 export async function query(sql: string, args: any[] = []) {
+  const client = getClient();
   const result = await client.execute({ sql, args });
   return result;
 }
@@ -25,8 +43,10 @@ export async function run(sql: string, args: any[] = []) {
   await query(sql, args);
 }
 
-// Initialize schema and migrations
+// Schema initialization — safe, idempotent, and ready for long-term use
 export async function initDb() {
+  const client = getClient();
+
   await client.batch([
     {
       sql: `
@@ -72,8 +92,9 @@ export async function initDb() {
       args: [],
     },
     { sql: 'CREATE INDEX IF NOT EXISTS idx_metrics_user ON metrics(user_id);', args: [] },
-  ]);
+  ], 'write');
 
+  // Add any missing columns (safe migrations)
   const info = await client.execute('PRAGMA table_info(users)');
   const columns = info.rows.map((r: any) => r.name);
 
@@ -94,4 +115,5 @@ export async function initDb() {
   }
 }
 
-initDb().catch(err => console.error('DB init failed:', err));
+// NO automatic initDb() call here
+// Call initDb() from your signup route or authenticated requests (see below)
