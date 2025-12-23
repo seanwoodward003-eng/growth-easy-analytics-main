@@ -80,5 +80,7 @@ export async function verifyCSRF(request: Request): Promise<boolean> {
   const cookieStore = await cookies();  // ← await here
   const cookie = cookieStore.get('csrf_token')?.value;
   const header = request.headers.get('X-CSRF-Token');
-  return cookie && header && cookie === header;
+
+  // Fixed: explicitly return a boolean
+  return !!cookie && !!header && cookie === header;
 }
