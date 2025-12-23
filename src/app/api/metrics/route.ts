@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 export async function GET() {
   const auth = await requireAuth();
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const userId = auth.id;
+  const userId = auth.user.id;
 
   const lastMetric = await getRow<{ date: string }>(
     'SELECT date FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
