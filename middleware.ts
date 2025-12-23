@@ -1,6 +1,9 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_FRONTEND_URL!,
@@ -13,15 +16,14 @@ export function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
-  // Start with a base response
   let response = NextResponse.next();
 
-  // === Security Headers (applied to all requests) ===
+  // Security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // === CORS Headers (only for /api routes) ===
+  // CORS for API
   if (request.nextUrl.pathname.startsWith('/api')) {
     if (isAllowedOrigin) {
       response.headers.set('Access-Control-Allow-Origin', origin!);
@@ -30,51 +32,41 @@ export function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
-    // Handle preflight OPTIONS request
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, { status: 204, headers: response.headers });
     }
   }
 
-  // === Force HTTPS in production (Render/Vercel-style) ===
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  if (forwardedProto === 'http' && process.env.NODE_ENV === 'production') {
+  // HTTPS redirect
+  if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
     const url = new URL(request.url);
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301);
   }
 
-  // === Protect Dashboard Routes ===
+  // Protect dashboard — verify JWT properly
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const token = request.cookies.get('access_token')?.value;
 
-    // If no token, redirect to landing page
     if (!token) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
-      url.search = ''; // Clear any query params for cleaner redirect
       return NextResponse.redirect(url);
     }
 
-    // Optional: Add JWT verification here later if your token is a JWT
-    // Example:
-    // try {
-    //   verifyJwt(token); // your verification logic
-    // } catch {
-    //   const url = request.nextUrl.clone();
-    //   url.pathname = '/';
-    //   return NextResponse.redirect(url);
-    // }
+    try {
+      jwt.verify(token, JWT_SECRET); // Throws if invalid/expired
+      // Valid token → allow
+    } catch {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
   }
 
-  // All good — proceed with the original response
   return response;
 }
 
-// Apply middleware to API routes AND dashboard routes
 export const config = {
-  matcher: [
-    '/api/:path*',
-    '/dashboard/:path*',
-  ],
+  matcher: ['/api/:path*', '/dashboard/:path*'],
 };
