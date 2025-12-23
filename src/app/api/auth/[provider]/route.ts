@@ -1,8 +1,11 @@
-// app/api/auth/[provider]/route.ts
+// src/app/api/auth/[provider]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 
-export async function GET(request: NextRequest, { params }: { params: { provider: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { provider: string } }
+) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/?error=login_required`);
