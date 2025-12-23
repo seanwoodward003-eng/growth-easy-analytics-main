@@ -1,0 +1,71 @@
+// app/api/auth/ga4/callback/route.ts
+import { NextRequest } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { run } from '@/lib/db';
+
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get('code');
+  const state = request.nextUrl.searchParams.get('state');
+
+  if (!code || !state) {
+    return new Response('<script>alert("GA4 Auth Failed");window.close();</script>', { status: 400 });
+  }
+
+  const userId = parseInt(state);
+  const user = await getCurrentUser();
+  if (!user || user.id !== userId) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      redirect_uri: `${process.env.DOMAIN}/api/auth/ga4/callback`,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  if (!tokenResp.ok) {
+    return new Response('Token exchange failed', { status: 400 });
+  }
+
+  const tokenData = await tokenResp.json();
+  const access_token = tokenData.access_token;
+  const refresh_token = tokenData.refresh_token;
+
+  let property_id: string | null = null;
+  try {
+    const summariesResp = await fetch('https://analyticsadmin.googleapis.com/v1/accountSummaries', {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+    if (summariesResp.ok) {
+      const data = await summariesResp.json();
+      const summaries = data.accountSummaries || [];
+      if (summaries.length > 0 && summaries[0].propertySummaries?.[0]?.property) {
+        property_id = summaries[0].propertySummaries[0].property.split('/').pop();
+      }
+    }
+  } catch (e) {
+    console.warn('GA4 property detection failed:', e);
+  }
+
+  await run(
+    `UPDATE users SET 
+      ga4_connected = 1,
+      ga4_access_token = ?,
+      ga4_refresh_token = ?,
+      ga4_property_id = COALESCE(?, ga4_property_id),
+      ga4_last_refreshed = ?
+     WHERE id = ?`,
+    [access_token, refresh_token, property_id, new Date().toISOString(), userId]
+  );
+
+  return new Response(
+    '<script>alert("GA4 Connected Successfully!"); window.close(); window.opener.location.reload();</script>',
+    { headers: { 'Content-Type': 'text/html' } }
+  );
+}
