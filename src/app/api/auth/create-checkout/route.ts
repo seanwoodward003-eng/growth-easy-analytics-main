@@ -7,7 +7,7 @@ import { getRow } from '@/lib/db';
 export async function POST(request: NextRequest) {
   const auth = await requireAuth();
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const userId = auth.id;
+  const userId = auth.user.id;
 
   const { plan } = await request.json();
   const priceMap: Record<string, string> = {
