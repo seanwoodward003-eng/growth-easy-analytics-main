@@ -4,14 +4,14 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { provider: string } }
+  { params }: { params: { provider: string } }
 ) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/?error=login_required`);
   }
 
-  const { provider } = context.params;
+  const provider = params.provider;
   const url = new URL(request.url);
   const shop = provider === 'shopify' ? url.searchParams.get('shop') : null;
 
