@@ -2,38 +2,37 @@
 
 import useSWR from 'swr';
 
-const BACKEND_URL = 'https://growth-easy-analytics-2.onrender.com/api';  // your back-end URL + /api
-
 const fetcher = async (url: string) => {
-  const res = await fetch(`${BACKEND_URL}${url}`, {
+  const res = await fetch(url, {
     credentials: 'include',
   });
 
-  if (!res.ok) throw new Error('Failed to fetch');
+  if (!res.ok) throw new Error('Failed to fetch metrics');
   return res.json();
 };
 
 const DEMO_DATA = {
-  revenue: { total: 12700, trend: "+12% this month" },
+  revenue: { total: 12700, trend: "+12%", history: { labels: [], values: [] } },
   churn: { rate: 3.2, at_risk: 18 },
-  acquisition: { top_channel: "Organic Search", cac: 87 },
-  performance: { ratio: "3.4" },
+  performance: { ratio: "3.4", ltv: 162, cac: 47 },
+  acquisition: { top_channel: "Organic Search", acquisition_cost: 87 },
   retention: { rate: 68 },
+  ai_insight: "Connect accounts for real insights.",
 };
 
 export default function useMetrics() {
-  const { data, error, isLoading, mutate } = useSWR('/metrics', fetcher, {  // path without /api
-    refreshInterval: 30000,
+  const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
+    refreshInterval: 60000,
     fallbackData: DEMO_DATA,
   });
 
   const metrics = data || DEMO_DATA;
-  const isConnected = !error && data && !data.revenue.trend.includes('demo');
+  const isConnected = !!data && data.revenue.total > 0;
 
   return {
     metrics,
     isLoading,
-    isError: error,
+    isError: !!error,
     isConnected,
     refresh: mutate,
   };
