@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (!document.cookie.includes('access_token')) {
       router.push('/');
     }
-  }, [router]);
+  }, [router]); *\
 
   return <>{children}</>;
 } 
