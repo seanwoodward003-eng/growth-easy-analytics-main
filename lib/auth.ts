@@ -1,5 +1,4 @@
-// lib/auth.ts — updated version (copy-paste this over your current one)
-
+// lib/auth.ts
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
@@ -23,13 +22,13 @@ export function generateCsrfToken() {
   return randomBytes(32).toString('hex');
 }
 
-export async function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const cookieStore = cookies(); // No need for await in App Router server components/actions
+export function setAuthCookies(access: string, refresh: string, csrf: string) {
+  const cookieStore = cookies(); // ← Synchronous in Next.js 15, no await
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // true in prod, false in dev
-    sameSite: 'lax', // Changed from 'none' → 'lax' is safer and works better with redirects
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     path: '/',
     maxAge: 3600, // 1 hour
   });
@@ -43,16 +42,16 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   });
 
   cookieStore.set('csrf_token', csrf, {
-    httpOnly: false, // Must be readable by client JS for X-CSRF-Token header
+    httpOnly: false, // Frontend needs to read this for X-CSRF-Token header
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
-  const cookieStore = cookies();
+export function getCurrentUser(): AuthUser | null {
+  const cookieStore = cookies(); // ← No await
   const accessToken = cookieStore.get('access_token')?.value;
 
   if (!accessToken) return null;
@@ -65,9 +64,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
-// Reusable for API routes and server actions
 export async function requireAuth() {
-  const user = await getCurrentUser();
+  const user = getCurrentUser();
   if (!user) return { error: 'Unauthorized', status: 401 };
 
   const row = await getRow<{ trial_end: string; subscription_status: string }>(
@@ -84,11 +82,11 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
-  return { user, row }; // Return more data if needed
+  return { user, subscription: row };
 }
 
-export async function verifyCSRF(request: Request): Promise<boolean> {
-  const cookieStore = cookies();
+export function verifyCSRF(request: Request): boolean {
+  const cookieStore = cookies(); // ← No await
   const cookieCsrf = cookieStore.get('csrf_token')?.value;
   const headerCsrf = request.headers.get('X-CSRF-Token');
 
