@@ -22,15 +22,16 @@ export function generateCsrfToken() {
   return randomBytes(32).toString('hex');
 }
 
+// ← Removed 'async' here — this function is fully synchronous
 export function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const cookieStore = cookies(); // ← Synchronous in Next.js 15, no await
+  const cookieStore = cookies(); // Synchronous — correct
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 3600, // 1 hour
+    maxAge: 3600,
   });
 
   cookieStore.set('refresh_token', refresh, {
@@ -38,20 +39,20 @@ export function setAuthCookies(access: string, refresh: string, csrf: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   });
 
   cookieStore.set('csrf_token', csrf, {
-    httpOnly: false, // Frontend needs to read this for X-CSRF-Token header
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   });
 }
 
 export function getCurrentUser(): AuthUser | null {
-  const cookieStore = cookies(); // ← No await
+  const cookieStore = cookies();
   const accessToken = cookieStore.get('access_token')?.value;
 
   if (!accessToken) return null;
@@ -86,7 +87,7 @@ export async function requireAuth() {
 }
 
 export function verifyCSRF(request: Request): boolean {
-  const cookieStore = cookies(); // ← No await
+  const cookieStore = cookies();
   const cookieCsrf = cookieStore.get('csrf_token')?.value;
   const headerCsrf = request.headers.get('X-CSRF-Token');
 
