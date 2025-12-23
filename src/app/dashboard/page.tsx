@@ -1,67 +1,85 @@
 'use client';
 
-import useMetrics from "@/hooks/useMetrics";
-import { RevenueChart } from "@/components/charts/RevenueChart";
-import { AIInsights } from "@/components/AIInsights";
-import Link from 'next/link';
+import { useState } from 'react';
 
-export default function Dashboard() {
-  const { metrics, isLoading, isConnected } = useMetrics();
+export default function LandingPage() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setMessage('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), consent: true }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setMessage('Success! Redirecting to dashboard...');
+        setTimeout(() => window.location.href = '/dashboard', 1500);
+      } else {
+        setMessage(data.error || 'Signup failed');
+      }
+    } catch (err) {
+      setMessage('Connection error — try again');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
-      {!isConnected && (
-        <div className="text-center mb-12">
-          <p className="text-3xl text-cyan-300 glow-medium mb-4">
-            {isLoading ? "Loading..." : "Demo mode — connect accounts for real data"}
+    <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-center p-8 text-center">
+      <h1 className="text-7xl md:text-9xl font-bold text-[#00ffff] mb-8 animate-glitch">
+        GROWTHEASY AI
+      </h1>
+      <p className="text-2xl md:text-4xl text-cyan-300 mb-4">
+        AI-Powered Growth Analytics
+      </p>
+      <p className="text-xl md:text-2xl text-cyan-400 mb-16 max-w-3xl">
+        Optimize churn, acquisition, retention, revenue, and performance for your Shopify store — with real-time AI insights and cyberpunk style.
+      </p>
+
+      <div className="space-y-8 max-w-lg w-full">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <input
+            type="email"
+            placeholder="your@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full px-8 py-5 text-lg bg-black/50 border-2 border-[#00ffff] text-[#00ffff] rounded-xl placeholder-cyan-600 focus:outline-none focus:ring-4 focus:ring-[#00ffff]/50"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#00ffff] text-black px-12 py-6 rounded-xl text-2xl font-bold hover:scale-110 transition shadow-2xl shadow-[#00ffff]/50 disabled:opacity-70"
+          >
+            {loading ? 'Creating Account...' : 'Start Free Trial'}
+          </button>
+        </form>
+        {message && (
+          <p className={`text-xl font-medium ${message.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>
+            {message}
           </p>
-        </div>
-      )}
-
-      <h2 className="glow-title text-center text-6xl md:text-8xl font-bold mb-16">
-        Dashboard
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-20">
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">Revenue</h3>
-          <p className="metric-value">£{metrics.revenue.total.toLocaleString()}</p>
-          <p className="text-3xl text-green-400 mt-6 glow-medium">{metrics.revenue.trend}</p>
-        </div>
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
-          <p className="metric-value text-red-400">{metrics.churn.rate}%</p>
-          <p className="text-3xl text-red-400 mt-6 glow-medium">{metrics.churn.at_risk} at risk</p>
-        </div>
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
-          <p className="metric-value text-green-400">{metrics.performance.ratio}:1</p>
-        </div>
+        )}
       </div>
 
-      <div className="max-w-5xl mx-auto mb-20">
-        <RevenueChart />
-      </div>
-
-      <div className="text-center mb-20">
-        <h3 className="text-5xl font-bold text-cyan-400 mb-8">Connect Your Accounts</h3>
-        <div className="flex flex-wrap justify-center gap-6">
-          <button onClick={() => {
-            const shop = prompt("Enter your .myshopify.com domain");
-            if (shop) window.location.href = `/api/auth/shopify?shop=${shop}`;
-          }} className="cyber-btn text-2xl px-10 py-5">
-            Connect Shopify
-          </button>
-          <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
-            Connect GA4
-          </button>
-          <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
-            Connect HubSpot
-          </button>
-        </div>
-      </div>
-
-      <AIInsights />
-    </div>
+      <p className="absolute bottom-8 text-cyan-500 text-sm">
+        Beta v0.1 © 2025 GrowthEasy AI
+      </p>
+    </main>
   );
 }
