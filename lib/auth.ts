@@ -18,8 +18,8 @@ export function generateTokens(userId: number, email: string) {
   return { access, refresh };
 }
 
-export function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const store = cookies();
+export async function setAuthCookies(access: string, refresh: string, csrf: string) {
+  const store = await cookies();  // ← ADD await HERE
   store.set('access_token', access, {
     httpOnly: true,
     secure: true,
@@ -43,7 +43,8 @@ export function setAuthCookies(access: string, refresh: string, csrf: string) {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const accessToken = cookies().get('access_token')?.value || cookies().get('token')?.value;
+  const cookieStore = await cookies();  // ← ADD await HERE
+  const accessToken = cookieStore.get('access_token')?.value || cookieStore.get('token')?.value;
   if (!accessToken) return null;
 
   try {
@@ -76,7 +77,8 @@ export async function requireAuth() {
 }
 
 export function verifyCSRF(request: Request): boolean {
-  const cookie = cookies().get('csrf_token')?.value;
+  const cookieStore = cookies(); // This one is sync in route handlers, but to be safe
+  const cookie = cookieStore.get('csrf_token')?.value;
   const header = request.headers.get('X-CSRF-Token');
   return cookie && header && cookie === header;
 }
