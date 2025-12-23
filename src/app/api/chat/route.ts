@@ -1,0 +1,58 @@
+// app/api/chat/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, verifyCSRF } from '@/lib/auth';
+import { getRow } from '@/lib/db';
+
+export async function POST(request: NextRequest) {
+  if (!verifyCSRF(request)) {
+    return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
+  }
+
+  const auth = await requireAuth();
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  const { message } = await request.json();
+  if (!message?.trim()) {
+    return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
+  }
+
+  const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
+    'SELECT revenue, churn_rate, at_risk FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
+    [auth.id]
+  );
+
+  const summary = metric
+    ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
+    : 'No data';
+
+  const systemPrompt = `You are GrowthEasy AI. User metrics: ${summary}. Answer: ${message}. <150 words.`;
+
+  try {
+    const resp = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'grok-beta',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.7,
+        max_tokens: 200,
+      }),
+    });
+
+    if (!resp.ok) throw new Error('Grok API error');
+    const data = await resp.json();
+    const reply = data.choices[0].message.content;
+    return NextResponse.json({ reply });
+  } catch (e) {
+    console.error('Grok error:', e);
+    return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
+  }
+}
+
+export const OPTIONS = () => new Response(null, { status: 200 });
