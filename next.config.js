@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',  // <-- add this line back
-  trailingSlash: true,  // keep if you have it
+  // Removed output: 'export' — we need server API routes
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;
