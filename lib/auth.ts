@@ -22,9 +22,9 @@ export function generateCsrfToken() {
   return randomBytes(32).toString('hex');
 }
 
-// ← Removed 'async' here — this function is fully synchronous
-export function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const cookieStore = cookies(); // Synchronous — correct
+// Make it async and await cookies()
+export async function setAuthCookies(access: string, refresh: string, csrf: string) {
+  const cookieStore = await cookies(); // ← MUST await in Next.js 15
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
@@ -43,7 +43,7 @@ export function setAuthCookies(access: string, refresh: string, csrf: string) {
   });
 
   cookieStore.set('csrf_token', csrf, {
-    httpOnly: false,
+    httpOnly: false, // Frontend needs to read for CSRF header
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
@@ -51,8 +51,9 @@ export function setAuthCookies(access: string, refresh: string, csrf: string) {
   });
 }
 
-export function getCurrentUser(): AuthUser | null {
-  const cookieStore = cookies();
+// Make async where needed
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
 
   if (!accessToken) return null;
@@ -66,7 +67,7 @@ export function getCurrentUser(): AuthUser | null {
 }
 
 export async function requireAuth() {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) return { error: 'Unauthorized', status: 401 };
 
   const row = await getRow<{ trial_end: string; subscription_status: string }>(
@@ -86,8 +87,9 @@ export async function requireAuth() {
   return { user, subscription: row };
 }
 
-export function verifyCSRF(request: Request): boolean {
-  const cookieStore = cookies();
+// Make async (returns Promise<boolean>)
+export async function verifyCSRF(request: Request): Promise<boolean> {
+  const cookieStore = await cookies();
   const cookieCsrf = cookieStore.get('csrf_token')?.value;
   const headerCsrf = request.headers.get('X-CSRF-Token');
 
