@@ -29,4 +29,9 @@ export async function GET(
   }
 
   if (provider === 'hubspot') {
-    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${process.env.DOMAIN}/api/auth/hubspot/callback&scope=crm.objects.contacts.read crm.objects.deals
+    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${process.env.DOMAIN}/api/auth/hubspot/callback&scope=crm.objects.contacts.read crm.objects.deals.read&response_type=code&state=${user.id}`;
+    return NextResponse.redirect(authUrl);
+  }
+
+  return new Response('Invalid provider', { status: 400 });
+}
