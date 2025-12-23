@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
     'SELECT revenue, churn_rate, at_risk FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
-    [auth.id]
+    [auth.user.id]
   );
 
   const summary = metric
