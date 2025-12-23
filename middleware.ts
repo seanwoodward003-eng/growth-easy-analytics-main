@@ -11,31 +11,70 @@ const ALLOWED_ORIGINS = [
 
 export function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
-  const response = NextResponse.next();
+  // Start with a base response
+  let response = NextResponse.next();
 
+  // === Security Headers (applied to all requests) ===
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  if (isAllowed) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
-  }
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-Token');
+  // === CORS Headers (only for /api routes) ===
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    if (isAllowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', origin!);
+    }
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
-  // HTTPS redirect (Vercel handles in prod)
-  if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
+    // Handle preflight OPTIONS request
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { status: 204, headers: response.headers });
+    }
+  }
+
+  // === Force HTTPS in production (Render/Vercel-style) ===
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  if (forwardedProto === 'http' && process.env.NODE_ENV === 'production') {
     const url = new URL(request.url);
     url.protocol = 'https:';
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 301);
   }
 
+  // === Protect Dashboard Routes ===
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    const token = request.cookies.get('access_token')?.value;
+
+    // If no token, redirect to landing page
+    if (!token) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.search = ''; // Clear any query params for cleaner redirect
+      return NextResponse.redirect(url);
+    }
+
+    // Optional: Add JWT verification here later if your token is a JWT
+    // Example:
+    // try {
+    //   verifyJwt(token); // your verification logic
+    // } catch {
+    //   const url = request.nextUrl.clone();
+    //   url.pathname = '/';
+    //   return NextResponse.redirect(url);
+    // }
+  }
+
+  // All good — proceed with the original response
   return response;
 }
 
+// Apply middleware to API routes AND dashboard routes
 export const config = {
-  matcher: '/api/:path*',
+  matcher: [
+    '/api/:path*',
+    '/dashboard/:path*',
+  ],
 };
