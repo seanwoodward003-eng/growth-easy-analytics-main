@@ -19,22 +19,22 @@ export function generateTokens(userId: number, email: string) {
 }
 
 export async function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const store = await cookies();  // ← ADD await HERE
-  store.set('access_token', access, {
+  const cookieStore = await cookies();  // ← await here
+  cookieStore.set('access_token', access, {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
     path: '/',
     maxAge: 3600,
   });
-  store.set('refresh_token', refresh, {
+  cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
     path: '/',
     maxAge: 30 * 24 * 60 * 60,
   });
-  store.set('csrf_token', csrf, {
+  cookieStore.set('csrf_token', csrf, {
     secure: true,
     sameSite: 'none',
     path: '/',
@@ -43,7 +43,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const cookieStore = await cookies();  // ← ADD await HERE
+  const cookieStore = await cookies();  // ← await here
   const accessToken = cookieStore.get('access_token')?.value || cookieStore.get('token')?.value;
   if (!accessToken) return null;
 
@@ -76,8 +76,8 @@ export async function requireAuth() {
   return user;
 }
 
-export function verifyCSRF(request: Request): boolean {
-  const cookieStore = cookies(); // This one is sync in route handlers, but to be safe
+export async function verifyCSRF(request: Request): Promise<boolean> {
+  const cookieStore = await cookies();  // ← await here
   const cookie = cookieStore.get('csrf_token')?.value;
   const header = request.headers.get('X-CSRF-Token');
   return cookie && header && cookie === header;
