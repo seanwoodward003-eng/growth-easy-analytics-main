@@ -9,7 +9,6 @@ export default function LandingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !email.includes('@')) {
       setMessage('Please enter a valid email address');
       return;
@@ -19,31 +18,23 @@ export default function LandingPage() {
     setMessage('');
 
     try {
-      const res = await fetch('https://growth-easy-analytics-2.onrender.com/api/signup', {  // <-- your back-end Render URL
+      const res = await fetch('/api/signup', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.toLowerCase().trim(),
-          consent: true,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), consent: true }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setMessage('Success! Redirecting to your dashboard...');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
+        setMessage('Success! Redirecting to dashboard...');
+        setTimeout(() => window.location.href = '/dashboard', 1500);
       } else {
-        setMessage(data.error || 'Signup failed — please try again');
+        setMessage(data.error || 'Signup failed');
       }
     } catch (err) {
-      setMessage('Connection error — refresh and try again');
-      console.error(err);
+      setMessage('Connection error — try again');
     } finally {
       setLoading(false);
     }
@@ -54,7 +45,6 @@ export default function LandingPage() {
       <h1 className="text-7xl md:text-9xl font-bold text-[#00ffff] mb-8 animate-glitch">
         GROWTHEASY AI
       </h1>
-
       <p className="text-2xl md:text-4xl text-cyan-300 mb-4">
         AI-Powered Growth Analytics
       </p>
@@ -70,9 +60,8 @@ export default function LandingPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-8 py-5 text-lg bg-black/50 border-2 border-[#00ffff] text-[#00ffff] rounded-xl placeholder-cyan-600 focus:outline-none focus:ring-4 focus:ring-[#00ffff]/50 transition"
+            className="w-full px-8 py-5 text-lg bg-black/50 border-2 border-[#00ffff] text-[#00ffff] rounded-xl placeholder-cyan-600 focus:outline-none focus:ring-4 focus:ring-[#00ffff]/50"
           />
-
           <button
             type="submit"
             disabled={loading}
@@ -81,7 +70,6 @@ export default function LandingPage() {
             {loading ? 'Creating Account...' : 'Start Free Trial'}
           </button>
         </form>
-
         {message && (
           <p className={`text-xl font-medium ${message.includes('Success') ? 'text-green-400' : 'text-red-400'}`}>
             {message}
