@@ -4,14 +4,14 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { provider: string } }
+  context: { params: { provider: string } }
 ) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/?error=login_required`);
   }
 
-  const provider = params.provider;
+  const { provider } = context.params;
   const url = new URL(request.url);
   const shop = provider === 'shopify' ? url.searchParams.get('shop') : null;
 
@@ -29,9 +29,4 @@ export async function GET(
   }
 
   if (provider === 'hubspot') {
-    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${process.env.DOMAIN}/api/auth/hubspot/callback&scope=crm.objects.contacts.read crm.objects.deals.read&response_type=code&state=${user.id}`;
-    return NextResponse.redirect(authUrl);
-  }
-
-  return new Response('Invalid provider', { status: 400 });
-}
+    const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${process.env.HUBSPOT_CLIENT_ID}&redirect_uri=${process.env.DOMAIN}/api/auth/hubspot/callback&scope=crm.objects.contacts.read crm.objects.deals
