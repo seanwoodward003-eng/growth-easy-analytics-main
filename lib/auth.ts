@@ -1,4 +1,5 @@
-// lib/auth.ts
+// lib/auth.ts — updated version (copy-paste this over your current one)
+
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
@@ -18,43 +19,53 @@ export function generateTokens(userId: number, email: string) {
   return { access, refresh };
 }
 
+export function generateCsrfToken() {
+  return randomBytes(32).toString('hex');
+}
+
 export async function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const cookieStore = await cookies();  // ← await here
+  const cookieStore = cookies(); // No need for await in App Router server components/actions
+
   cookieStore.set('access_token', access, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: process.env.NODE_ENV === 'production', // true in prod, false in dev
+    sameSite: 'lax', // Changed from 'none' → 'lax' is safer and works better with redirects
     path: '/',
-    maxAge: 3600,
+    maxAge: 3600, // 1 hour
   });
+
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     path: '/',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   });
+
   cookieStore.set('csrf_token', csrf, {
-    secure: true,
-    sameSite: 'none',
+    httpOnly: false, // Must be readable by client JS for X-CSRF-Token header
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
     path: '/',
     maxAge: 30 * 24 * 60 * 60,
   });
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const cookieStore = await cookies();  // ← await here
-  const accessToken = cookieStore.get('access_token')?.value || cookieStore.get('token')?.value;
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get('access_token')?.value;
+
   if (!accessToken) return null;
 
   try {
-    const payload = jwt.verify(accessToken, JWT_SECRET) as any;
-    return { id: Number(payload.sub), email: payload.email || '' };
+    const payload = jwt.verify(accessToken, JWT_SECRET) as { sub: string; email: string };
+    return { id: Number(payload.sub), email: payload.email };
   } catch {
     return null;
   }
 }
 
+// Reusable for API routes and server actions
 export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) return { error: 'Unauthorized', status: 401 };
@@ -73,14 +84,13 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
-  return user;
+  return { user, row }; // Return more data if needed
 }
 
 export async function verifyCSRF(request: Request): Promise<boolean> {
-  const cookieStore = await cookies();  // ← await here
-  const cookie = cookieStore.get('csrf_token')?.value;
-  const header = request.headers.get('X-CSRF-Token');
+  const cookieStore = cookies();
+  const cookieCsrf = cookieStore.get('csrf_token')?.value;
+  const headerCsrf = request.headers.get('X-CSRF-Token');
 
-  // Fixed: explicitly return a boolean
-  return !!cookie && !!header && cookie === header;
+  return !!cookieCsrf && !!headerCsrf && cookieCsrf === headerCsrf;
 }
