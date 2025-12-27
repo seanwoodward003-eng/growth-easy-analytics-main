@@ -1,12 +1,27 @@
-'use client';
+// app/(dashboard)/layout.tsx
+import { getCurrentUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { AICoach } from '@/components/AICoach';  // Your AI chat component
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/');
+  }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  return (
+    <>
+      {children}
 
-  
+      {/* AI Chat Coach — appears on every dashboard page */}
+      <AICoach />
 
-  return <>{children}</>;
-} 
+      {/* Optional: Action Zone if you want it here too */}
+      {/* ... your Action Zone code ... */}
+    </>
+  );
+}
