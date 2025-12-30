@@ -24,22 +24,26 @@ function getClient(): Client {
 }
 
 export async function query(sql: string, args: any[] = []) {
+  await ensureDbInitialized();  // ← Ensures tables exist on first query
   const c = getClient();
   const result = await c.execute({ sql, args });
   return result;
 }
 
 export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
+  await ensureDbInitialized();  // ← Ensures tables exist
   const result = await query(sql, args);
   return result.rows[0] ? (result.rows[0] as T) : null;
 }
 
 export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
+  await ensureDbInitialized();  // ← Ensures tables exist
   const result = await query(sql, args);
   return result.rows as T[];
 }
 
 export async function run(sql: string, args: any[] = []) {
+  await ensureDbInitialized();  // ← Ensures tables exist
   await query(sql, args);
 }
 
@@ -95,7 +99,7 @@ async function ensureDbInitialized() {
       `,
       args: [],
     },
-    // NEW: rate_limits table for rate limiting
+    // ADDED: rate_limits table
     {
       sql: `
         CREATE TABLE IF NOT EXISTS rate_limits (
@@ -135,26 +139,35 @@ async function ensureDbInitialized() {
   dbInitialized = true;
 }
 
-// Auto-init on first query
+// Auto-init wrapper on all exports
 const originalQuery = query;
+export { originalQuery as query };
+
+const originalGetRow = getRow;
+export { originalGetRow as getRow };
+
+const originalGetRows = getRows;
+export { originalGetRows as getRows };
+
+const originalRun = run;
+export { originalRun as run };
+
+// Wrapped versions with auto-init
 export const query = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalQuery(sql, args);
 };
 
-const originalGetRow = getRow;
 export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
   await ensureDbInitialized();
   return originalGetRow(sql, args);
 };
 
-const originalGetRows = getRows;
 export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
   await ensureDbInitialized();
   return originalGetRows(sql, args);
 };
 
-const originalRun = run;
 export const run = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalRun(sql, args);
