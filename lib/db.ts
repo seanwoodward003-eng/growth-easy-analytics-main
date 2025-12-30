@@ -157,4 +157,4 @@ const originalRun = run;
 export const run = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalRun(sql, args);
-};
+}; 
