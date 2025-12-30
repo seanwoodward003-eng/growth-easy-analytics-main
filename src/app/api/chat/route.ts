@@ -1,7 +1,7 @@
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
-import { getRow } from '@/lib/db';
+import { getRow, run } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   if (!verifyCSRF(request)) {
@@ -10,6 +10,28 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireAuth();
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const userId = auth.user.id;
+
+  // RATE LIMIT: 8 messages per minute per user
+  const recentChats = await getRow<{ count: number }>(
+    `SELECT COUNT(*) as count FROM rate_limits 
+     WHERE user_id = ? AND endpoint = 'chat' 
+     AND timestamp > datetime('now', '-1 minute')`,
+    [userId]
+  );
+
+  if (recentChats.count >= 8) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded — maximum 8 messages per minute' },
+      { status: 429 }
+    );
+  }
+
+  // Log this chat request
+  await run(
+    'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
+    [userId]
+  );
 
   const { message } = await request.json();
   if (!message?.trim()) {
@@ -18,7 +40,7 @@ export async function POST(request: NextRequest) {
 
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
     'SELECT revenue, churn_rate, at_risk FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
-    [auth.user.id]
+    [userId]
   );
 
   const summary = metric
