@@ -95,20 +95,21 @@ async function ensureDbInitialized() {
       `,
       args: [],
     },
+    // NEW: rate_limits table for rate limiting
     {
       sql: `
         CREATE TABLE IF NOT EXISTS rate_limits (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id INTEGER,
-          endpoint TEXT,
-          timestamp TEXT,
+          user_id INTEGER NOT NULL,
+          endpoint TEXT NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(user_id) REFERENCES users(id)
         );
       `,
       args: [],
     },
     { sql: 'CREATE INDEX IF NOT EXISTS idx_metrics_user ON metrics(user_id);', args: [] },
-    { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint);', args: [] },
+    { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
   // Safe column additions
@@ -157,4 +158,4 @@ const originalRun = run;
 export const run = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalRun(sql, args);
-}; 
+};
