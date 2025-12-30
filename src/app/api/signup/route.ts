@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateTokens, setAuthCookies } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 import { randomBytes } from 'crypto';
-import { Resend } from 'resend';
+import { Resend } from 'resend';  // ← ADDED
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);  // ← ADDED
 
 async function handleSignup(json: any) {
   const email = (json.email || '').toLowerCase().trim();
@@ -15,23 +15,24 @@ async function handleSignup(json: any) {
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
   }
 
+  // ← ADDED: Prevent duplicate emails
   const existing = await getRow('SELECT id FROM users WHERE email = ?', [email]);
   if (existing) {
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
   const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const verificationToken = randomBytes(32).toString('hex');
+  const verificationToken = randomBytes(32).toString('hex');  // ← ADDED
 
   await run(
-    'INSERT INTO users (email, gdpr_consented, trial_end, subscription_status, verification_token) VALUES (?, ?, ?, ?, ?)',
-    [email, 1, trialEnd, 'trial', verificationToken]
+    'INSERT INTO users (email, gdpr_consented, trial_end, subscription_status, verification_token) VALUES (?, ?, ?, ?, ?)',  // ← added verification_token
+    [email, 1, trialEnd, 'trial', verificationToken]  // ← added token
   );
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) return NextResponse.json({ error: 'Failed' }, { status: 500 });
 
-  // Send verification email
+  // ← ADDED: Send verification email
   await resend.emails.send({
     from: 'verify@growtheasy.ai',
     to: email,
@@ -54,7 +55,7 @@ async function handleSignup(json: any) {
 
   const response = NextResponse.json({
     success: true,
-    message: 'Check your email to verify and activate your trial!',
+    message: 'Check your email to verify and activate your trial!',  // ← changed message
   });
 
   await setAuthCookies(access, refresh, csrf);
