@@ -2,7 +2,7 @@
 import { createClient } from '@libsql/client';
 import type { Client } from '@libsql/client';
 
-// Lazy-loaded client — only created when first needed (at runtime)
+// Lazy-loaded client
 let client: Client | null = null;
 
 function getClient(): Client {
@@ -24,8 +24,8 @@ function getClient(): Client {
 }
 
 export async function query(sql: string, args: any[] = []) {
-  const client = getClient();
-  const result = await client.execute({ sql, args });
+  const c = getClient();
+  const result = await c.execute({ sql, args });
   return result;
 }
 
@@ -43,11 +43,15 @@ export async function run(sql: string, args: any[] = []) {
   await query(sql, args);
 }
 
-// Schema initialization — safe, idempotent, and ready for long-term use
-export async function initDb() {
-  const client = getClient();
+// Schema initialization + rate_limits table
+let dbInitialized = false;
 
-  await client.batch([
+async function ensureDbInitialized() {
+  if (dbInitialized) return;
+
+  const c = getClient();
+
+  await c.batch([
     {
       sql: `
         CREATE TABLE IF NOT EXISTS users (
@@ -91,14 +95,27 @@ export async function initDb() {
       `,
       args: [],
     },
+    {
+      sql: `
+        CREATE TABLE IF NOT EXISTS rate_limits (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER,
+          endpoint TEXT,
+          timestamp TEXT,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+      `,
+      args: [],
+    },
     { sql: 'CREATE INDEX IF NOT EXISTS idx_metrics_user ON metrics(user_id);', args: [] },
+    { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint);', args: [] },
   ], 'write');
 
-  // Add any missing columns (safe migrations)
-  const info = await client.execute('PRAGMA table_info(users)');
+  // Safe column additions
+  const info = await c.execute('PRAGMA table_info(users)');
   const columns = info.rows.map((r: any) => r.name);
 
-  const columnAdditions = [
+  const additions = [
     { name: 'hubspot_refresh_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_refresh_token TEXT' },
     { name: 'shopify_access_token', sql: 'ALTER TABLE users ADD COLUMN shopify_access_token TEXT' },
     { name: 'gdpr_consented', sql: 'ALTER TABLE users ADD COLUMN gdpr_consented INTEGER DEFAULT 0' },
@@ -108,12 +125,36 @@ export async function initDb() {
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
   ];
 
-  for (const { name, sql } of columnAdditions) {
+  for (const { name, sql } of additions) {
     if (!columns.includes(name)) {
-      await client.execute(sql);
+      await c.execute(sql);
     }
   }
+
+  dbInitialized = true;
 }
 
-// NO automatic initDb() call here
-// Call initDb() from your signup route or authenticated requests (see below)
+// Auto-init on first query
+const originalQuery = query;
+export const query = async (sql: string, args: any[] = []) => {
+  await ensureDbInitialized();
+  return originalQuery(sql, args);
+};
+
+const originalGetRow = getRow;
+export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
+  await ensureDbInitialized();
+  return originalGetRow(sql, args);
+};
+
+const originalGetRows = getRows;
+export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
+  await ensureDbInitialized();
+  return originalGetRows(sql, args);
+};
+
+const originalRun = run;
+export const run = async (sql: string, args: any[] = []) => {
+  await ensureDbInitialized();
+  return originalRun(sql, args);
+};
