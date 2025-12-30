@@ -4,15 +4,35 @@ import "./globals.css";
 import { Orbitron } from 'next/font/google';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [showCookieBanner, setShowCookieBanner] = useState(false);
 
   const isActive = (path: string) => pathname.startsWith(path);
+
+  // Cookie Consent Logic
+  useEffect(() => {
+    const consent = localStorage.getItem('cookie_consent');
+    if (!consent) {
+      setShowCookieBanner(true);
+    }
+  }, []);
+
+  const acceptCookies = () => {
+    localStorage.setItem('cookie_consent', 'accepted');
+    setShowCookieBanner(false);
+    // Here you can load analytics scripts if needed
+  };
+
+  const declineCookies = () => {
+    localStorage.setItem('cookie_consent', 'declined');
+    setShowCookieBanner(false);
+  };
 
   return (
     <html lang="en">
@@ -20,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>GrowthEasy AI</title>
       </head>
-      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen`}>
+      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
           <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
             <Link href="/dashboard" className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
@@ -89,7 +109,53 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="pt-32 px-6 pb-40">
           {children}
         </main>
+
+        {/* Cookie Consent Banner */}
+        {showCookieBanner && (
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-cyan-200 text-center md:text-left">
+                We use cookies to enhance your experience and for essential functions. By continuing, you agree to our{' '}
+                <Link href="/privacy" className="text-cyan-400 underline hover:text-cyan-300">
+                  Privacy Policy
+                </Link>{' '}
+                and{' '}
+                <Link href="/terms" className="text-cyan-400 underline hover:text-cyan-300">
+                  Terms of Service
+                </Link>
+                .
+              </p>
+              <div className="flex space-x-4">
+                <button
+                  onClick={acceptCookies}
+                  className="bg-cyan-400 text-black font-bold px-8 py-4 rounded-xl hover:scale-105 transition"
+                >
+                  Accept All
+                </button>
+                <button
+                  onClick={declineCookies}
+                  className="border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-xl hover:bg-cyan-400/20 transition"
+                >
+                  Essential Only
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer with Public Links (visible on all pages, including landing) */}
+        <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
+          <Link href="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="hover:underline">
+            Terms of Service
+          </Link>
+          <p className="mt-4 text-cyan-400">
+            Beta v0.1 © 2025 GrowthEasy AI
+          </p>
+        </footer>
       </body>
     </html>
   );
-} 
+}
