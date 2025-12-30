@@ -109,6 +109,14 @@ export default function LandingPage() {
       <p className="absolute bottom-8 text-cyan-500 text-sm">
         Beta v0.1 © 2025 GrowthEasy AI
       </p>
+
+<div className="mt-20 text-center text-cyan-500 text-sm space-x-8 pb-8">
+  <a href="/privacy" className="hover:underline">Privacy Policy</a>
+  <a href="/terms" className="hover:underline">Terms of Service</a>
+</div>
+
+
+
     </main>
   );
 }
