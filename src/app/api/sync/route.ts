@@ -48,6 +48,27 @@ export async function POST(request: NextRequest) {
   }
   const userId = auth.user.id;
 
+  // RATE LIMIT: 6 syncs per hour per user
+  const recentSyncs = await getRow<{ count: number }>(
+    `SELECT COUNT(*) as count FROM rate_limits 
+     WHERE user_id = ? AND endpoint = 'sync' 
+     AND timestamp > datetime('now', '-1 hour')`,
+    [userId]
+  );
+
+  if (recentSyncs.count >= 6) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded — maximum 6 syncs per hour' },
+      { status: 429 }
+    );
+  }
+
+  // Log this sync attempt
+  await run(
+    'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "sync")',
+    [userId]
+  );
+
   const user = await getRow<{
     shopify_shop: string | null;
     shopify_access_token: string | null;
