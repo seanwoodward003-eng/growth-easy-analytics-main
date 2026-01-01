@@ -43,7 +43,7 @@ export async function run(sql: string, args: any[] = []) {
   await query(sql, args);
 }
 
-// Schema initialization + rate_limits table
+// Schema initialization
 let dbInitialized = false;
 
 async function ensureDbInitialized() {
@@ -71,7 +71,8 @@ async function ensureDbInitialized() {
           ga4_last_refreshed TEXT,
           created_at TEXT DEFAULT (datetime('now')),
           trial_end TEXT,
-          subscription_status TEXT DEFAULT 'trial'
+          subscription_status TEXT DEFAULT 'trial',
+          verification_token TEXT  -- ← ADDED THIS
         );
       `,
       args: [],
@@ -95,7 +96,6 @@ async function ensureDbInitialized() {
       `,
       args: [],
     },
-    // ADDED: rate_limits table for rate limiting
     {
       sql: `
         CREATE TABLE IF NOT EXISTS rate_limits (
@@ -112,7 +112,7 @@ async function ensureDbInitialized() {
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions
+  // Safe column additions (in case of older DBs)
   const info = await c.execute('PRAGMA table_info(users)');
   const columns = info.rows.map((r: any) => r.name);
 
@@ -124,6 +124,7 @@ async function ensureDbInitialized() {
     { name: 'hubspot_access_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_access_token TEXT' },
     { name: 'trial_end', sql: 'ALTER TABLE users ADD COLUMN trial_end TEXT' },
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
+    { name: 'verification_token', sql: 'ALTER TABLE users ADD COLUMN verification_token TEXT' },  // ← ADDED
   ];
 
   for (const { name, sql } of additions) {
@@ -135,7 +136,7 @@ async function ensureDbInitialized() {
   dbInitialized = true;
 }
 
-// Auto-init on first query
+// Auto-init on first DB access
 const originalQuery = query;
 export const query = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
