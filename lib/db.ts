@@ -4,6 +4,7 @@ import type { Client } from '@libsql/client';
 
 // Lazy-loaded client
 let client: Client | null = null;
+let dbInitialized = false;
 
 function getClient(): Client {
   const url = process.env.TURSO_DATABASE_URL;
@@ -23,29 +24,13 @@ function getClient(): Client {
   return client;
 }
 
-export async function query(sql: string, args: any[] = []) {
+// Raw execution (no auto-init)
+async function executeRaw(sql: string, args: any[] = []) {
   const c = getClient();
-  const result = await c.execute({ sql, args });
-  return result;
-}
-
-export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
-  const result = await query(sql, args);
-  return result.rows[0] ? (result.rows[0] as T) : null;
-}
-
-export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
-  const result = await query(sql, args);
-  return result.rows as T[];
-}
-
-export async function run(sql: string, args: any[] = []) {
-  await query(sql, args);
+  return await c.execute({ sql, args });
 }
 
 // Schema initialization
-let dbInitialized = false;
-
 async function ensureDbInitialized() {
   if (dbInitialized) return;
 
@@ -72,7 +57,7 @@ async function ensureDbInitialized() {
           created_at TEXT DEFAULT (datetime('now')),
           trial_end TEXT,
           subscription_status TEXT DEFAULT 'trial',
-          verification_token TEXT  -- ← ADDED THIS
+          verification_token TEXT
         );
       `,
       args: [],
@@ -112,8 +97,8 @@ async function ensureDbInitialized() {
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions (in case of older DBs)
-  const info = await c.execute('PRAGMA table_info(users)');
+  // Safe column additions for backward compatibility
+  const info = await executeRaw('PRAGMA table_info(users)');
   const columns = info.rows.map((r: any) => r.name);
 
   const additions = [
@@ -124,39 +109,37 @@ async function ensureDbInitialized() {
     { name: 'hubspot_access_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_access_token TEXT' },
     { name: 'trial_end', sql: 'ALTER TABLE users ADD COLUMN trial_end TEXT' },
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
-    { name: 'verification_token', sql: 'ALTER TABLE users ADD COLUMN verification_token TEXT' },  // ← ADDED
+    { name: 'verification_token', sql: 'ALTER TABLE users ADD COLUMN verification_token TEXT' },
   ];
 
   for (const { name, sql } of additions) {
     if (!columns.includes(name)) {
-      await c.execute(sql);
+      await executeRaw(sql);
     }
   }
 
   dbInitialized = true;
 }
 
-// Auto-init on first DB access
-const originalQuery = query;
-export const query = async (sql: string, args: any[] = []) => {
+// Public API — all functions now safely trigger initialization
+export async function query(sql: string, args: any[] = []) {
   await ensureDbInitialized();
-  return originalQuery(sql, args);
-};
+  return executeRaw(sql, args);
+}
 
-const originalGetRow = getRow;
-export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
+export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
   await ensureDbInitialized();
-  return originalGetRow(sql, args);
-};
+  const result = await executeRaw(sql, args);
+  return result.rows[0] ? (result.rows[0] as T) : null;
+}
 
-const originalGetRows = getRows;
-export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
+export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
   await ensureDbInitialized();
-  return originalGetRows(sql, args);
-};
+  const result = await executeRaw(sql, args);
+  return result.rows as T[];
+}
 
-const originalRun = run;
-export const run = async (sql: string, args: any[] = []) => {
+export async function run(sql: string, args: any[] = []) {
   await ensureDbInitialized();
-  return originalRun(sql, args);
-};
+  await executeRaw(sql, args);
+}
