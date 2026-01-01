@@ -1,4 +1,3 @@
-// app/api/chat/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
     [userId]
   );
 
-  if (recentChats.count >= 8) {
+  if (recentChats!.count >= 8) {
     return NextResponse.json(
       { error: 'Rate limit exceeded — maximum 8 messages per minute' },
       { status: 429 }
