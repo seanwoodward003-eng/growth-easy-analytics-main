@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${message}`;
 
   try {
-    console.log('Grok API request starting for user:', userId, 'Message:', message);
+    console.log('[Grok Request] Starting for user:', userId, '| Message:', message);
 
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // Confirmed working model (Jan 2026)
+        model: 'grok-4-1-fast-reasoning',  // Confirmed current cheap/fast/reasoning model
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
@@ -71,17 +71,17 @@ export async function POST(request: NextRequest) {
 
     if (!resp.ok) {
       const errorText = await resp.text();
-      console.error('Grok API error response:', resp.status, errorText);
-      throw new Error(`Grok API failed: ${resp.status} ${errorText}`);
+      console.error('[Grok API Error]', resp.status, errorText);
+      throw new Error(`Status ${resp.status}: ${errorText}`);
     }
 
     const data = await resp.json();
-    const reply = data.choices[0]?.message?.content?.trim() || 'No reply from Grok.';
+    const reply = data.choices[0]?.message?.content?.trim() || 'No reply.';
 
-    console.log('Grok success – reply:', reply);
+    console.log('[Grok Success] Reply:', reply);
     return NextResponse.json({ reply });
   } catch (e: any) {
-    console.error('Full Grok error:', e.message || e);
+    console.error('[Grok Catch Error]', e.message || e);
     return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
   }
 }
