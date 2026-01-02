@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // Confirmed current cheap/fast/reasoning model
+        model: 'grok-4-1-fast-reasoning',  // Updated to current fast reasoning model
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error('[Grok API Error]', resp.status, errorText);
-      throw new Error(`Status ${resp.status}: ${errorText}`);
+      throw new Error(`Grok API error ${resp.status}: ${errorText}`);
     }
 
     const data = await resp.json();
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply });
   } catch (e: any) {
     console.error('[Grok Catch Error]', e.message || e);
-    return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
+    return NextResponse.json({ reply: 'Sorry, something went wrong. Try again or check your API key/billing.' });
   }
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 }); 
+export const OPTIONS = () => new Response(null, { status: 200 });
