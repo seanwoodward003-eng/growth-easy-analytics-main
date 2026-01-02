@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
   const userId = auth.user.id;
 
-  // RATE LIMIT: 6 syncs per hour per user
+  // RATE LIMIT: 6 syncs per hour per user (safe null check)
   const recentSyncs = await getRow<{ count: number }>(
     `SELECT COUNT(*) as count FROM rate_limits 
      WHERE user_id = ? AND endpoint = 'sync' 
@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
     [userId]
   );
 
-  if (recentSyncs?.count >= 6) {
+  const syncCount = recentSyncs?.count ?? 0;
+
+  if (syncCount >= 6) {
     return NextResponse.json(
       { error: 'Rate limit exceeded — maximum 6 syncs per hour' },
       { status: 429 }
@@ -148,7 +150,6 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // FIXED: Use stable v1 API (not deprecated v1beta)
       const reportUrl = `https://analyticsdata.googleapis.com/v1/properties/${ga4_property_id}:runReport`;
       const headers = { Authorization: `Bearer ${ga4_access_token}`, 'Content-Type': 'application/json' };
 
@@ -165,8 +166,6 @@ export async function POST(request: NextRequest) {
         if (rows.length > 0) {
           top_channel = rows[0].dimensionValues[0].value || 'Organic';
         }
-      } else {
-        console.error('GA4 report failed:', await channelResp.text());
       }
     } catch (e) {
       console.error('GA4 sync error:', e);
