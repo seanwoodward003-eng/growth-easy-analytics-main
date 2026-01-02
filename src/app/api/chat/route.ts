@@ -86,4 +86,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 });
+export const OPTIONS = () => new Response(null, { status: 200 }); 
