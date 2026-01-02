@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4',  // Flagship model — guaranteed available to all accounts
+        model: 'grok-4',  // Flagship model — works on all accounts, most intelligent
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
