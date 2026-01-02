@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.GROK_API_KEY!,
+  baseURL: 'https://api.x.ai/v1', // Routes to Grok
+});
 
 export async function POST(request: NextRequest) {
   if (!verifyCSRF(request)) {
@@ -46,32 +52,24 @@ export async function POST(request: NextRequest) {
     ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
     : 'No data';
 
-  const systemPrompt = `You are GrowthEasy AI. User metrics: ${summary}. Answer: ${message}. <150 words.`;
+  const systemPrompt = `You are GrowthEasy AI. User metrics: ${summary}. Answer: ${message}. Keep it under 150 words. Concise and actionable.`;
 
   try {
-    const resp = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'grok-beta',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
-        ],
-        temperature: 0.7,
-        max_tokens: 200,
-      }),
+    const completion = await openai.chat.completions.create({
+      model: 'grok-4-fast', // Current, fast, cheap model
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
     });
 
-    if (!resp.ok) throw new Error('Grok API error');
-    const data = await resp.json();
-    const reply = data.choices[0].message.content;
+    const reply = completion.choices[0].message.content?.trim() || 'Try reducing churn with targeted emails.';
+
     return NextResponse.json({ reply });
-  } catch (e) {
-    console.error('Grok error:', e);
+  } catch (e: any) {
+    console.error('Grok API error:', e.message || e);
     return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
   }
 }
