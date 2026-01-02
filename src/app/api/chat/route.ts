@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${message}`;
 
   try {
-    console.log('Sending request to Grok API for user:', userId); // Will show in Vercel logs
+    console.log('Grok API request starting for user:', userId, 'Message:', message);
 
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // Current working model (Jan 2026)
+        model: 'grok-4-1-fast-reasoning',  // Confirmed working model (Jan 2026)
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
@@ -71,17 +71,17 @@ export async function POST(request: NextRequest) {
 
     if (!resp.ok) {
       const errorText = await resp.text();
-      console.error('Grok API failed:', resp.status, errorText); // This WILL show in logs
-      throw new Error(`Grok API error ${resp.status}: ${errorText}`);
+      console.error('Grok API error response:', resp.status, errorText);
+      throw new Error(`Grok API failed: ${resp.status} ${errorText}`);
     }
 
     const data = await resp.json();
-    const reply = data.choices[0]?.message?.content?.trim() || 'No reply generated.';
+    const reply = data.choices[0]?.message?.content?.trim() || 'No reply from Grok.';
 
-    console.log('Grok success – reply sent'); // Confirmation in logs
+    console.log('Grok success – reply:', reply);
     return NextResponse.json({ reply });
   } catch (e: any) {
-    console.error('Grok error:', e.message || e); // Exact error in Vercel logs
+    console.error('Full Grok error:', e.message || e);
     return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
   }
 }
