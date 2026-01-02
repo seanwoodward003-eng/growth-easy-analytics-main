@@ -46,9 +46,12 @@ export async function POST(request: NextRequest) {
     ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
     : 'No data';
 
-  const systemPrompt = `You are GrowthEasy AI. User metrics: ${summary}. Answer the user's question concisely in under 150 words. Be actionable and helpful. Question: ${message}`;
+  const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
+  Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${message}`;
 
   try {
+    console.log('Sending request to Grok API for user:', userId); // Will show in Vercel logs
+
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // This is a current, cheap, high-quality model that works
+        model: 'grok-4-1-fast-reasoning',  // Current working model (Jan 2026)
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
@@ -68,15 +71,17 @@ export async function POST(request: NextRequest) {
 
     if (!resp.ok) {
       const errorText = await resp.text();
+      console.error('Grok API failed:', resp.status, errorText); // This WILL show in logs
       throw new Error(`Grok API error ${resp.status}: ${errorText}`);
     }
 
     const data = await resp.json();
-    const reply = data.choices[0]?.message?.content?.trim() || 'Try reducing churn with targeted emails.';
+    const reply = data.choices[0]?.message?.content?.trim() || 'No reply generated.';
 
+    console.log('Grok success – reply sent'); // Confirmation in logs
     return NextResponse.json({ reply });
   } catch (e: any) {
-    console.error('Grok error:', e.message || e);
+    console.error('Grok error:', e.message || e); // Exact error in Vercel logs
     return NextResponse.json({ reply: 'Try reducing churn with targeted emails.' });
   }
 }
