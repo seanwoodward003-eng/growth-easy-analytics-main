@@ -1,3 +1,4 @@
+// app/api/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
   const userId = auth.user.id;
 
-  // RATE LIMIT: 6 syncs per hour per user
+  // RATE LIMIT: 6 syncs per hour per user (safe null check)
   const recentSyncs = await getRow<{ count: number }>(
     `SELECT COUNT(*) as count FROM rate_limits 
      WHERE user_id = ? AND endpoint = 'sync' 
