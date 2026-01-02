@@ -1,3 +1,4 @@
+// app/api/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     [userId]
   );
 
-  if (recentSyncs!.count >= 6) {
+  if (recentSyncs?.count >= 6) {
     return NextResponse.json(
       { error: 'Rate limit exceeded — maximum 6 syncs per hour' },
       { status: 429 }
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Fixed: Changed from /v1beta to /v1 (current stable API version)
+      // FIXED: Use stable v1 API (not deprecated v1beta)
       const reportUrl = `https://analyticsdata.googleapis.com/v1/properties/${ga4_property_id}:runReport`;
       const headers = { Authorization: `Bearer ${ga4_access_token}`, 'Content-Type': 'application/json' };
 
@@ -164,6 +165,8 @@ export async function POST(request: NextRequest) {
         if (rows.length > 0) {
           top_channel = rows[0].dimensionValues[0].value || 'Organic';
         }
+      } else {
+        console.error('GA4 report failed:', await channelResp.text());
       }
     } catch (e) {
       console.error('GA4 sync error:', e);
