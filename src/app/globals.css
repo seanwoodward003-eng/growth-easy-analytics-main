@@ -223,3 +223,53 @@ html, body, #__next {
 .glow-soft {
   text-shadow: 0 0 6px #00ffff, 0 0 12px #00ffff;
 }
+
+/* Subtle Cyberpunk Polish */
+.metric-card {
+  background: rgba(10, 15, 44, 0.6);
+  border: 3px solid rgba(0, 255, 255, 0.4);
+  border-radius: 32px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: #00ffff;
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+  transform: translateY(-8px);
+}
+
+/* Softer glows */
+.glow-title {
+  text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+}
+
+.glow-number {
+  text-shadow: 0 0 15px #00ffff;
+}
+
+/* Cyber buttons - softer */
+.cyber-btn {
+  background: linear-gradient(45deg, #00ffff, #00bfff);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+}
+
+.cyber-btn:hover {
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .metric-card {
+    padding: 2rem 1rem;
+  }
+  .text-8xl {
+    font-size: 4.5rem !important;
+  }
+  .text-7xl {
+    font-size: 3.5rem !important;
+  }
+}
