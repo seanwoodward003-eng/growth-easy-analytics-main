@@ -3,13 +3,10 @@
 import { useState } from 'react';
 
 export default function LandingPage() {
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-
-  // Hardcoded counters for launch (replace with DB fetch later)
-  const earlyBirdLeft = 200;
-  const totalLifetimeLeft = 500;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,20 +18,31 @@ export default function LandingPage() {
     setLoading(true);
     setMessage('');
 
+    const endpoint = mode === 'signup' ? '/api/signup' : '/api/login';
+
     try {
-      const res = await fetch('/api/signup', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase().trim(), consent: true }),
+        body: JSON.stringify({ 
+          email: email.toLowerCase().trim(),
+          ...(mode === 'signup' && { consent: true })
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setMessage('Check your email to verify and start your 7-day free trial!');
+        setMessage(mode === 'signup' 
+          ? 'Check your email to verify and start your 7-day free trial!'
+          : 'Welcome back! Redirecting to dashboard...'
+        );
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
       } else {
-        setMessage(data.error || 'Something went wrong — try again');
+        setMessage(data.error || 'Something went wrong — please try again');
       }
     } catch {
       setMessage('Connection error — try again');
@@ -58,8 +66,12 @@ export default function LandingPage() {
         </p>
 
         {/* CTA Form */}
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mb-20">
-          <div className="flex flex-col md:flex-row gap-6 items-center">
+        <div className="max-w-2xl mx-auto mb-20">
+          <h2 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-8">
+            {mode === 'signup' ? 'Start Your 7-Day Free Trial' : 'Welcome Back'}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-6 items-center">
             <input
               type="email"
               placeholder="your@email.com"
@@ -73,23 +85,37 @@ export default function LandingPage() {
               disabled={loading}
               className="w-full md:w-auto px-16 py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-2xl font-black rounded-full hover:scale-105 transition shadow-2xl shadow-cyan-500/50 disabled:opacity-70"
             >
-              {loading ? 'Sending...' : 'Start 7-Day Free Trial'}
+              {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
             </button>
           </div>
+
           {message && (
-            <p className={`mt-6 text-xl ${message.includes('Check your email') ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`mt-6 text-xl ${message.includes('Check') || message.includes('Welcome') ? 'text-green-400' : 'text-red-400'}`}>
               {message}
             </p>
           )}
-        </form>
+
+          {/* Toggle Link */}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'signup' ? 'signin' : 'signup');
+              setMessage('');
+              setEmail('');
+            }}
+            className="mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
+          >
+            {mode === 'signup' ? 'Already have an account? Sign in' : 'New here? Sign up for free trial'}
+          </button>
+        </div>
 
         {/* Urgency */}
         <div className="space-y-6 mb-20">
           <p className="text-4xl md:text-5xl font-black text-red-400 animate-pulse">
-            Only {earlyBirdLeft} Early Bird lifetime spots left at £49
+            Only 200 Early Bird lifetime spots left at £49
           </p>
           <p className="text-3xl md:text-4xl font-bold text-purple-400">
-            Lifetime access closes forever at 500 — {totalLifetimeLeft} spots remaining
+            Lifetime access closes forever at 500 — 500 spots remaining
           </p>
         </div>
 
@@ -123,7 +149,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="p-10 rounded-3xl bg-gradient-to-br from-cyan-900/30 to-black border-4 border-cyan-400">
               <p className="text-6xl font-black text-cyan-400 mb-4">£49</p>
-              <p className="text-2xl text-red-400 mb-8">Early Bird • {earlyBirdLeft} left</p>
+              <p className="text-2xl text-red-400 mb-8">Early Bird • 200 left</p>
               <p className="text-xl text-cyan-200">One-time payment</p>
             </div>
             <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-900/30 to-black border-4 border-purple-500">
