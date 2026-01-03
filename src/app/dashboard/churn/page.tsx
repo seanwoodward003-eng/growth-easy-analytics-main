@@ -2,6 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { ChurnChart } from "@/components/charts/ChurnChart";
+import AIInsights from "@/app/dashboard/ai-insights/page";
 
 export default function ChurnPage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
