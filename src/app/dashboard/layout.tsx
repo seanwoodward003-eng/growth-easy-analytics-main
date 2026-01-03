@@ -1,6 +1,9 @@
+'use client';
+
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { AICoach } from '@/components/AICoach';
+import Link from 'next/link'; // ← THIS WAS MISSING — NOW ADDED
 
 export default async function DashboardLayout({
   children,
@@ -41,7 +44,15 @@ export default async function DashboardLayout({
           <Link href="/pricing" className="block text-3xl py-4 border-b border-cyan-600/50 text-cyan-300 hover:text-cyan-400">
             Upgrade
           </Link>
-          <button onClick={() => { /* logout logic */ }} className="w-full text-left text-3xl text-red-400 py-4">
+          <button 
+            onClick={() => {
+              document.cookie = 'access_token=; Max-Age=0; path=/';
+              document.cookie = 'refresh_token=; Max-Age=0; path=/';
+              document.cookie = 'csrf_token=; Max-Age=0; path=/';
+              window.location.href = '/';
+            }}
+            className="w-full text-left text-3xl text-red-400 py-4"
+          >
             Logout
           </button>
         </div>
@@ -52,7 +63,7 @@ export default async function DashboardLayout({
         {children}
       </main>
 
-      {/* AI Coach */}
+      {/* AI Coach — appears on every dashboard page */}
       <AICoach />
     </div>
   );
