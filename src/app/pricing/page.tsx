@@ -6,8 +6,8 @@ export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
 
   // TODO: Replace with real DB fetch in production
-  const earlyBirdSold = 0; // Update from your DB
-  const totalLifetimeSold = 0; // Update from your DB
+  const earlyBirdSold = 0;
+  const totalLifetimeSold = 0;
 
   const EARLY_CAP = 200;
   const TOTAL_CAP = 500;
@@ -22,21 +22,11 @@ export default function Pricing() {
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
     setLoading(plan);
     try {
-      const priceMap = {
-        early_ltd: process.env.NEXT_PUBLIC_STRIPE_PRICE_EARLY_LTD,
-        standard_ltd: process.env.NEXT_PUBLIC_STRIPE_PRICE_STANDARD_LTD,
-        monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
-        annual: process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL,
-      };
-
-      const priceId = priceMap[plan];
-      if (!priceId) throw new Error('Invalid plan');
-
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan }), // Only send the plan name — secure
       });
 
       const data = await res.json();
@@ -55,7 +45,7 @@ export default function Pricing() {
       <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
       <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
 
-      {/* Real-Time Counters – Big & Urgent */}
+      {/* Urgency Counters */}
       <div className="max-w-4xl mx-auto mb-20 space-y-6">
         {showEarly && (
           <p className="text-5xl font-black text-red-400 animate-pulse">
@@ -77,8 +67,8 @@ export default function Pricing() {
             <h2 className="text-4xl font-bold mb-6">Early Bird Lifetime</h2>
             <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49</p>
             <p className="text-2xl text-red-400 mb-10">One-time • {earlyLeft} left</p>
-            <button 
-              onClick={() => handleCheckout('early_ltd')} 
+            <button
+              onClick={() => handleCheckout('early_ltd')}
               disabled={loading === 'early_ltd'}
               className="cyber-btn text-3xl px-12 py-6 w-full"
             >
@@ -93,8 +83,8 @@ export default function Pricing() {
             <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
             <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
             <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 500</p>
-            <button 
-              onClick={() => handleCheckout('standard_ltd')} 
+            <button
+              onClick={() => handleCheckout('standard_ltd')}
               disabled={loading === 'standard_ltd'}
               className="cyber-btn text-3xl px-12 py-6 w-full"
             >
@@ -107,8 +97,8 @@ export default function Pricing() {
         <div className="metric-bubble p-12">
           <h2 className="text-4xl font-bold mb-6">Monthly</h2>
           <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49<span className="text-4xl">/mo</span></p>
-          <button 
-            onClick={() => handleCheckout('monthly')} 
+          <button
+            onClick={() => handleCheckout('monthly')}
             disabled={loading === 'monthly'}
             className="cyber-btn text-3xl px-12 py-6 w-full"
           >
@@ -116,7 +106,7 @@ export default function Pricing() {
           </button>
         </div>
 
-        {/* Annual – Highlighted as Best Value */}
+        {/* Annual – Best Value */}
         <div className="metric-bubble p-12 border-4 border-green-500/80 shadow-2xl scale-105">
           <div className="bg-green-500/20 text-green-400 text-xl font-bold px-6 py-3 rounded-full mb-6 inline-block">
             BEST VALUE — SAVE 16%
@@ -124,8 +114,8 @@ export default function Pricing() {
           <h2 className="text-4xl font-bold mb-6">Annual</h2>
           <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£490<span className="text-4xl">/year</span></p>
           <p className="text-2xl text-green-400 mb-10">= £41/mo</p>
-          <button 
-            onClick={() => handleCheckout('annual')} 
+          <button
+            onClick={() => handleCheckout('annual')}
             disabled={loading === 'annual'}
             className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-3xl px-12 py-6 w-full"
           >
