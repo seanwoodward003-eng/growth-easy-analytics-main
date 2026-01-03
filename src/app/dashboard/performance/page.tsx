@@ -2,7 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { PerformanceChart } from "@/components/charts/PerformanceChart";
-import AIInsights from "@/app/dashboard/ai-insights/page";
+
 
 export default function PerformancePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
@@ -42,7 +42,7 @@ export default function PerformancePage() {
         <PerformanceChart />
       </div>
 
-      <AIInsights />
+    
     </div>
   );
 }
