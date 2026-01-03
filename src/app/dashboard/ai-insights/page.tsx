@@ -65,7 +65,7 @@ export default function AIInsightsPage() {
         )}
       </div>
 
-      {/* Input Bar */}
+      {/* Input */}
       <div className="max-w-5xl mx-auto">
         <form onSubmit={handleSubmit} className="flex gap-6">
           <input
