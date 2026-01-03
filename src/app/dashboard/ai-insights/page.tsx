@@ -2,7 +2,7 @@
 
 import { useChat } from 'ai/react';
 
-export default function AIInsightsPage() {
+export default function AIInsights() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
   }); 
