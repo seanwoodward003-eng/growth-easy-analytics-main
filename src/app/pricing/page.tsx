@@ -6,8 +6,8 @@ export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
 
   // TODO: Replace with real DB fetch in production
-  const earlyBirdSold = 0; // Update this from DB
-  const totalLifetimeSold = 0; // Update this from DB
+  const earlyBirdSold = 0; // Update from your DB
+  const totalLifetimeSold = 0; // Update from your DB
 
   const EARLY_CAP = 200;
   const TOTAL_CAP = 500;
@@ -53,18 +53,21 @@ export default function Pricing() {
   return (
     <div className="min-h-screen px-6 py-20 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
       <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
-      <p className="text-2xl text-cyan-300 mb-20">Lock in lifetime access before it's gone forever</p>
+      <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
 
-      {/* Urgency Banner */}
-      <div className="max-w-4xl mx-auto mb-20">
+      {/* Real-Time Counters – Big & Urgent */}
+      <div className="max-w-4xl mx-auto mb-20 space-y-6">
         {showEarly && (
-          <p className="text-4xl font-bold text-red-400 animate-pulse mb-4">
+          <p className="text-5xl font-black text-red-400 animate-pulse">
             Only {earlyLeft} Early Bird spots left at £49!
           </p>
         )}
-        <p className="text-3xl text-purple-400">
-          Lifetime access closes forever at {TOTAL_CAP} paid users — {totalLeft} spots remaining
+        <p className="text-4xl font-bold text-purple-400">
+          Lifetime closes forever at {TOTAL_CAP} — {totalLeft} spots remaining
         </p>
+        {lifetimeSoldOut && (
+          <p className="text-4xl font-bold text-gray-500">Lifetime Sold Out Forever</p>
+        )}
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -89,7 +92,7 @@ export default function Pricing() {
           <div className="metric-bubble p-12 border-4 border-purple-500/80 shadow-2xl">
             <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
             <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
-            <p className="text-2xl text-purple-400 mb-10">One-time • Closes forever at 500</p>
+            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 500</p>
             <button 
               onClick={() => handleCheckout('standard_ltd')} 
               disabled={loading === 'standard_ltd'}
@@ -97,14 +100,6 @@ export default function Pricing() {
             >
               {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
             </button>
-          </div>
-        )}
-
-        {/* Sold Out Lifetime */}
-        {lifetimeSoldOut && (
-          <div className="metric-bubble p-12 border-4 border-gray-600 opacity-70">
-            <h2 className="text-4xl font-bold mb-6 text-gray-400">Lifetime Sold Out</h2>
-            <p className="text-2xl text-gray-500 mb-10">All 500 spots claimed forever</p>
           </div>
         )}
 
@@ -121,9 +116,9 @@ export default function Pricing() {
           </button>
         </div>
 
-        {/* Annual - Highlighted */}
+        {/* Annual – Highlighted as Best Value */}
         <div className="metric-bubble p-12 border-4 border-green-500/80 shadow-2xl scale-105">
-          <div className="bg-green-500/20 text-green-400 text-xl font-bold px-4 py-2 rounded-full mb-6 inline-block">
+          <div className="bg-green-500/20 text-green-400 text-xl font-bold px-6 py-3 rounded-full mb-6 inline-block">
             BEST VALUE — SAVE 16%
           </div>
           <h2 className="text-4xl font-bold mb-6">Annual</h2>
@@ -139,8 +134,8 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Guarantee & Perks */}
-      <div className="max-w-4xl mx-auto mt-32 px-6 text-gray-300 text-xl space-y-6">
+      {/* Guarantee */}
+      <div className="max-w-4xl mx-auto mt-32 text-gray-300 text-xl space-y-6">
         <p className="text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
         <p>Lifetime plans include: current version + bug fixes forever + 12 months of all future major features free after close.</p>
         <p className="text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
