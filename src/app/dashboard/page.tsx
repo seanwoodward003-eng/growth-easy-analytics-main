@@ -2,66 +2,91 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
-import { AIInsights } from "@/components/AIInsights";
 import Link from 'next/link';
 
 export default function Dashboard() {
   const { metrics, isLoading, isConnected } = useMetrics();
 
+  // Simple logic for biggest opportunity (expand later)
+  const biggestOpportunity = metrics.churn.rate > 7 
+    ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
+    : `Scale acquisition — your CAC is healthy`;
+
   return (
-    <div className="min-h-screen px-4 py-8 md:px-8 lg:px-16">
+    <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24">
+      {/* Header */}
+      <h1 className="text-center text-6xl md:text-8xl font-black mb-12 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+        Dashboard
+      </h1>
+
+      {/* Not Connected State */}
       {!isConnected && (
-        <div className="text-center mb-12">
-          <p className="text-3xl text-cyan-300 glow-medium mb-4">
-            {isLoading ? "Loading..." : "Demo mode — connect accounts for real data"}
+        <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
+          <p className="text-3xl text-cyan-300 mb-6">
+            Connect your store to unlock real-time data and AI-powered insights
           </p>
+          <div className="flex flex-wrap justify-center gap-6 mt-10">
+            <button onClick={() => window.location.href = '/api/auth/shopify'} className="cyber-btn text-2xl px-10 py-5">
+              Connect Shopify
+            </button>
+            <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
+              Connect GA4
+            </button>
+            <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
+              Connect HubSpot
+            </button>
+          </div>
         </div>
       )}
 
-      <h2 className="glow-title text-center text-6xl md:text-8xl font-bold mb-16">
-        Dashboard
-      </h2>
+      {/* Biggest Opportunity Card */}
+      <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
+        <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
+        <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-20">
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">Revenue</h3>
-          <p className="metric-value">£{metrics.revenue.total.toLocaleString()}</p>
-          <p className="text-3xl text-green-400 mt-6 glow-medium">{metrics.revenue.trend}</p>
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
+        {/* Revenue */}
+        <div className="metric-card p-10 text-center">
+          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
+          <p className="text-7xl font-black text-cyan-400 mb-4">
+            £{metrics.revenue.total.toLocaleString()}
+          </p>
+          <p className="text-3xl text-green-400">{metrics.revenue.trend}</p>
+          <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
         </div>
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">Churn Rate</h3>
-          <p className="metric-value text-red-400">{metrics.churn.rate}%</p>
-          <p className="text-3xl text-red-400 mt-6 glow-medium">{metrics.churn.at_risk} at risk</p>
+
+        {/* Churn */}
+        <div className="metric-card p-10 text-center">
+          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Churn Rate</h3>
+          <p className="text-7xl font-black text-red-400 mb-4">
+            {metrics.churn.rate}%
+          </p>
+          <p className="text-3xl text-red-400">{metrics.churn.at_risk} at risk</p>
+          <p className="text-xl text-cyan-200 mt-6">
+            {metrics.churn.rate > 7 ? 'High churn — send win-back emails to at-risk customers' : 'Churn healthy — keep it up'}
+          </p>
         </div>
-        <div className="metric-bubble">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-4">LTV:CAC</h3>
-          <p className="metric-value text-green-400">{metrics.performance.ratio}:1</p>
+
+        {/* LTV:CAC */}
+        <div className="metric-card p-10 text-center">
+          <h3 className="text-4xl font-bold text-cyan-300 mb-6">LTV:CAC Ratio</h3>
+          <p className="text-7xl font-black text-green-400 mb-8">
+            {metrics.performance.ratio}:1
+          </p>
+          <p className="text-xl text-cyan-200">
+            {metrics.performance.ratio >= 3 ? 'Healthy ratio — scale acquisition' : 'Improve by reducing CAC or increasing LTV'}
+          </p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mb-20">
-        <RevenueChart />
-      </div>
-
-      <div className="text-center mb-20">
-        <h3 className="text-5xl font-bold text-cyan-400 mb-8">Connect Your Accounts</h3>
-        <div className="flex flex-wrap justify-center gap-6">
-          <button onClick={() => {
-            const shop = prompt("Enter your .myshopify.com domain");
-            if (shop) window.location.href = `/api/auth/shopify?shop=${shop}`;
-          }} className="cyber-btn text-2xl px-10 py-5">
-            Connect Shopify
-          </button>
-          <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
-            Connect GA4
-          </button>
-          <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
-            Connect HubSpot
-          </button>
+      {/* Main Chart */}
+      <div className="max-w-6xl mx-auto mb-20">
+        <div className="metric-card p-8">
+          <RevenueChart />
         </div>
       </div>
-
-      <AIInsights />
     </div>
   );
 }
