@@ -2,7 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RetentionChart } from "@/components/charts/RetentionChart";
-import AIInsights from "@/app/dashboard/ai-insights/page";
+
 
 
 export default function RetentionPage() {
