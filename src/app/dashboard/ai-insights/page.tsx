@@ -2,40 +2,85 @@
 
 import { useChat } from 'ai/react';
 
-export default function AIInsights() {
+export default function AIInsightsPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
-  }); 
+  });
 
   return (
-    <div className="flex flex-col h-screen max-w-6xl mx-auto p-6 md:p-12">
-      <div className="mb-8 text-center">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+    <div className="min-h-screen bg-gradient-to-b from-black to-[#0a0f2c] flex flex-col px-4 py-8 md:px-12 lg:px-24">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="glow-title text-6xl md:text-8xl font-black mb-6">
           AI Insights
         </h1>
-        <p className="text-gray-400 mt-4 text-lg">Powered by Grok • Real-time growth intelligence</p>
+        <p className="text-2xl text-cyan-300">Powered by Grok • Real-time growth intelligence</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto mb-8 space-y-6">
+      {/* Messages Area - Full height, scrollable */}
+      <div className="flex-1 overflow-y-auto mb-8 space-y-8 px-4">
+        {messages.length === 0 && (
+          <div className="text-center mt-20">
+            <p className="text-3xl text-cyan-300 mb-8">
+              Ask me anything about your revenue, churn, acquisition, or growth...
+            </p>
+            <div className="flex flex-wrap justify-center gap-6">
+              {[
+                "How can I reduce churn?",
+                "What's driving my revenue growth?",
+                "Which acquisition channel is best?",
+                "How does my LTV:CAC compare?",
+                "Give me 3 growth ideas this month",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleSubmit(new Event('submit') as any, { data: { prompt: q } })}
+                  className="text-cyan-300 text-xl px-8 py-4 rounded-full border-2 border-cyan-400/50 hover:bg-cyan-400/20 transition"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-3xl px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-md border ${m.role === 'user' ? 'bg-gradient-to-r from-purple-900/70 to-cyan-900/70 border-purple-500/60' : 'bg-gray-900/95 border-cyan-500/40'}`}>
-              <p className="whitespace-pre-wrap text-white leading-relaxed text-lg">{m.content}</p>
+            <div className={`max-w-4xl px-8 py-6 rounded-3xl shadow-2xl backdrop-blur-md border-4 ${
+              m.role === 'user' 
+                ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 border-purple-500/70' 
+                : 'bg-gray-900/95 border-cyan-500/60'
+            }`}>
+              <p className="text-xl md:text-2xl leading-relaxed whitespace-pre-wrap text-white">
+                {m.content}
+              </p>
             </div>
           </div>
         ))}
-        {isLoading && <div className="text-center text-cyan-400">Thinking...</div>}
+
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="px-8 py-6 rounded-3xl bg-gray-900/95 border-4 border-cyan-500/60">
+              <p className="text-2xl text-cyan-300">Thinking...</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-4">
+      {/* Input Bar - Fixed at bottom, spacious */}
+      <form onSubmit={handleSubmit} className="flex gap-6 max-w-5xl mx-auto">
         <input
           value={input}
           onChange={handleInputChange}
           placeholder="Ask about revenue, churn, growth..."
-          className="flex-1 bg-transparent border-4 border-cyan-500 rounded-2xl px-6 py-4 text-white text-lg focus:outline-none"
+          className="flex-1 bg-transparent border-4 border-cyan-500 rounded-full px-10 py-6 text-2xl text-white placeholder-cyan-400 focus:outline-none focus:border-cyan-300 transition"
           disabled={isLoading}
         />
-        <button type="submit" disabled={isLoading || !input.trim()} className="cyber-btn text-2xl px-10 py-4">
+        <button
+          type="submit"
+          disabled={isLoading || !input.trim()}
+          className="bg-gradient-to-r from-cyan-500 to-purple-600 text-black font-bold px-12 py-6 rounded-full text-2xl hover:opacity-90 transition disabled:opacity-50"
+        >
           Send
         </button>
       </form>
