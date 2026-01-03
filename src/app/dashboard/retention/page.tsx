@@ -43,7 +43,7 @@ export default function RetentionPage() {
         <RetentionChart />
       </div>
 
-      <AIInsights />
+      
     </div>
   );
 }
