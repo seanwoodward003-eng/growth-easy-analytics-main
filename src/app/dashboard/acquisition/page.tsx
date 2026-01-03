@@ -3,7 +3,7 @@
 import useMetrics from "@/hooks/useMetrics";
 import { AcquisitionChart } from "@/components/charts/AcquisitionChart";
 import { CostTrendChart } from "@/components/charts/CostTrendChart";
-import { AIInsights } from "@/components/AIInsights";
+
 
 export default function AcquisitionPage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
@@ -49,7 +49,6 @@ export default function AcquisitionPage() {
         </div>
       </div>
 
-      <AIInsights />
     </div>
   );
 }
