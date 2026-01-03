@@ -41,16 +41,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400">
-          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+        {/* Header with improved Menu button */}
+        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-6 py-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            {/* Logo */}
             <Link href="/dashboard" className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
               GrowthEasy AI
             </Link>
+
+            {/* Menu Button - Now premium & glowing */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="bg-transparent border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-full text-2xl font-medium hover:bg-cyan-400/20 transition"
+              className="relative group px-10 py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
             >
-              Menu
+              {/* Gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
+              {/* Inner dark layer */}
+              <div className="relative z-10 bg-[#0a0f2c]/80 px-10 py-4 rounded-xl text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
+                Menu
+              </div>
             </button>
           </div>
         </header>
@@ -143,7 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer with Public Links (visible on all pages, including landing) */}
+        {/* Footer */}
         <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
