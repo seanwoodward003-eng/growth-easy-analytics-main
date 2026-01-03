@@ -9,29 +9,44 @@ export default function AcquisitionPage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
 
   return (
-    <div className="px-6 py-20">
+    <div className="px-6 py-20 md:px-12 lg:px-24">
       <h1 className="glow-title text-center text-6xl md:text-8xl font-black mb-16 text-cyan-400">
         Acquisition
       </h1>
 
       {!isConnected && (
-        <div className="text-center mb-12">
-          <p className="text-3xl text-cyan-300 glow-medium mb-4">
-            {isError ? "Unable to load real data — please connect your accounts" : "Demo mode active — connect accounts for real data"}
+        <div className="max-w-5xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
+          <p className="text-3xl text-cyan-300 mb-6">
+            Connect your accounts to see real-time acquisition data and AI insights
           </p>
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
+            <button onClick={() => window.location.href = '/api/auth/shopify'} className="cyber-btn text-2xl px-10 py-5">
+              Connect Shopify
+            </button>
+            <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
+              Connect GA4
+            </button>
+            <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
+              Connect HubSpot
+            </button>
+          </div>
         </div>
       )}
 
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">Top Channel</p>
-        <p className="metric-value text-7xl">{metrics.acquisition.top_channel}</p>
-        <p className="text-5xl text-cyan-300 mt-8">Acquisition Cost</p>
-        <p className="metric-value text-7xl">£{metrics.acquisition.cac}</p>
+        <p className="metric-value text-8xl text-cyan-400 mb-4">{metrics.acquisition.top_channel}</p>
+        <p className="text-2xl text-cyan-200 mb-4">Acquisition Cost: £{metrics.acquisition.cac}</p>
+        <p className="text-xl text-purple-300 mt-6">Top channel driving growth — allocate 60% budget here to lower CAC</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-10 max-w-7xl mx-auto mb-20">
-        <AcquisitionChart />
-        <CostTrendChart />
+      <div className="grid lg:grid-cols-2 gap-12 mb-20">
+        <div className="metric-card p-8">
+          <AcquisitionChart />
+        </div>
+        <div className="metric-card p-8">
+          <CostTrendChart />
+        </div>
       </div>
 
       <AIInsights />
