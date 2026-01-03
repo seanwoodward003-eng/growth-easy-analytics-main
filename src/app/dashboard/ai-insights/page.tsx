@@ -8,7 +8,7 @@ export default function AIInsightsPage() {
   });
 
   return (
-    <div className="flex flex-col h-screen max-w-5xl mx-auto p-6">
+    <div className="flex flex-col h-screen max-w-6xl mx-auto p-6 md:p-12">
       <div className="mb-8 text-center">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           AI Insights
@@ -41,4 +41,4 @@ export default function AIInsightsPage() {
       </form>
     </div>
   );
-} 
+}
