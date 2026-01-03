@@ -5,7 +5,7 @@ import { useChat } from 'ai/react';
 export default function AIInsightsPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
-  });
+  }); 
 
   return (
     <div className="flex flex-col h-screen max-w-6xl mx-auto p-6 md:p-12">
