@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRow, run } from '@/lib/db';
 import { generateTokens, setAuthCookies } from '@/lib/auth';
-import { randomBytes } from 'crypto';
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
@@ -10,11 +9,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?error=no_token', request.url));
   }
 
-  // Fetch user with token and expiry
   const user = await getRow<{ 
     id: number; 
     email: string; 
-    verification_token_expires: string;
+    verification_token_expires: string | null;
   }>(
     'SELECT id, email, verification_token_expires FROM users WHERE verification_token = ?',
     [token]
@@ -24,26 +22,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?error=invalid_token', request.url));
   }
 
-  // Check if token is expired
-  const tokenExpires = new Date(user.verification_token_expires);
-  if (tokenExpires < new Date()) {
-    // Optional: clear expired token
+  // Check token expiry
+  if (user.verification_token_expires && new Date(user.verification_token_expires) < new Date()) {
     await run('UPDATE users SET verification_token = NULL, verification_token_expires = NULL WHERE id = ?', [user.id]);
     return NextResponse.redirect(new URL('/?error=token_expired', request.url));
   }
 
-  // Token valid — verify user and clear token data
+  // Clear token
   await run(
     'UPDATE users SET verification_token = NULL, verification_token_expires = NULL WHERE id = ?',
     [user.id]
   );
 
-  // Auto-login the user
+  // Generate tokens and set cookies
   const { access, refresh } = generateTokens(user.id, user.email);
-  const csrf = randomBytes(32).toString('hex');
+  const csrf = crypto.randomBytes(32).toString('hex'); // if not in generateTokens
 
   const response = NextResponse.redirect(new URL('/dashboard?verified=true', request.url));
-  await setAuthCookies(response, access, refresh, csrf);  // Make sure setAuthCookies accepts response
+  await setAuthCookies(access, refresh, csrf); // your function sets cookies on the current response
 
   return response;
 }
