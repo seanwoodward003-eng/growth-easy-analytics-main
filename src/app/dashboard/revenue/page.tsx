@@ -2,7 +2,7 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
-import AIInsights from "@/app/dashboard/ai-insights/page";
+
 
 export default function RevenuePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
@@ -43,7 +43,7 @@ export default function RevenuePage() {
         <RevenueChart />
       </div>
 
-      <AIInsights />
+      
     </div>
   );
 }
