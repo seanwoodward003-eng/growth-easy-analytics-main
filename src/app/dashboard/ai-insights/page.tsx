@@ -8,7 +8,7 @@ export default function AIInsightsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-[#0a0f2c] flex flex-col px-4 py-8 md:px-12 lg:px-24">
+    <div className="min-h-screen bg-gradient-to-b from-black to-[#0a0f2c] flex flex-col px-6 py-12 md:px-12 lg:px-24">
       {/* Header */}
       <div className="text-center mb-12">
         <h1 className="glow-title text-6xl md:text-8xl font-black mb-6">
@@ -17,11 +17,11 @@ export default function AIInsightsPage() {
         <p className="text-2xl text-cyan-300">Powered by Grok • Real-time growth intelligence</p>
       </div>
 
-      {/* Messages Area - Full height, scrollable */}
-      <div className="flex-1 overflow-y-auto mb-8 space-y-8 px-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto mb-8 space-y-8">
         {messages.length === 0 && (
           <div className="text-center mt-20">
-            <p className="text-3xl text-cyan-300 mb-8">
+            <p className="text-3xl text-cyan-300 mb-12">
               Ask me anything about your revenue, churn, acquisition, or growth...
             </p>
             <div className="flex flex-wrap justify-center gap-6">
@@ -48,12 +48,10 @@ export default function AIInsightsPage() {
           <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-4xl px-8 py-6 rounded-3xl shadow-2xl backdrop-blur-md border-4 ${
               m.role === 'user' 
-                ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 border-purple-500/70' 
-                : 'bg-gray-900/95 border-cyan-500/60'
+                ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 border-purple-500/70 text-white' 
+                : 'bg-gray-900/95 border-cyan-500/60 text-white'
             }`}>
-              <p className="text-xl md:text-2xl leading-relaxed whitespace-pre-wrap text-white">
-                {m.content}
-              </p>
+              <p className="text-xl md:text-2xl leading-relaxed whitespace-pre-wrap">{m.content}</p>
             </div>
           </div>
         ))}
@@ -67,23 +65,25 @@ export default function AIInsightsPage() {
         )}
       </div>
 
-      {/* Input Bar - Fixed at bottom, spacious */}
-      <form onSubmit={handleSubmit} className="flex gap-6 max-w-5xl mx-auto">
-        <input
-          value={input}
-          onChange={handleInputChange}
-          placeholder="Ask about revenue, churn, growth..."
-          className="flex-1 bg-transparent border-4 border-cyan-500 rounded-full px-10 py-6 text-2xl text-white placeholder-cyan-400 focus:outline-none focus:border-cyan-300 transition"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !input.trim()}
-          className="bg-gradient-to-r from-cyan-500 to-purple-600 text-black font-bold px-12 py-6 rounded-full text-2xl hover:opacity-90 transition disabled:opacity-50"
-        >
-          Send
-        </button>
-      </form>
+      {/* Input Bar */}
+      <div className="max-w-5xl mx-auto">
+        <form onSubmit={handleSubmit} className="flex gap-6">
+          <input
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Ask about revenue, churn, growth..."
+            className="flex-1 bg-transparent border-4 border-cyan-500 rounded-full px-10 py-6 text-2xl text-white placeholder-cyan-400 focus:outline-none focus:border-cyan-300 transition"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-12 py-6 rounded-full font-bold text-2xl hover:opacity-90 transition disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
