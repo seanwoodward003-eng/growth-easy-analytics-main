@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRow, run } from '@/lib/db';
 import { generateTokens, setAuthCookies } from '@/lib/auth';
+import crypto from 'crypto'; // ← Proper Node.js crypto import
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
 
   if (!token) {
-    return NextResponse.redirect(new URL('/?error=no_token', request.url));
+  return NextResponse.redirect(new URL('/?error=no_token', request.url));
   }
 
   const user = await getRow<{ 
@@ -34,12 +35,13 @@ export async function GET(request: NextRequest) {
     [user.id]
   );
 
-  // Generate tokens and set cookies
+  // Generate tokens and csrf
   const { access, refresh } = generateTokens(user.id, user.email);
-  const csrf = crypto.randomBytes(32).toString('hex'); // if not in generateTokens
+  const csrf = crypto.randomBytes(32).toString('hex');
 
+  // Set cookies and redirect
   const response = NextResponse.redirect(new URL('/dashboard?verified=true', request.url));
-  await setAuthCookies(access, refresh, csrf); // your function sets cookies on the current response
+  await setAuthCookies(access, refresh, csrf); // Your function uses the current response
 
   return response;
 }
