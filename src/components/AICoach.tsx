@@ -27,9 +27,9 @@ export function AICoach() {
         </svg>
       </button>
 
-      {/* Chat Window */}
+      {/* Chat Window - Spacious & Clean */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-[#0a0f2c]/98 backdrop-blur-xl border-4 border-cyan-400/60 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] md:h-[700px] bg-[#0a0f2c]/98 backdrop-blur-xl border-4 border-cyan-400/60 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-900/80 to-cyan-900/80 p-5 flex justify-between items-center border-b border-cyan-400/40">
             <h3 className="text-2xl font-black text-cyan-300">AI Growth Coach</h3>
@@ -66,7 +66,7 @@ export function AICoach() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+          {/* Input - Big and spacious */}
           <form onSubmit={handleSubmit} className="p-6 border-t border-cyan-400/40">
             <div className="flex gap-4">
               <input
