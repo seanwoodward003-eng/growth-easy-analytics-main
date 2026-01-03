@@ -11,7 +11,6 @@ export function AICoach() {
     api: '/api/chat',
   });
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -28,9 +27,9 @@ export function AICoach() {
         </svg>
       </button>
 
-      {/* Chat Window — Spacious & Clean */}
+      {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 h-[32rem] bg-[#0a0f2c]/95 backdrop-blur-xl border-4 border-cyan-400/60 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-[#0a0f2c]/98 backdrop-blur-xl border-4 border-cyan-400/60 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-900/80 to-cyan-900/80 p-5 flex justify-between items-center border-b border-cyan-400/40">
             <h3 className="text-2xl font-black text-cyan-300">AI Growth Coach</h3>
@@ -39,8 +38,8 @@ export function AICoach() {
             </button>
           </div>
 
-          {/* Messages — Plenty of space */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messages.length === 0 && (
               <p className="text-center text-cyan-300/70 text-lg mt-10">
                 Ask me anything about your revenue, churn, or growth...
@@ -48,7 +47,7 @@ export function AICoach() {
             )}
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] px-6 py-4 rounded-2xl shadow-lg backdrop-blur-sm border ${
+                <div className={`max-w-[85%] px-6 py-4 rounded-3xl shadow-lg backdrop-blur-sm border ${
                   m.role === 'user' 
                     ? 'bg-gradient-to-r from-purple-600/80 to-cyan-600/80 border-purple-500/60 text-white' 
                     : 'bg-gray-800/90 border-cyan-500/40 text-white'
@@ -59,7 +58,7 @@ export function AICoach() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="px-6 py-4 rounded-2xl bg-gray-800/90 border-cyan-500/40">
+                <div className="px-6 py-4 rounded-3xl bg-gray-800/90 border-cyan-500/40">
                   <p className="text-cyan-300">Thinking...</p>
                 </div>
               </div>
@@ -67,7 +66,7 @@ export function AICoach() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input — Full width, spacious */}
+          {/* Input */}
           <form onSubmit={handleSubmit} className="p-6 border-t border-cyan-400/40">
             <div className="flex gap-4">
               <input
