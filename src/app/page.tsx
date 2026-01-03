@@ -87,7 +87,7 @@ export default function LandingPage() {
             >
               {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
             </button>
-          </div>
+          </form>
 
           {message && (
             <p className={`mt-6 text-xl ${message.includes('Check') || message.includes('Welcome') ? 'text-green-400' : 'text-red-400'}`}>
