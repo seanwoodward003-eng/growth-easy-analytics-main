@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
+/* ====================== BASE ====================== */
 html, body, #__next {
   height: 100%;
   margin: 0;
@@ -7,269 +8,201 @@ html, body, #__next {
   background: linear-gradient(135deg, #0a0f2c 0%, #1a1f3d 100%);
   color: #e0e7ff;
   font-family: 'Orbitron', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glow Effects */
+/* ====================== TYPOGRAPHY ====================== */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+p {
+  margin: 1rem 0;
+  line-height: 1.6;
+}
+
+/* ====================== SUBTLE GLOW EFFECTS ====================== */
+.glow-title {
+  text-shadow: 
+    0 0 10px #00ffff,
+    0 0 20px #00ffff,
+    0 0 30px #00ffff;
+}
+
+.glow-number {
+  text-shadow: 
+    0 0 10px #00ffff,
+    0 0 20px #00ffff;
+}
+
 .glow-medium {
   text-shadow: 
     0 0 8px #00ffff,
-    0 0 15px #00ffff;
+    0 0 16px #00ffff,
+    0 0 24px #00ffff;
 }
 
 .glow-soft {
-  text-shadow: 0 0 6px #00ffff;
-}
-.glow-medium {
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff;
-}
-
-.glitch {
-  animation: glitch 1.5s infinite;
+  text-shadow: 
+    0 0 6px #00ffff,
+    0 0 12px #00ffff;
 }
 
-@keyframes glitch {
-  0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
-  50% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; }
-  100% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; }
-}
-
-/* Metric Bubbles */
-.metric-bubble {
-  background: rgba(0, 255, 255, 0.05);
-  border: 4px solid #00ffff;
-  border-radius: 30px;
-  padding: 2.5rem 2rem;
+/* ====================== METRIC CARDS ====================== */
+.metric-card {
+  background: rgba(10, 15, 44, 0.7);
+  border: 3px solid rgba(0, 255, 255, 0.4);
+  border-radius: 32px;
+  padding: 3rem 2rem;
   text-align: center;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  transition: all 0.4s ease;
   margin: 2rem auto;
   max-width: 90%;
-  backdrop-filter: blur(10px);
 }
 
+.metric-card:hover {
+  border-color: #00ffff;
+  box-shadow: 
+    0 12px 40px rgba(0, 255, 255, 0.3),
+    0 0 50px rgba(0, 255, 255, 0.4);
+  transform: translateY(-8px);
+}
+
+/* Big metric values */
 .metric-value {
-  font-size: 4.5rem;
+  font-size: 6rem;
   font-weight: 900;
   color: #00ffff;
-  text-shadow: 0 0 15px #00ffff; /* was 30px → much softer */
+  text-shadow: 0 0 15px #00ffff;
+  line-height: 1;
 }
 
-/* Buttons */
+/* ====================== CYBER BUTTONS ====================== */
 .cyber-btn {
   background: linear-gradient(45deg, #00ffff, #00bfff);
   color: #0a0f2c;
-  padding: 1rem 2rem;
+  padding: 1.2rem 2.5rem;
   border-radius: 50px;
   font-weight: bold;
-  font-size: 1.4rem;
-  box-shadow: 0 0 30px #00ffff;
+  font-size: 1.6rem;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
   transition: all 0.3s ease;
   cursor: pointer;
-  min-width: 200px;
+  min-width: 220px;
+  border: none;
+  display: inline-block;
 }
 
 .cyber-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 50px #00ffff;
+  transform: scale(1.08);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
 }
 
-/* AI Chat Box */
-.ai-chat-box {
-  background: rgba(0, 255, 255, 0.1);
-  border: 3px solid #00ffff;
-  border-radius: 30px;
-  padding: 2rem;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
-  margin: 3rem auto;
-  max-width: 95%;
+.cyber-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* Navigation Buttons */
-.nav-btn {
-  color: #e0e7ff;
-  padding: 0.8rem 1.6rem;
-  border-radius: 12px;
-  transition: all 0.3s;
-  font-weight: bold;
-  font-size: 1.1rem;
+/* Best Value Highlight */
+.cyber-btn.bg-green-500 {
+  background: linear-gradient(45deg, #00ff88, #00cc66);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
 }
 
-.nav-btn:hover, .nav-btn.active {
-  background: #00ffff;
-  color: #0a0f2c;
-  box-shadow: 0 0 30px #00ffff;
+.cyber-btn.bg-green-500:hover {
+  box-shadow: 0 0 50px rgba(0, 255, 136, 0.8);
 }
 
-/* ==================== MOBILE RESPONSIVENESS ==================== */
+/* ====================== GENERAL SPACING ====================== */
+section {
+  padding: 4rem 2rem;
+}
 
-/* Default mobile styles (base) */
+.mb-20 {
+  margin-bottom: 5rem;
+}
+
+.mt-20 {
+  margin-top: 5rem;
+}
+
+/* ====================== MOBILE RESPONSIVENESS ====================== */
 @media (max-width: 767px) {
-  /* Big titles */
-  h1, h2, .glow-title {
-    font-size: 2.8rem !important;
-    margin-bottom: 1.5rem;
+  h1.glow-title {
+    font-size: 3.5rem !important;
   }
 
-  /* Profile email */
-  p.dashboard-email, .dashboard-email {
-    font-size: 1.8rem !important;
-    margin-bottom: 2rem;
-  }
-
-  /* Metric values */
   .metric-value {
-    font-size: 3.2rem !important;
+    font-size: 4rem !important;
   }
 
-  /* Subtitle / trend text under metrics */
-  .metric-subtitle, .trend-text {
-    font-size: 1.8rem !important;
-    margin-top: 1rem;
-  }
-
-  /* Buttons */
-  .cyber-btn, .connect-btn {
-    font-size: 1.2rem !important;
-    padding: 0.8rem 1.6rem !important;
-    min-width: auto;
-    width: 80%;
-    margin: 0.8rem auto;
-    display: block;
-  }
-
-  /* Chart */
-  .chart-container {
-    height: 280px !important;
-    padding: 0 1rem;
-  }
-
-  /* General spacing */
-  section, .section {
+  .metric-card {
     padding: 2rem 1rem;
   }
 
-  /* Stack connect buttons vertically */
-  .connect-buttons-container {
-    flex-direction: column;
-    gap: 1rem;
+  .cyber-btn {
+    font-size: 1.4rem !important;
+    padding: 1rem 2rem !important;
+    min-width: auto;
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  section {
+    padding: 2rem 1rem;
   }
 }
 
 /* Tablet */
 @media (min-width: 768px) and (max-width: 1023px) {
-  h1, h2, .glow-title {
-    font-size: 4.5rem;
+  .glow-title {
+    font-size: 5rem !important;
   }
 
   .metric-value {
-    font-size: 5rem;
+    font-size: 5.5rem !important;
   }
 
   .cyber-btn {
     font-size: 1.6rem;
     padding: 1.2rem 2.4rem;
   }
-
-  .chart-container {
-    height: 400px;
-  }
 }
 
-/* Desktop - full glory */
+/* Desktop */
 @media (min-width: 1024px) {
-  h1, h2, .glow-title {
-    font-size: 5.5rem;
+  .glow-title {
+    font-size: 6rem;
   }
 
   .metric-value {
-    font-size: 6rem;
+    font-size: 7rem;
   }
 
   .cyber-btn {
     font-size: 1.8rem;
     padding: 1.4rem 3rem;
   }
-
-  .chart-container {
-    height: 500px;
-  }
-}
-  /* Mobile Menu Button - cyber style */
-.mobile-menu-btn {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.8rem 1.8rem;
-  background: rgba(0, 255, 255, 0.1);
-  border: 3px solid #00ffff;
-  border-radius: 50px;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
-  transition: all 0.3s ease;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #00ffff;
 }
 
-.mobile-menu-btn:hover {
-  background: rgba(0, 255, 255, 0.2);
-  box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
-  transform: scale(1.05);
+/* ====================== AI CHAT SPECIFIC ====================== */
+.ai-chat-message-user {
+  background: linear-gradient(45deg, rgba(128, 0, 255, 0.7), rgba(0, 255, 255, 0.7));
+  border-color: #8000ff80;
 }
 
-/* Softer glows - add these if not already there */
-.glow-medium {
-  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
-}
-
-.glow-soft {
-  text-shadow: 0 0 6px #00ffff, 0 0 12px #00ffff;
-}
-
-/* Subtle Cyberpunk Polish */
-.metric-card {
-  background: rgba(10, 15, 44, 0.6);
-  border: 3px solid rgba(0, 255, 255, 0.4);
-  border-radius: 32px;
-  padding: 3rem 2rem;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  transition: all 0.3s ease;
-}
-
-.metric-card:hover {
-  border-color: #00ffff;
-  box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
-  transform: translateY(-8px);
-}
-
-/* Softer glows */
-.glow-title {
-  text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
-}
-
-.glow-number {
-  text-shadow: 0 0 15px #00ffff;
-}
-
-/* Cyber buttons - softer */
-.cyber-btn {
-  background: linear-gradient(45deg, #00ffff, #00bfff);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
-}
-
-.cyber-btn:hover {
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
-}
-
-/* Mobile adjustments */
-@media (max-width: 767px) {
-  .metric-card {
-    padding: 2rem 1rem;
-  }
-  .text-8xl {
-    font-size: 4.5rem !important;
-  }
-  .text-7xl {
-    font-size: 3.5rem !important;
-  }
+.ai-chat-message-assistant {
+  background: rgba(20, 20, 40, 0.95);
+  border-color: #00ffff80;
 }
