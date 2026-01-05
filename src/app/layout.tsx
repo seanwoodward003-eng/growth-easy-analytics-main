@@ -14,7 +14,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [showCookieBanner, setShowCookieBanner] = useState(false);
 
   const isCoachPage = pathname === '/dashboard/ai-growth-coach';
-
   const isActive = (path: string) => pathname.startsWith(path);
 
   // Cookie Consent
@@ -38,8 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Perfect mobile viewport – fixes address bar & keyboard issues */}
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
@@ -114,16 +112,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content – dynamic height, full screen on coach page */}
-        <main className={isCoachPage ? 'min-h-dvh' : 'min-h-dvh pt-32 px-6 pb-40'}>
-          {children}
+        {/* Main content – now consistently centered with safe padding */}
+        <main className={isCoachPage ? 'min-h-dvh pt-24' : 'min-h-dvh pt-32 pb-40'}>
+          <div className="max-w-7xl mx-auto px-6">
+            {children}
+          </div>
         </main>
 
         {/* Cookie Banner */}
         {showCookieBanner && (
           <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl pb-safe">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-cyan-200 text-center md:text-left">
+              <p className="text-cyan-200 text-center md:text-left text-sm md:text-base">
                 We use cookies to enhance your experience and for essential functions. By continuing, you agree to our{' '}
                 <Link href="/privacy" className="text-cyan-400 underline hover:text-cyan-300">
                   Privacy Policy
@@ -155,15 +155,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Footer - hide on coach page */}
         {!isCoachPage && (
           <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
-            <Link href="/privacy" className="hover:underline">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:underline">
-              Terms of Service
-            </Link>
-            <p className="mt-4 text-cyan-400">
-              Beta v0.1 © 2025 GrowthEasy AI
-            </p>
+            <div className="max-w-7xl mx-auto px-6">
+              <Link href="/privacy" className="hover:underline">
+                Privacy Policy
+              </Link>{' '}
+              <Link href="/terms" className="hover:underline">
+                Terms of Service
+              </Link>
+              <p className="mt-4 text-cyan-400">
+                Beta v0.1 © 2025 GrowthEasy AI
+              </p>
+            </div>
           </footer>
         )}
       </body>
