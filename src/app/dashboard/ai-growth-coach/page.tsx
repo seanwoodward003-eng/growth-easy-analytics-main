@@ -8,65 +8,236 @@ export default function AIGrowthCoachPage() {
   });
 
   return (
-    <div className="min-h-screen bg-cyber-bg flex flex-col font-orbitron text-cyan-100">
-      <div className="flex-1 overflow-y-auto p-6 md:p-12 pb-32">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Messages Area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem 1rem 8rem 1rem' }}>
+        {/* Empty State */}
         {messages.length === 0 && (
-          <div className="flex h-full items-center justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 blur-3xl bg-cyber-neon/30 animate-pulse rounded-full" />
-              <svg className="h-64 w-64 text-cyber-neon drop-shadow-2xl" viewBox="0 0 163.53 163.53">
-                <rect width="163.53" height="163.53" fill="currentColor" rx="40" className="opacity-20" />
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                filter: 'blur(72px)',
+                background: 'rgba(0, 255, 255, 0.3)',
+                borderRadius: '9999px',
+                animation: 'pulse 3s infinite'
+              }} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ width: '20rem', height: '20rem', color: '#00ffff', filter: 'drop-shadow(0 0 40px #00ffff)' }}
+                viewBox="0 0 163.53 163.53"
+              >
+                <rect width="163.53" height="163.53" fill="currentColor" rx="40" opacity="0.2" />
                 <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" fill="currentColor" />
               </svg>
             </div>
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto space-y-10">
-          {messages.map((m, i) => (
-            <div key={m.id} className={`flex items-start gap-6 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`relative max-w-3xl px-8 py-6 rounded-3xl border-4 backdrop-blur-xl shadow-2xl
-                ${m.role === 'user' 
-                  ? 'bg-gradient-to-r from-purple-900/70 to-cyan-900/70 border-purple-500/70' 
-                  : 'bg-gray-900/95 border-cyber-neon/60'}`}
-              >
+        {/* Messages */}
+        <div style={{ maxWidth: '90rem', margin: '0 auto', padding: '0 1rem' }}>
+          {messages.map((m, index) => (
+            <div
+              key={m.id}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1.5rem',
+                marginBottom: '3rem',
+                flexDirection: m.role === 'user' ? 'row-reverse' : 'row'
+              }}
+            >
+              {/* Avatar */}
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                borderRadius: '50%',
+                background: 'rgba(30, 30, 60, 0.8)',
+                border: '3px solid rgba(0, 255, 255, 0.6)',
+                boxShadow: '0 0 20px rgba(0, 255, 255, 0.4)',
+                flexShrink: 0
+              }} />
+
+              {/* Message Group */}
+              <div style={{ maxWidth: '80%' }}>
+                {/* Status Text - Assistant Only */}
                 {m.role === 'assistant' && (
-                  <p className="text-cyber-neon text-sm mb-4 opacity-90">
-                    {i === 0 ? 'User connected\nGrok online' : 'Grok online'}
+                  <p className="glow-soft" style={{
+                    color: '#00ffff',
+                    fontSize: '0.9rem',
+                    marginBottom: '0.8rem',
+                    textAlign: m.role === 'user' ? 'right' : 'left'
+                  }}>
+                    {index === 0 ? 'User connected\nGrok online' : 'Grok online'}
                   </p>
                 )}
-                <p className="text-xl md:text-2xl whitespace-pre-wrap">{m.content}</p>
+
+                {/* Bubble */}
+                <div
+                  className={m.role === 'user' ? 'ai-chat-message-user' : 'ai-chat-message-assistant'}
+                  style={{
+                    position: 'relative',
+                    padding: '1.8rem 2.5rem',
+                    borderRadius: '2.5rem',
+                    border: '4px solid',
+                    backdropFilter: 'blur(16px)',
+                    boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)',
+                    borderRadius: m.role === 'user' ? '2.5rem 2.5rem 0.5rem 2.5rem' : '2.5rem 2.5rem 2.5rem 0.5rem'
+                  }}
+                >
+                  {/* Tail */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '1.8rem',
+                    width: '1.8rem',
+                    height: '1.8rem',
+                    background: 'inherit',
+                    border: 'inherit',
+                    clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
+                    [m.role === 'user' ? 'right' : 'left']: '-0.9rem',
+                    transform: 'rotate(45deg)'
+                  }} />
+
+                  <p className="glow-medium" style={{
+                    fontSize: '1.6rem',
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    color: '#ffffff'
+                  }}>
+                    {m.content}
+                  </p>
+                </div>
               </div>
             </div>
           ))}
 
+          {/* Loading */}
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="px-8 py-6 rounded-3xl bg-gray-900/95 border-4 border-cyber-neon/60 backdrop-blur-xl">
-                <p className="text-2xl text-cyber-neon animate-pulse">Thinking...</p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', marginBottom: '3rem' }}>
+              <div style={{
+                width: '3rem',
+                height: '3rem',
+                borderRadius: '50%',
+                background: 'rgba(30, 30, 60, 0.8)',
+                border: '3px solid rgba(0, 255, 255, 0.6)',
+                boxShadow: '0 0 20px rgba(0, 255, 255, 0.4)'
+              }} />
+              <div>
+                <p className="glow-soft" style={{ color: '#00ffff', fontSize: '0.9rem', marginBottom: '0.8rem' }}>
+                  Grok online
+                </p>
+                <div className="ai-chat-message-assistant" style={{
+                  padding: '1.8rem 2.5rem',
+                  borderRadius: '2.5rem 2.5rem 2.5rem 0.5rem',
+                  border: '4px solid #00ffff80',
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '-0.9rem',
+                    top: '1.8rem',
+                    width: '1.8rem',
+                    height: '1.8rem',
+                    background: 'inherit',
+                    border: 'inherit',
+                    clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
+                    transform: 'rotate(45deg)'
+                  }} />
+                  <p style={{ fontSize: '1.8rem', color: '#00ffff', animation: 'pulse 1.5s infinite' }}>
+                    Thinking...
+                  </p>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-6 md:p-12 bg-gradient-to-t from-cyber-bg to-transparent backdrop-blur-2xl border-t-4 border-cyber-neon/30">
-        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex items-center gap-4">
-          <input
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Message..."
-            className="flex-1 bg-gray-900/80 text-white px-12 py-6 rounded-3xl border-4 border-cyber-neon/60 focus:border-cyber-neon focus:outline-none text-xl placeholder-cyan-400/70 backdrop-blur-md"
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="bg-gradient-to-r from-cyber-neon to-purple-600 text-black font-bold px-12 py-6 rounded-3xl text-2xl shadow-2xl shadow-cyber-neon/60 hover:scale-105 transition disabled:opacity-50"
-          >
+      {/* Input Bar */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: '1.5rem',
+        background: 'linear-gradient(to top, rgba(10,15,44,0.95), transparent)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '3px solid rgba(0,255,255,0.4)'
+      }}>
+        <div style={{
+          maxWidth: '90rem',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <button style={{
+            padding: '1rem',
+            borderRadius: '1rem',
+            background: 'rgba(20,20,40,0.8)',
+            border: '3px solid rgba(0,255,255,0.5)',
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+          }}>📎</button>
+
+          <button style={{
+            padding: '1rem',
+            borderRadius: '1rem',
+            background: 'rgba(20,20,40,0.8)',
+            border: '3px solid rgba(0,255,255,0.5)',
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+          }}>🖼</button>
+
+          <div style={{ flex: 1, position: 'relative' }}>
+            <input
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Message..."
+              style={{
+                width: '100%',
+                padding: '1.5rem 4rem 1.5rem 4rem',
+                borderRadius: '2rem',
+                background: 'rgba(15,20,40,0.9)',
+                border: '4px solid rgba(0,255,255,0.6)',
+                color: 'white',
+                fontSize: '1.4rem',
+                backdropFilter: 'blur(12px)',
+                outline: 'none'
+              }}
+              autoFocus
+            />
+            <span style={{
+              position: 'absolute',
+              left: '1.8rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '1.8rem',
+              color: '#00ffff'
+            }}>←</span>
+          </div>
+
+          <button className="cyber-btn" style={{ padding: '1.5rem 3.5rem', fontSize: '1.8rem' }}>
             Send
           </button>
-        </form>
+
+          <button style={{
+            padding: '1rem',
+            borderRadius: '1rem',
+            background: 'rgba(20,20,40,0.8)',
+            border: '3px solid rgba(0,255,255,0.5)',
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+          }}>😊</button>
+
+          <button style={{
+            padding: '1rem',
+            borderRadius: '1rem',
+            background: 'rgba(20,20,40,0.8)',
+            border: '3px solid rgba(0,255,255,0.5)',
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+          }}>🙂</button>
+        </div>
       </div>
     </div>
   );
