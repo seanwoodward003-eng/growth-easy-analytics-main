@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx}",           // Scans everything
+    "./src/**/*.{js,ts,jsx,tsx}",
     "./app/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
@@ -14,6 +14,9 @@ module.exports = {
           card: "#0f1a3d",
           neon: "#00ffff",
         },
+      },
+      fontFamily: {
+        orbitron: ["Orbitron", "sans-serif"],
       },
     },
   },
