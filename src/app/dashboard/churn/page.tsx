@@ -3,6 +3,7 @@
 import useMetrics from "@/hooks/useMetrics";
 import { ChurnChart } from "@/components/charts/ChurnChart";
 import { useState } from 'react';
+import { AIInsights } from "@/components/AIInsights";
 
 export default function ChurnPage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
@@ -59,6 +60,7 @@ export default function ChurnPage() {
         <p className="text-5xl text-cyan-300 mb-4">Churn Rate</p>
         <p className="metric-value text-8xl text-red-400 mb-4">{metrics.churn.rate}%</p>
         <p className="text-5xl text-red-400 mb-4">{metrics.churn.at_risk} at risk</p>
+        <p className="text-xl text-cyan-200">High churn — send win-back emails to recover revenue</p>
       </div>
 
       {/* NEW: Repeat Purchase Rate */}
@@ -103,6 +105,9 @@ export default function ChurnPage() {
           </div>
         )}
       </div>
+
+      {/* AI Insights */}
+      <AIInsights page="churn" />
     </div>
   );
 }
