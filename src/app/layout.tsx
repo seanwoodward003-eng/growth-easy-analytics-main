@@ -38,7 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        {/* Enhanced viewport for perfect mobile scaling & touch behavior */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
