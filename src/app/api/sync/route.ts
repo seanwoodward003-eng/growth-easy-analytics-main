@@ -109,12 +109,6 @@ export async function POST(request: NextRequest) {
     acquisition_cost = 0,
     retention_rate = 85;
 
-  // NEW: AOV, Repeat Rate, LTV Breakdown
-  let aov = 0,
-    repeatRate = 0,
-    ltvNew = 0,
-    ltvReturning = 0;
-
   const now = DateTime.now().setZone('UTC');
   const monthAgo = now.minus({ months: 1 });
 
@@ -133,9 +127,6 @@ export async function POST(request: NextRequest) {
         const totalOrders = orders.length;
         churn_rate = totalOrders ? (canceled / totalOrders) * 100 : 0;
 
-        // AOV
-        aov = totalOrders ? revenue / totalOrders : 0;
-
         const customerIds = new Set(orders.map((o: any) => o.customer?.id).filter(Boolean));
         if (customerIds.size > 0) ltv = (revenue / customerIds.size) * 3;
 
@@ -146,17 +137,6 @@ export async function POST(request: NextRequest) {
         if (customersResp.ok) {
           const { customers } = await customersResp.json();
           at_risk = customers.filter((c: any) => (c.orders_count || 0) === 0).length;
-
-          // Repeat Purchase Rate
-          const repeatCustomers = customers.filter((c: any) => (c.orders_count || 0) > 1).length;
-          const totalCustomers = customers.length;
-          repeatRate = totalCustomers ? (repeatCustomers / totalCustomers) * 100 : 0;
-
-          // LTV Breakdown (simple estimate)
-          const newCustomers = customers.filter((c: any) => (c.orders_count || 0) === 1).length;
-          const returningCustomers = repeatCustomers;
-          ltvNew = newCustomers ? (revenue * 0.4) / newCustomers : 0; // estimate 40% revenue from new
-          ltvReturning = returningCustomers ? (revenue * 0.6) / returningCustomers : 0; // 60% from returning
         }
       }
     } catch (e) {
@@ -181,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       const channelResp = await fetch(reportUrl, { method: 'POST', headers, body: JSON.stringify(channelPayload) });
       if (channelResp.ok) {
-        const data = await channelResp.json();
+        const data = await resp.json();
         const rows = data.rows || [];
         if (rows.length > 0) {
           top_channel = rows[0].dimensionValues[0].value || 'Organic';
@@ -215,8 +195,8 @@ export async function POST(request: NextRequest) {
 
   await run(
     `INSERT OR REPLACE INTO metrics 
-     (user_id, date, revenue, churn_rate, at_risk, ltv, cac, top_channel, acquisition_cost, retention_rate, aov, repeat_rate, ltv_new, ltv_returning)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     (user_id, date, revenue, churn_rate, at_risk, ltv, cac, top_channel, acquisition_cost, retention_rate)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       now.toISO(),
@@ -228,10 +208,6 @@ export async function POST(request: NextRequest) {
       top_channel,
       acquisition_cost,
       retention_rate,
-      aov,
-      repeatRate,
-      ltvNew,
-      ltvReturning,
     ]
   );
 
@@ -245,10 +221,6 @@ export async function POST(request: NextRequest) {
     top_channel,
     acquisition_cost,
     retention_rate,
-    aov,
-    repeatRate,
-    ltvNew,
-    ltvReturning,
   });
 }
 
