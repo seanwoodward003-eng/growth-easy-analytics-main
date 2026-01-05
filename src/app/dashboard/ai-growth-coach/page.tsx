@@ -11,7 +11,7 @@ export default function AIGrowthCoachPage() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Messages Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '2rem 1rem 8rem 1rem' }}>
-        {/* Empty State */}
+        {/* Empty State - Pulsing Logo */}
         {messages.length === 0 && (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative' }}>
@@ -61,19 +61,19 @@ export default function AIGrowthCoachPage() {
 
               {/* Message Group */}
               <div style={{ maxWidth: '80%' }}>
-                {/* Status Text - Assistant Only */}
+                {/* Status Text - Only for Assistant Messages */}
                 {m.role === 'assistant' && (
                   <p className="glow-soft" style={{
                     color: '#00ffff',
                     fontSize: '0.9rem',
                     marginBottom: '0.8rem',
-                    textAlign: m.role === 'user' ? 'right' : 'left'
+                    textAlign: 'left'  // Fixed: always left for assistant
                   }}>
                     {index === 0 ? 'User connected\nGrok online' : 'Grok online'}
                   </p>
                 )}
 
-                {/* Bubble */}
+                {/* Message Bubble */}
                 <div
                   className={m.role === 'user' ? 'ai-chat-message-user' : 'ai-chat-message-assistant'}
                   style={{
@@ -86,7 +86,7 @@ export default function AIGrowthCoachPage() {
                     borderRadius: m.role === 'user' ? '2.5rem 2.5rem 0.5rem 2.5rem' : '2.5rem 2.5rem 2.5rem 0.5rem'
                   }}
                 >
-                  {/* Tail */}
+                  {/* Speech Bubble Tail */}
                   <div style={{
                     position: 'absolute',
                     top: '1.8rem',
@@ -112,7 +112,7 @@ export default function AIGrowthCoachPage() {
             </div>
           ))}
 
-          {/* Loading */}
+          {/* Loading Indicator */}
           {isLoading && (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', marginBottom: '3rem' }}>
               <div style={{
@@ -124,16 +124,21 @@ export default function AIGrowthCoachPage() {
                 boxShadow: '0 0 20px rgba(0, 255, 255, 0.4)'
               }} />
               <div>
-                <p className="glow-soft" style={{ color: '#00ffff', fontSize: '0.9rem', marginBottom: '0.8rem' }}>
+                <p className="glow-soft" style={{
+                  color: '#00ffff',
+                  fontSize: '0.9rem',
+                  marginBottom: '0.8rem',
+                  textAlign: 'left'
+                }}>
                   Grok online
                 </p>
                 <div className="ai-chat-message-assistant" style={{
+                  position: 'relative',
                   padding: '1.8rem 2.5rem',
                   borderRadius: '2.5rem 2.5rem 2.5rem 0.5rem',
                   border: '4px solid #00ffff80',
                   backdropFilter: 'blur(16px)',
-                  boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)',
-                  position: 'relative'
+                  boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)'
                 }}>
                   <div style={{
                     position: 'absolute',
@@ -146,7 +151,7 @@ export default function AIGrowthCoachPage() {
                     clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
                     transform: 'rotate(45deg)'
                   }} />
-                  <p style={{ fontSize: '1.8rem', color: '#00ffff', animation: 'pulse 1.5s infinite' }}>
+                  <p style={{ fontSize: '1.8rem', color: '#00ffff', animation: 'pulse 1.5s infinite', margin: 0 }}>
                     Thinking...
                   </p>
                 </div>
@@ -156,7 +161,7 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Input Bar */}
+      {/* Fixed Bottom Input Bar */}
       <div style={{
         position: 'fixed',
         bottom: 0,
@@ -174,20 +179,22 @@ export default function AIGrowthCoachPage() {
           alignItems: 'center',
           gap: '1rem'
         }}>
-          <button style={{
+          <button type="button" style={{
             padding: '1rem',
             borderRadius: '1rem',
             background: 'rgba(20,20,40,0.8)',
             border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
+            fontSize: '1.5rem'
           }}>📎</button>
 
-          <button style={{
+          <button type="button" style={{
             padding: '1rem',
             borderRadius: '1rem',
             background: 'rgba(20,20,40,0.8)',
             border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
+            fontSize: '1.5rem'
           }}>🖼</button>
 
           <div style={{ flex: 1, position: 'relative' }}>
@@ -218,24 +225,32 @@ export default function AIGrowthCoachPage() {
             }}>←</span>
           </div>
 
-          <button className="cyber-btn" style={{ padding: '1.5rem 3.5rem', fontSize: '1.8rem' }}>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isLoading || !input.trim()}
+            className="cyber-btn"
+            style={{ padding: '1.5rem 3.5rem', fontSize: '1.8rem' }}
+          >
             Send
           </button>
 
-          <button style={{
+          <button type="button" style={{
             padding: '1rem',
             borderRadius: '1rem',
             background: 'rgba(20,20,40,0.8)',
             border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
+            fontSize: '1.5rem'
           }}>😊</button>
 
-          <button style={{
+          <button type="button" style={{
             padding: '1rem',
             borderRadius: '1rem',
             background: 'rgba(20,20,40,0.8)',
             border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)'
+            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
+            fontSize: '1.5rem'
           }}>🙂</button>
         </div>
       </div>
