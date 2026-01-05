@@ -48,30 +48,18 @@ export default function PerformancePage() {
         <p className="text-xl text-cyan-200">Ratio healthy — scale acquisition safely</p>
       </div>
 
-      {/* NEW: Health Score Meter */}
+      {/* Health Score */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Store Health Score</h2>
         <div className="metric-card p-10 text-center">
-          <div className="relative inline-block">
-            <div className="text-9xl font-black" style={{
-              background: `conic-gradient(from 0deg, #00ffff ${healthScore}%, #333 ${healthScore}%)`,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent'
-            }}>
-              {Math.round(healthScore)}
-            </div>
-            <p className="text-3xl text-cyan-300 mt-4">/100</p>
-          </div>
-          <p className="text-2xl text-cyan-200 mt-8">
-            {healthScore >= 80 ? 'Excellent — elite performance' : 
-             healthScore >= 60 ? 'Good — room to optimize' : 
-             'Needs work — focus on churn & AOV'}
+          <p className="text-9xl font-black text-gradient bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
+            {Math.round(healthScore)}
           </p>
+          <p className="text-3xl text-cyan-300 mt-4">/100</p>
         </div>
       </div>
 
-      {/* NEW: Profit Margin Estimate */}
+      {/* Profit Estimate */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Estimated Monthly Profit</h2>
         <div className="metric-card p-10 text-center">
@@ -82,14 +70,13 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* NEW: Benchmarking */}
+      {/* Benchmarking */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">How You Compare</h2>
         <div className="metric-card p-10">
           <p className="text-3xl text-cyan-300 text-center mb-8">
             Your LTV:CAC beats 75% of similar stores
           </p>
-          {/* Add bar chart later */}
         </div>
       </div>
 
@@ -97,8 +84,8 @@ export default function PerformancePage() {
         <PerformanceChart />
       </div>
 
-      {/* AI Insights */}
-      <AIInsights page="performance" />
+      {/* AI Insights — removed page prop */}
+      <AIInsights />
     </div>
   );
 }
