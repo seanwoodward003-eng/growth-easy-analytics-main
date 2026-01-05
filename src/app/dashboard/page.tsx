@@ -3,7 +3,7 @@
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import Link from 'next/link';
-import { AIInsights } from "@/components/aiinsights";  // <-- Added import
+import { AIInsights } from "@/components/AIInsights";  // <-- Added import
 
 export default function Dashboard() {
   const { metrics, isLoading, isConnected } = useMetrics();
