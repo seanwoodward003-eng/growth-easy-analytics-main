@@ -38,14 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Enhanced viewport for perfect mobile scaling & touch behavior */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-        />
+        {/* Perfect mobile viewport – fixes address bar & keyboard issues */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <title>GrowthEasy AI</title>
       </head>
-      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
+      <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
         {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-6 py-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -117,14 +114,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content - NO padding on AI Growth Coach page */}
-        <main className={isCoachPage ? '' : 'pt-32 px-6 pb-40'}>
+        {/* Main content – dynamic height, full screen on coach page */}
+        <main className={isCoachPage ? 'min-h-dvh' : 'min-h-dvh pt-32 px-6 pb-40'}>
           {children}
         </main>
 
         {/* Cookie Banner */}
         {showCookieBanner && (
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl pb-safe">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-cyan-200 text-center md:text-left">
                 We use cookies to enhance your experience and for essential functions. By continuing, you agree to our{' '}
@@ -155,7 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer - hide on coach page to avoid overlap */}
+        {/* Footer - hide on coach page */}
         {!isCoachPage && (
           <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
             <Link href="/privacy" className="hover:underline">
