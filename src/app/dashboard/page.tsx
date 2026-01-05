@@ -42,7 +42,7 @@ export default function Dashboard() {
         <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
       </div>
 
-      {/* Key Metrics Grid — Added AOV and Repeat Rate */}
+      {/* Key Metrics Grid — added AOV + Repeat Rate */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
         {/* Revenue */}
         <div className="metric-card p-10 text-center">
@@ -51,6 +51,7 @@ export default function Dashboard() {
             £{metrics.revenue.total.toLocaleString()}
           </p>
           <p className="text-3xl text-green-400">{metrics.revenue.trend}</p>
+          <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
         </div>
 
         {/* Churn */}
@@ -60,6 +61,9 @@ export default function Dashboard() {
             {metrics.churn.rate}%
           </p>
           <p className="text-3xl text-red-400">{metrics.churn.at_risk} at risk</p>
+          <p className="text-xl text-cyan-200 mt-6">
+            High churn — send win-back emails to at-risk customers
+          </p>
         </div>
 
         {/* AOV — NEW */}
@@ -68,7 +72,7 @@ export default function Dashboard() {
           <p className="text-7xl font-black text-green-400 mb-4">
             £{metrics.aov?.toFixed(2) || '0.00'}
           </p>
-          <p className="text-xl text-cyan-200">Higher AOV = higher profits</p>
+          <p className="text-xl text-cyan-200 mt-6">Increase with bundles & upsells</p>
         </div>
 
         {/* Repeat Purchase Rate — NEW */}
@@ -77,7 +81,7 @@ export default function Dashboard() {
           <p className="text-7xl font-black text-green-400 mb-4">
             {metrics.repeatRate?.toFixed(1) || '0'}%
           </p>
-          <p className="text-xl text-cyan-200">Customers buying again</p>
+          <p className="text-xl text-cyan-200 mt-6">Customers buying again</p>
         </div>
 
         {/* LTV:CAC */}
@@ -87,7 +91,7 @@ export default function Dashboard() {
             {metrics.performance.ratio}:1
           </p>
           <p className="text-xl text-cyan-200">
-            {metrics.performance.ratio >= 3 ? 'Healthy ratio — scale acquisition' : 'Improve by reducing CAC or increasing LTV'}
+            Ratio healthy — scale acquisition safely
           </p>
         </div>
       </div>
