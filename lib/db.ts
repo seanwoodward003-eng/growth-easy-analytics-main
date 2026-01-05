@@ -23,24 +23,25 @@ function getClient(): Client {
   return client;
 }
 
-export async function query(sql: string, args: any[] = []) {
+// Base functions (no init)
+async function baseQuery(sql: string, args: any[] = []) {
   const c = getClient();
   const result = await c.execute({ sql, args });
   return result;
 }
 
-export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
-  const result = await query(sql, args);
+async function baseGetRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
+  const result = await baseQuery(sql, args);
   return result.rows[0] ? (result.rows[0] as T) : null;
 }
 
-export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
-  const result = await query(sql, args);
+async function baseGetRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
+  const result = await baseQuery(sql, args);
   return result.rows as T[];
 }
 
-export async function run(sql: string, args: any[] = []) {
-  await query(sql, args);
+async function baseRun(sql: string, args: any[] = []) {
+  await baseQuery(sql, args);
 }
 
 // Schema initialization + rate_limits table
@@ -90,10 +91,6 @@ async function ensureDbInitialized() {
           top_channel TEXT DEFAULT '',
           acquisition_cost REAL DEFAULT 0,
           retention_rate REAL DEFAULT 0,
-          aov REAL DEFAULT 0,
-          repeat_rate REAL DEFAULT 0,
-          ltv_new REAL DEFAULT 0,
-          ltv_returning REAL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         );
       `,
@@ -115,7 +112,7 @@ async function ensureDbInitialized() {
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions for users
+  // Safe column additions
   const info = await c.execute('PRAGMA table_info(users)');
   const columns = info.rows.map((r: any) => r.name);
 
@@ -135,47 +132,26 @@ async function ensureDbInitialized() {
     }
   }
 
-  // Safe column additions for metrics
-  const metricsInfo = await c.execute('PRAGMA table_info(metrics)');
-  const metricsColumns = metricsInfo.rows.map((r: any) => r.name);
-
-  const metricsAdditions = [
-    { name: 'aov', sql: 'ALTER TABLE metrics ADD COLUMN aov REAL DEFAULT 0' },
-    { name: 'repeat_rate', sql: 'ALTER TABLE metrics ADD COLUMN repeat_rate REAL DEFAULT 0' },
-    { name: 'ltv_new', sql: 'ALTER TABLE metrics ADD COLUMN ltv_new REAL DEFAULT 0' },
-    { name: 'ltv_returning', sql: 'ALTER TABLE metrics ADD COLUMN ltv_returning REAL DEFAULT 0' },
-  ];
-
-  for (const { name, sql } of metricsAdditions) {
-    if (!metricsColumns.includes(name)) {
-      await c.execute(sql);
-    }
-  }
-
   dbInitialized = true;
 }
 
-// Auto-init on first query
-const originalQuery = query;
-export const query = async (sql: string, args: any[] = []) => {
+// Exported functions with auto-init
+export async function query(sql: string, args: any[] = []) {
   await ensureDbInitialized();
-  return originalQuery(sql, args);
-};
+  return baseQuery(sql, args);
+}
 
-const originalGetRow = getRow;
-export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
+export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
   await ensureDbInitialized();
-  return originalGetRow(sql, args);
-};
+  return baseGetRow(sql, args);
+}
 
-const originalGetRows = getRows;
-export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
+export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
   await ensureDbInitialized();
-  return originalGetRows(sql, args);
-};
+  return baseGetRows(sql, args);
+}
 
-const originalRun = run;
-export const run = async (sql: string, args: any[] = []) => {
+export async function run(sql: string, args: any[] = []) {
   await ensureDbInitialized();
-  return originalRun(sql, args);
-};
+  return baseRun(sql, args);
+}
