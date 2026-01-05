@@ -38,14 +38,14 @@ export default function RetentionPage() {
         <p className="text-xl text-cyan-200">Retention strong — build loyalty programs to boost further</p>
       </div>
 
-      {/* NEW: Cohort Analysis Table */}
+      {/* Cohort Table */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Cohort Retention</h2>
         <div className="metric-card p-10">
           <p className="text-2xl text-cyan-200 text-center">
             Month-by-month retention by customer cohort (coming soon — based on first purchase date)
           </p>
-          {/* Placeholder for cohort table — we'll add real data later */}
+          {/* Placeholder table */}
           <div className="mt-8 grid grid-cols-6 gap-4 text-center">
             <div className="text-cyan-300">Cohort</div>
             <div className="text-cyan-300">Month 0</div>
@@ -53,7 +53,6 @@ export default function RetentionPage() {
             <div className="text-cyan-300">Month 2</div>
             <div className="text-cyan-300">Month 3</div>
             <div className="text-cyan-300">Month 6</div>
-            {/* Example row */}
             <div className="text-cyan-200">Jan 2026</div>
             <div className="text-green-400">100%</div>
             <div className="text-green-400">65%</div>
@@ -68,8 +67,8 @@ export default function RetentionPage() {
         <RetentionChart />
       </div>
 
-      {/* AI Insights */}
-      <AIInsights page="retention" />
+      {/* AI Insights — no page prop */}
+      <AIInsights />
     </div>
   );
 }
