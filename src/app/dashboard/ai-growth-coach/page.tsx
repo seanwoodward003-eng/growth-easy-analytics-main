@@ -2,31 +2,41 @@
 
 import { useChat } from 'ai/react';
 import { Paperclip, Image, Smile, Send } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function AIGrowthCoachPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
   });
 
+  // Force full-screen takeover + remove any potential parent interference
+  useEffect(() => {
+    document.body.style.padding = '0';
+    document.body.style.margin = '0';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#0a0f2c] flex flex-col relative">
-      {/* Subtle cyberpunk background depth */}
+    // FIXED FULL SCREEN – this line is critical
+    <div className="fixed inset-0 flex flex-col bg-[#0a0f2c] text-cyan-100 overflow-hidden">
+      {/* Subtle cyberpunk background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-radial from-cyan-500/5 via-transparent to-transparent" />
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-400/10 to-transparent" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 pb-32">
-        {/* Empty State */}
+      {/* Chat messages area */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-12 py-8 pb-32">
+        {/* Empty state */}
         {messages.length === 0 && (
           <div className="h-full flex items-center justify-center">
             <div className="relative">
               <div className="absolute inset-0 blur-3xl bg-cyan-500/30 animate-pulse rounded-full" />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-64 w-64 text-cyan-400 drop-shadow-2xl"
+                className="h-48 w-48 md:h-64 md:w-64 text-cyan-400 drop-shadow-2xl"
                 viewBox="0 0 163.53 163.53"
               >
                 <rect width="163.53" height="163.53" fill="currentColor" rx="40" className="opacity-20" />
@@ -40,7 +50,7 @@ export default function AIGrowthCoachPage() {
         )}
 
         {/* Messages */}
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-5xl mx-auto space-y-6">
           {messages.map((m) => (
             <div
               key={m.id}
@@ -63,9 +73,8 @@ export default function AIGrowthCoachPage() {
                 {m.role === 'user' && <div className="text-xl font-bold text-white">You</div>}
               </div>
 
-              {/* Message Bubble */}
+              {/* Message bubble */}
               <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
-                {/* Status for assistant only */}
                 {m.role === 'assistant' && (
                   <p className="text-cyan-400 text-sm mb-2 px-2 font-medium">Grok online</p>
                 )}
@@ -95,7 +104,7 @@ export default function AIGrowthCoachPage() {
             </div>
           ))}
 
-          {/* Loading */}
+          {/* Loading indicator */}
           {isLoading && (
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-gray-800/80 border-4 border-cyan-500/50 shadow-lg shadow-cyan-500/30 flex items-center justify-center">
@@ -119,8 +128,8 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Fixed Bottom Input Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 md:p-12 bg-gradient-to-t from-[#0a0f2c] to-[#0a0f2c]/80 backdrop-blur-2xl border-t-2 border-cyan-400/30">
+      {/* Fixed input bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 md:p-12 bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-2xl border-t-2 border-cyan-400/30">
         <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex items-center gap-4">
           <button type="button" className="p-4 rounded-lg bg-cyan-900/30 border-2 border-cyan-500/40 hover:bg-cyan-900/50 transition">
             <Paperclip className="w-6 h-6 text-cyan-300" />
@@ -158,4 +167,4 @@ export default function AIGrowthCoachPage() {
       </div>
     </div>
   );
-} 
+}
