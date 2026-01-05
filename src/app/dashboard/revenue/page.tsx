@@ -2,9 +2,13 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function RevenuePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
+
+  // Simple forecast
+  const forecast = metrics.revenue.total * 1.15;
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
@@ -12,42 +16,24 @@ export default function RevenuePage() {
         Revenue
       </h1>
 
-      {!isConnected && (
-        <div className="max-w-5xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
-          <p className="text-3xl text-cyan-300 mb-6">
-            Connect your accounts to see real-time revenue data and AI insights
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 mt-8">
-            <button onClick={() => window.location.href = '/api/auth/shopify'} className="cyber-btn text-2xl px-10 py-5">
-              Connect Shopify
-            </button>
-            <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
-              Connect GA4
-            </button>
-            <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
-              Connect HubSpot
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ... not connected state ... */}
 
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">Total Revenue</p>
         <p className="metric-value text-8xl text-green-400 mb-4">£{metrics.revenue.total.toLocaleString()}</p>
-        <p className="text-5xl text-green-400 mb-4">{metrics.revenue.trend}</p>
       </div>
 
-      {/* NEW: AOV Section */}
+      {/* AOV */}
       <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Average Order Value (AOV)</h2>
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Average Order Value</h2>
         <div className="metric-card p-10 text-center">
-          <p className="text-7xl font-black text-green-400 mb-4">£{metrics.aov?.toFixed(2) || '0.00'}</p>
-          <p className="text-2xl text-cyan-200">Increase AOV with bundles and upsells</p>
+          <p className="text-7xl font-black text-green-400 mb-4">
+            £{metrics.aov?.toFixed(2) || '0.00'}
+          </p>
         </div>
-        {/* Add AOV chart here if you have one */}
       </div>
 
-      {/* NEW: LTV Breakdown */}
+      {/* LTV Breakdown */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">LTV Breakdown</h2>
         <div className="grid md:grid-cols-2 gap-12">
@@ -62,9 +48,22 @@ export default function RevenuePage() {
         </div>
       </div>
 
+      {/* Revenue Forecast */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">12-Month Forecast</h2>
+        <div className="metric-card p-10 text-center">
+          <p className="text-7xl font-black text-green-400 mb-4">
+            £{forecast.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-2xl text-cyan-200">At 15% growth — reduce churn to hit higher</p>
+        </div>
+      </div>
+
       <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
         <RevenueChart />
       </div>
+
+      <AIInsights page="revenue" />
     </div>
   );
 }
