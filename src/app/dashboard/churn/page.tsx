@@ -63,20 +63,11 @@ export default function ChurnPage() {
         <p className="text-xl text-cyan-200">High churn — send win-back emails to recover revenue</p>
       </div>
 
-      {/* NEW: Repeat Purchase Rate */}
-      <div className="max-w-4xl mx-auto text-center mb-20">
-        <p className="text-5xl text-cyan-300 mb-4">Repeat Purchase Rate</p>
-        <p className="metric-value text-8xl text-green-400 mb-4">
-          {metrics.repeatRate?.toFixed(1) || '0'}%
-        </p>
-        <p className="text-xl text-cyan-200">Higher repeat rate = lower churn</p>
-      </div>
-
       <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
         <ChurnChart />
       </div>
 
-      {/* AI Win-Back Email Generator */}
+      {/* Win-Back Generator */}
       <div className="max-w-5xl mx-auto mb-20">
         <div className="text-center mb-12">
           <h2 className="text-5xl font-black text-cyan-400 mb-8">
@@ -87,7 +78,7 @@ export default function ChurnPage() {
             disabled={loadingEmail}
             className="cyber-btn text-3xl px-12 py-6 animate-pulse"
           >
-            {loadingEmail ? 'Generating Email...' : 'Generate Win-Back Email for At-Risk Customers'}
+            {loadingEmail ? 'Generating...' : 'Generate Win-Back Email for At-Risk Customers'}
           </button>
         </div>
 
@@ -107,7 +98,7 @@ export default function ChurnPage() {
       </div>
 
       {/* AI Insights */}
-      <AIInsights page="churn" />
+      <AIInsights />
     </div>
   );
 }
