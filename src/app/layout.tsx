@@ -16,7 +16,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const isCoachPage = pathname === '/dashboard/ai-growth-coach';
   const isActive = (path: string) => pathname.startsWith(path);
 
-  // Cookie Consent
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) {
@@ -41,26 +40,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-6 py-6">
+        {/* Header - full width with internal max-width */}
+        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 sm:px-6 py-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/dashboard" className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
+            <Link href="/dashboard" className="text-4xl sm:text-5xl md:text-7xl font-black text-cyan-400 glow-title whitespace-nowrap">
               GrowthEasy AI
             </Link>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="relative group px-12 py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
+              className="relative group px-8 sm:px-12 py-4 sm:py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative z-10 bg-[#0a0f2c]/80 px-12 py-4 rounded-xl text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
+              <div className="relative z-10 bg-[#0a0f2c]/80 px-8 sm:px-12 py-3 sm:py-4 rounded-xl text-xl sm:text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
                 Menu
               </div>
             </button>
           </div>
         </header>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - unchanged */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40" onClick={() => setMenuOpen(false)} />
@@ -112,16 +111,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content – now consistently centered with safe padding */}
+        {/* Main content - responsive wrapper */}
         <main className={isCoachPage ? 'min-h-dvh pt-24' : 'min-h-dvh pt-32 pb-40'}>
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="w-full max-w-full md:max-w-5xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
 
-        {/* Cookie Banner */}
+        {/* Cookie Banner - responsive */}
         {showCookieBanner && (
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl pb-safe">
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-4 sm:p-6 z-50 shadow-2xl">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-cyan-200 text-center md:text-left text-sm md:text-base">
                 We use cookies to enhance your experience and for essential functions. By continuing, you agree to our{' '}
@@ -134,16 +133,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
                 .
               </p>
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                 <button
                   onClick={acceptCookies}
-                  className="bg-cyan-400 text-black font-bold px-8 py-4 rounded-xl hover:scale-105 transition"
+                  className="bg-cyan-400 text-black font-bold px-8 py-4 rounded-xl hover:scale-105 transition w-full sm:w-auto"
                 >
                   Accept All
                 </button>
                 <button
                   onClick={declineCookies}
-                  className="border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-xl hover:bg-cyan-400/20 transition"
+                  className="border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-xl hover:bg-cyan-400/20 transition w-full sm:w-auto"
                 >
                   Essential Only
                 </button>
@@ -152,10 +151,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer - hide on coach page */}
+        {/* Footer */}
         {!isCoachPage && (
-          <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
-            <div className="max-w-7xl mx-auto px-6">
+          <footer className="py-8 text-center text-cyan-500 text-sm space-x-4 sm:space-x-8 border-t border-cyan-900/50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <Link href="/privacy" className="hover:underline">
                 Privacy Policy
               </Link>{' '}
