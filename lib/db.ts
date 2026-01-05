@@ -115,11 +115,11 @@ async function ensureDbInitialized() {
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions for users table
-  const userInfo = await c.execute('PRAGMA table_info(users)');
-  const userColumns = userInfo.rows.map((r: any) => r.name);
+  // Safe column additions for users
+  const info = await c.execute('PRAGMA table_info(users)');
+  const columns = info.rows.map((r: any) => r.name);
 
-  const userAdditions = [
+  const additions = [
     { name: 'hubspot_refresh_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_refresh_token TEXT' },
     { name: 'shopify_access_token', sql: 'ALTER TABLE users ADD COLUMN shopify_access_token TEXT' },
     { name: 'gdpr_consented', sql: 'ALTER TABLE users ADD COLUMN gdpr_consented INTEGER DEFAULT 0' },
@@ -129,13 +129,13 @@ async function ensureDbInitialized() {
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
   ];
 
-  for (const { name, sql } of userAdditions) {
-    if (!userColumns.includes(name)) {
+  for (const { name, sql } of additions) {
+    if (!columns.includes(name)) {
       await c.execute(sql);
     }
   }
 
-  // Safe column additions for metrics table (new analytics)
+  // Safe column additions for metrics
   const metricsInfo = await c.execute('PRAGMA table_info(metrics)');
   const metricsColumns = metricsInfo.rows.map((r: any) => r.name);
 
