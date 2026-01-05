@@ -13,6 +13,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [showCookieBanner, setShowCookieBanner] = useState(false);
 
+  const isCoachPage = pathname === '/dashboard/ai-growth-coach';
+
   const isActive = (path: string) => pathname.startsWith(path);
 
   // Cookie Consent
@@ -43,12 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-6 py-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            {/* Logo */}
             <Link href="/dashboard" className="text-5xl md:text-7xl font-black text-cyan-400 glow-title">
               GrowthEasy AI
             </Link>
 
-            {/* Menu Button */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="relative group px-12 py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
@@ -113,7 +113,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        <main className="pt-32 px-6 pb-40">
+        {/* Main content - NO padding on AI Growth Coach page */}
+        <main className={isCoachPage ? '' : 'pt-32 px-6 pb-40'}>
           {children}
         </main>
 
@@ -150,18 +151,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer */}
-        <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
-          <Link href="/privacy" className="hover:underline">
-            Privacy Policy
-          </Link>
-          <Link href="/terms" className="hover:underline">
-            Terms of Service
-          </Link>
-          <p className="mt-4 text-cyan-400">
-            Beta v0.1 © 2025 GrowthEasy AI
-          </p>
-        </footer>
+        {/* Footer - hide on coach page to avoid overlap */}
+        {!isCoachPage && (
+          <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
+            <Link href="/privacy" className="hover:underline">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:underline">
+              Terms of Service
+            </Link>
+            <p className="mt-4 text-cyan-400">
+              Beta v0.1 © 2025 GrowthEasy AI
+            </p>
+          </footer>
+        )}
       </body>
     </html>
   );
