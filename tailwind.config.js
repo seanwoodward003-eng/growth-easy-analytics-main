@@ -6,6 +6,20 @@ module.exports = {
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    {
+      pattern: /(bg|border|text)-(cyan|purple|gray)-(100|300|400|500|700|800|900)/,
+    },
+    {
+      pattern: /(from|via|to)-(cyan|purple|gray)-(400|500|900)\/(30|50|70|80|90)/,
+    },
+    'backdrop-blur-md',
+    'backdrop-blur-xl',
+    'animate-pulse',
+    'drop-shadow-2xl',
+    'bg-gradient-to-r',
+    'bg-gradient-to-t',
+  ],
   theme: {
     extend: {
       colors: {
