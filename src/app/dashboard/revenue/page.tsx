@@ -8,7 +8,7 @@ export default function RevenuePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
 
   // Simple forecast
-  const forecast = metrics.revenue.total * 1.15; // 15% growth
+  const forecast = metrics.revenue.total * 1.15;
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
@@ -83,7 +83,8 @@ export default function RevenuePage() {
         <RevenueChart />
       </div>
 
-      <AIInsights page="revenue" />
+      {/* AI Insights — removed page prop */}
+      <AIInsights />
     </div>
   );
 }
