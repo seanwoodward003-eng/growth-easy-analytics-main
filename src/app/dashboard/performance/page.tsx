@@ -3,9 +3,15 @@
 import useMetrics from "@/hooks/useMetrics";
 import { PerformanceChart } from "@/components/charts/PerformanceChart";
 
-
 export default function PerformancePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
+
+  // Simple health score (0-100) — example logic
+  const healthScore = Math.min(100, 
+    (metrics.performance.ratio * 20) + 
+    (100 - metrics.churn.rate * 2) + 
+    (metrics.repeatRate || 0)
+  );
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
@@ -32,17 +38,56 @@ export default function PerformancePage() {
         </div>
       )}
 
+      {/* LTV:CAC Ratio */}
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">LTV:CAC Ratio</p>
         <p className="metric-value text-8xl text-yellow-400 mb-4">{metrics.performance.ratio}:1</p>
-        <p className="text-xl text-cyan-200">Ratio healthy — scale acquisition safely</p>
+        <p className="text-xl text-cyan-200">
+          {metrics.performance.ratio >= 3 ? 'Healthy — scale acquisition safely' : 'Improve by reducing CAC or increasing LTV'}
+        </p>
+      </div>
+
+      {/* NEW: Health Score Meter */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Store Health Score</h2>
+        <div className="metric-card p-10 text-center">
+          <div className="relative inline-block">
+            <div className="text-9xl font-black" style={{
+              background: `conic-gradient(from 0deg, #00ffff ${healthScore}%, #333 ${healthScore}%)`,
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              {Math.round(healthScore)}
+            </div>
+            <p className="text-3xl text-cyan-300 mt-4">/100</p>
+          </div>
+          <p className="text-2xl text-cyan-200 mt-8">
+            {healthScore >= 80 ? 'Excellent — elite performance' : 
+             healthScore >= 60 ? 'Good — room to optimize' : 
+             'Needs work — focus on churn & AOV'}
+          </p>
+        </div>
+      </div>
+
+      {/* NEW: LTV Breakdown */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Lifetime Value Breakdown</h2>
+        <div className="grid md:grid-cols-2 gap-12">
+          <div className="metric-card p-10 text-center">
+            <h3 className="text-3xl font-bold text-cyan-300 mb-6">New Customers LTV</h3>
+            <p className="text-6xl font-black text-yellow-400">£{metrics.ltvNew?.toFixed(0) || '0'}</p>
+          </div>
+          <div className="metric-card p-10 text-center">
+            <h3 className="text-3xl font-bold text-cyan-300 mb-6">Returning Customers LTV</h3>
+            <p className="text-6xl font-black text-green-400">£{metrics.ltvReturning?.toFixed(0) || '0'}</p>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
         <PerformanceChart />
       </div>
-
-    
     </div>
   );
 }
