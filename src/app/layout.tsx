@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   const isActive = (path: string) => pathname.startsWith(path);
 
-  // Cookie Consent Logic
+  // Cookie Consent
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) {
@@ -26,7 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const acceptCookies = () => {
     localStorage.setItem('cookie_consent', 'accepted');
     setShowCookieBanner(false);
-    // Here you can load analytics scripts if needed
   };
 
   const declineCookies = () => {
@@ -41,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-screen relative`}>
-        {/* Header with improved Menu button */}
+        {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-6 py-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Logo */}
@@ -49,21 +48,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               GrowthEasy AI
             </Link>
 
-            {/* Menu Button - Now premium & glowing */}
+            {/* Menu Button */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="relative group px-10 py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
+              className="relative group px-12 py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
             >
-              {/* Gradient background */}
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
-              {/* Inner dark layer */}
-              <div className="relative z-10 bg-[#0a0f2c]/80 px-10 py-4 rounded-xl text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
+              <div className="relative z-10 bg-[#0a0f2c]/80 px-12 py-4 rounded-xl text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
                 Menu
               </div>
             </button>
           </div>
         </header>
 
+        {/* Mobile Menu */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40" onClick={() => setMenuOpen(false)} />
@@ -87,8 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/dashboard/performance" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard/performance') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   Performance
                 </Link>
-                <Link href="/dashboard/ai-growth-coach" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard/ai-insights') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  AI Insights
+                <Link href="/dashboard/ai-growth-coach" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard/ai-growth-coach') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
+                  AI Growth Coach
                 </Link>
                 <Link href="/about" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${pathname === '/about' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   About
@@ -119,7 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
 
-        {/* Cookie Consent Banner */}
+        {/* Cookie Banner */}
         {showCookieBanner && (
           <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
