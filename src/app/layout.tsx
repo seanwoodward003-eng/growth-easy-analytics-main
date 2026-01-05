@@ -42,12 +42,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header - Menu button now ALWAYS fully visible on mobile */}
+        {/* Header - Menu button fully visible, logo gracefully truncates only if needed */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link 
               href="/dashboard" 
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-cyan-400 glow-title whitespace-nowrap overflow-hidden text-ellipsis max-w-[55%] sm:max-w-none"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-cyan-400 glow-title whitespace-nowrap overflow-hidden text-ellipsis max-w-[65%] sm:max-w-none"
             >
               GrowthEasy AI
             </Link>
