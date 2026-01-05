@@ -2,6 +2,7 @@
 import { createClient } from '@libsql/client';
 import type { Client } from '@libsql/client';
 
+// Lazy-loaded client
 let client: Client | null = null;
 
 function getClient(): Client {
@@ -89,6 +90,10 @@ async function ensureDbInitialized() {
           top_channel TEXT DEFAULT '',
           acquisition_cost REAL DEFAULT 0,
           retention_rate REAL DEFAULT 0,
+          aov REAL DEFAULT 0,
+          repeat_rate REAL DEFAULT 0,
+          ltv_new REAL DEFAULT 0,
+          ltv_returning REAL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         );
       `,
@@ -110,11 +115,11 @@ async function ensureDbInitialized() {
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions
-  const info = await c.execute('PRAGMA table_info(users)');
-  const columns = info.rows.map((r: any) => r.name);
+  // Safe column additions for users table
+  const userInfo = await c.execute('PRAGMA table_info(users)');
+  const userColumns = userInfo.rows.map((r: any) => r.name);
 
-  const additions = [
+  const userAdditions = [
     { name: 'hubspot_refresh_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_refresh_token TEXT' },
     { name: 'shopify_access_token', sql: 'ALTER TABLE users ADD COLUMN shopify_access_token TEXT' },
     { name: 'gdpr_consented', sql: 'ALTER TABLE users ADD COLUMN gdpr_consented INTEGER DEFAULT 0' },
@@ -124,8 +129,25 @@ async function ensureDbInitialized() {
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
   ];
 
-  for (const { name, sql } of additions) {
-    if (!columns.includes(name)) {
+  for (const { name, sql } of userAdditions) {
+    if (!userColumns.includes(name)) {
+      await c.execute(sql);
+    }
+  }
+
+  // Safe column additions for metrics table (new analytics)
+  const metricsInfo = await c.execute('PRAGMA table_info(metrics)');
+  const metricsColumns = metricsInfo.rows.map((r: any) => r.name);
+
+  const metricsAdditions = [
+    { name: 'aov', sql: 'ALTER TABLE metrics ADD COLUMN aov REAL DEFAULT 0' },
+    { name: 'repeat_rate', sql: 'ALTER TABLE metrics ADD COLUMN repeat_rate REAL DEFAULT 0' },
+    { name: 'ltv_new', sql: 'ALTER TABLE metrics ADD COLUMN ltv_new REAL DEFAULT 0' },
+    { name: 'ltv_returning', sql: 'ALTER TABLE metrics ADD COLUMN ltv_returning REAL DEFAULT 0' },
+  ];
+
+  for (const { name, sql } of metricsAdditions) {
+    if (!metricsColumns.includes(name)) {
       await c.execute(sql);
     }
   }
@@ -133,35 +155,26 @@ async function ensureDbInitialized() {
   dbInitialized = true;
 }
 
-// Auto-init on first query (no duplicate exports)
+// Auto-init on first query
 const originalQuery = query;
-export { originalQuery as query };
-
-const originalGetRow = getRow;
-export { originalGetRow as getRow };
-
-const originalGetRows = getRows;
-export { originalGetRows as getRows };
-
-const originalRun = run;
-export { originalRun as run };
-
-// Wrapped versions with auto-init
 export const query = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalQuery(sql, args);
 };
 
-export const getRow = async <T = any>(sql: string, args: any[] = []) => {
+const originalGetRow = getRow;
+export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
   await ensureDbInitialized();
   return originalGetRow(sql, args);
 };
 
-export const getRows = async <T = any>(sql: string, args: any[] = []) => {
+const originalGetRows = getRows;
+export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
   await ensureDbInitialized();
   return originalGetRows(sql, args);
 };
 
+const originalRun = run;
 export const run = async (sql: string, args: any[] = []) => {
   await ensureDbInitialized();
   return originalRun(sql, args);
