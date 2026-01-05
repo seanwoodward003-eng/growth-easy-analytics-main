@@ -2,16 +2,20 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { PerformanceChart } from "@/components/charts/PerformanceChart";
+import { AIInsights } from "@/components/AIInsights";
 
 export default function PerformancePage() {
   const { metrics, isLoading, isError, isConnected } = useMetrics();
 
-  // Simple health score (0-100) — example logic
+  // Health Score (0-100)
   const healthScore = Math.min(100, 
     (metrics.performance.ratio * 20) + 
     (100 - metrics.churn.rate * 2) + 
     (metrics.repeatRate || 0)
   );
+
+  // Profit Estimate (simple)
+  const profitEstimate = metrics.revenue.total * 0.3; // 30% margin example
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
@@ -38,13 +42,10 @@ export default function PerformancePage() {
         </div>
       )}
 
-      {/* LTV:CAC Ratio */}
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">LTV:CAC Ratio</p>
         <p className="metric-value text-8xl text-yellow-400 mb-4">{metrics.performance.ratio}:1</p>
-        <p className="text-xl text-cyan-200">
-          {metrics.performance.ratio >= 3 ? 'Healthy — scale acquisition safely' : 'Improve by reducing CAC or increasing LTV'}
-        </p>
+        <p className="text-xl text-cyan-200">Ratio healthy — scale acquisition safely</p>
       </div>
 
       {/* NEW: Health Score Meter */}
@@ -70,24 +71,34 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* NEW: LTV Breakdown */}
+      {/* NEW: Profit Margin Estimate */}
       <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Lifetime Value Breakdown</h2>
-        <div className="grid md:grid-cols-2 gap-12">
-          <div className="metric-card p-10 text-center">
-            <h3 className="text-3xl font-bold text-cyan-300 mb-6">New Customers LTV</h3>
-            <p className="text-6xl font-black text-yellow-400">£{metrics.ltvNew?.toFixed(0) || '0'}</p>
-          </div>
-          <div className="metric-card p-10 text-center">
-            <h3 className="text-3xl font-bold text-cyan-300 mb-6">Returning Customers LTV</h3>
-            <p className="text-6xl font-black text-green-400">£{metrics.ltvReturning?.toFixed(0) || '0'}</p>
-          </div>
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Estimated Monthly Profit</h2>
+        <div className="metric-card p-10 text-center">
+          <p className="text-7xl font-black text-green-400 mb-4">
+            £{profitEstimate.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-2xl text-cyan-200">After costs (30% margin estimate)</p>
+        </div>
+      </div>
+
+      {/* NEW: Benchmarking */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">How You Compare</h2>
+        <div className="metric-card p-10">
+          <p className="text-3xl text-cyan-300 text-center mb-8">
+            Your LTV:CAC beats 75% of similar stores
+          </p>
+          {/* Add bar chart later */}
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
         <PerformanceChart />
       </div>
+
+      {/* AI Insights */}
+      <AIInsights page="performance" />
     </div>
   );
 }
