@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       const channelResp = await fetch(reportUrl, { method: 'POST', headers, body: JSON.stringify(channelPayload) });
       if (channelResp.ok) {
-        const data = await resp.json();
+        const data = await channelResp.json();  // FIXED: was 'resp' — now 'channelResp'
         const rows = data.rows || [];
         if (rows.length > 0) {
           top_channel = rows[0].dimensionValues[0].value || 'Organic';
