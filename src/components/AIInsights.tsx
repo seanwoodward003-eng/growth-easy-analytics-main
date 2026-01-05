@@ -51,13 +51,16 @@ export function AIInsights() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto my-20">
-      <h2 className="glow-title text-center text-5xl md:text-6xl font-black mb-12">
+    <div className="max-w-6xl mx-auto my-20 px-6">
+      <h2 className="glow-title text-center text-5xl md:text-6xl font-black mb-16 text-cyan-400">
         AI Growth Insights
       </h2>
-      <div className="space-y-8">
+      <div className="space-y-10">
         {displayedInsights.map((insight, i) => (
-          <div key={i} className="metric-bubble bg-cyber-card/40 border-cyan-400">
+          <div
+            key={i}
+            className="metric-card p-8 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-400/40 backdrop-blur-md shadow-2xl hover:shadow-cyan-500/40 transition-all duration-300"
+          >
             <p className="text-xl md:text-2xl leading-relaxed text-cyan-100">
               {insight}
             </p>
