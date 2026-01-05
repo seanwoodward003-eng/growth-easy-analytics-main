@@ -14,8 +14,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [showCookieBanner, setShowCookieBanner] = useState(false);
 
   const isCoachPage = pathname === '/dashboard/ai-growth-coach';
+
   const isActive = (path: string) => pathname.startsWith(path);
 
+  // Cookie Consent
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) {
@@ -40,26 +42,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header - full width with internal max-width */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 sm:px-6 py-6">
+        {/* Header - Menu button now ALWAYS fully visible on mobile */}
+        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/dashboard" className="text-4xl sm:text-5xl md:text-7xl font-black text-cyan-400 glow-title whitespace-nowrap">
+            <Link 
+              href="/dashboard" 
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-cyan-400 glow-title whitespace-nowrap overflow-hidden text-ellipsis max-w-[55%] sm:max-w-none"
+            >
               GrowthEasy AI
             </Link>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="relative group px-8 sm:px-12 py-4 sm:py-5 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50"
+              className="relative group px-4 sm:px-6 md:px-10 py-3 sm:py-4 rounded-2xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-2xl hover:shadow-cyan-500/50 flex-shrink-0"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative z-10 bg-[#0a0f2c]/80 px-8 sm:px-12 py-3 sm:py-4 rounded-xl text-xl sm:text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium">
+              <div className="relative z-10 bg-[#0a0f2c]/80 px-4 sm:px-6 md:px-10 py-2 sm:py-3 rounded-xl text-base sm:text-lg md:text-2xl lg:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium flex items-center gap-2">
                 Menu
+                <span className="text-xl sm:text-2xl">▼</span>
               </div>
             </button>
           </div>
         </header>
 
-        {/* Mobile Menu - unchanged */}
+        {/* Mobile Menu */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40" onClick={() => setMenuOpen(false)} />
@@ -111,18 +117,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content - responsive wrapper */}
-        <main className={isCoachPage ? 'min-h-dvh pt-24' : 'min-h-dvh pt-32 pb-40'}>
-          <div className="w-full max-w-full md:max-w-5xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main content */}
+        <main className={isCoachPage ? 'min-h-dvh pt-20 sm:pt-24' : 'min-h-dvh pt-24 sm:pt-32 pb-40'}>
+          <div className="w-full max-w-full sm:max-w-3xl md:max-w-5xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
 
-        {/* Cookie Banner - responsive */}
+        {/* Cookie Banner */}
         {showCookieBanner && (
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-4 sm:p-6 z-50 shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl pb-safe">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-cyan-200 text-center md:text-left text-sm md:text-base">
+              <p className="text-cyan-200 text-center md:text-left">
                 We use cookies to enhance your experience and for essential functions. By continuing, you agree to our{' '}
                 <Link href="/privacy" className="text-cyan-400 underline hover:text-cyan-300">
                   Privacy Policy
@@ -133,16 +139,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
                 .
               </p>
-              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              <div className="flex space-x-4">
                 <button
                   onClick={acceptCookies}
-                  className="bg-cyan-400 text-black font-bold px-8 py-4 rounded-xl hover:scale-105 transition w-full sm:w-auto"
+                  className="bg-cyan-400 text-black font-bold px-8 py-4 rounded-xl hover:scale-105 transition"
                 >
                   Accept All
                 </button>
                 <button
                   onClick={declineCookies}
-                  className="border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-xl hover:bg-cyan-400/20 transition w-full sm:w-auto"
+                  className="border-4 border-cyan-400 text-cyan-400 px-8 py-4 rounded-xl hover:bg-cyan-400/20 transition"
                 >
                   Essential Only
                 </button>
@@ -151,10 +157,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer */}
+        {/* Footer - hide on coach page */}
         {!isCoachPage && (
-          <footer className="py-8 text-center text-cyan-500 text-sm space-x-4 sm:space-x-8 border-t border-cyan-900/50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
+            <div className="max-w-7xl mx-auto px-6">
               <Link href="/privacy" className="hover:underline">
                 Privacy Policy
               </Link>{' '}
