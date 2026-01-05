@@ -1,227 +1,161 @@
-// app/api/sync/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, verifyCSRF } from '@/lib/auth';
-import { getRow, run } from '@/lib/db';
-import { DateTime } from 'luxon';
+// lib/db.ts
+import { createClient } from '@libsql/client';
+import type { Client } from '@libsql/client';
 
-async function refreshGA4Token(userId: number): Promise<string | null> {
-  const row = await getRow<{ ga4_refresh_token: string }>(
-    'SELECT ga4_refresh_token FROM users WHERE id = ?',
-    [userId]
-  );
-  if (!row?.ga4_refresh_token) return null;
+// Lazy-loaded client
+let client: Client | null = null;
 
-  try {
-    const resp = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        refresh_token: row.ga4_refresh_token,
-        grant_type: 'refresh_token',
-      }),
+function getClient(): Client {
+  const url = process.env.TURSO_DATABASE_URL;
+  const token = process.env.TURSO_AUTH_TOKEN;
+
+  if (!url || !token) {
+    throw new Error('Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables');
+  }
+
+  if (!client) {
+    client = createClient({
+      url,
+      authToken: token,
     });
-
-    if (resp.ok) {
-      const data = await resp.json();
-      await run(
-        'UPDATE users SET ga4_access_token = ?, ga4_last_refreshed = ? WHERE id = ?',
-        [data.access_token, new Date().toISOString(), userId]
-      );
-      return data.access_token;
-    }
-  } catch (e) {
-    console.error('GA4 refresh failed:', e);
   }
-  return null;
+
+  return client;
 }
 
-export async function POST(request: NextRequest) {
-  if (!verifyCSRF(request)) {
-    return NextResponse.json({ error: 'CSRF validation failed' }, { status: 403 });
-  }
+export async function query(sql: string, args: any[] = []) {
+  const c = getClient();
+  const result = await c.execute({ sql, args });
+  return result;
+}
 
-  const auth = await requireAuth();
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
-  }
-  const userId = auth.user.id;
+export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
+  const result = await query(sql, args);
+  return result.rows[0] ? (result.rows[0] as T) : null;
+}
 
-  // RATE LIMIT: 6 syncs per hour per user (safe null check)
-  const recentSyncs = await getRow<{ count: number }>(
-    `SELECT COUNT(*) as count FROM rate_limits 
-     WHERE user_id = ? AND endpoint = 'sync' 
-     AND timestamp > datetime('now', '-1 hour')`,
-    [userId]
-  );
+export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
+  const result = await query(sql, args);
+  return result.rows as T[];
+}
 
-  const syncCount = recentSyncs?.count ?? 0;
+export async function run(sql: string, args: any[] = []) {
+  await query(sql, args);
+}
 
-  if (syncCount >= 6) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded — maximum 6 syncs per hour' },
-      { status: 429 }
-    );
-  }
+// Schema initialization + rate_limits table
+let dbInitialized = false;
 
-  // Log this sync attempt
-  await run(
-    'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "sync")',
-    [userId]
-  );
+async function ensureDbInitialized() {
+  if (dbInitialized) return;
 
-  const user = await getRow<{
-    shopify_shop: string | null;
-    shopify_access_token: string | null;
-    ga4_access_token: string | null;
-    ga4_refresh_token: string | null;
-    ga4_property_id: string | null;
-    hubspot_refresh_token: string | null;
-    hubspot_access_token: string | null;
-    ga4_last_refreshed: string | null;
-  }>(
-    `SELECT shopify_shop, shopify_access_token, ga4_access_token, ga4_refresh_token, 
-            ga4_property_id, hubspot_refresh_token, hubspot_access_token, ga4_last_refreshed 
-     FROM users WHERE id = ?`,
-    [userId]
-  );
+  const c = getClient();
 
-  if (!user) return NextResponse.json({ error: 'No user data' }, { status: 400 });
-
-  let {
-    shopify_shop,
-    shopify_access_token,
-    ga4_access_token,
-    ga4_refresh_token,
-    ga4_property_id,
-    hubspot_refresh_token,
-    hubspot_access_token,
-    ga4_last_refreshed,
-  } = user;
-
-  let revenue = 0,
-    churn_rate = 0,
-    at_risk = 0,
-    ltv = 0,
-    cac = 0,
-    top_channel = '',
-    acquisition_cost = 0,
-    retention_rate = 85;
-
-  const now = DateTime.now().setZone('UTC');
-  const monthAgo = now.minus({ months: 1 });
-
-  if (shopify_shop && shopify_access_token) {
-    try {
-      const ordersResp = await fetch(
-        `https://${shopify_shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${monthAgo.toISODate()}&limit=250`,
-        { headers: { 'X-Shopify-Access-Token': shopify_access_token } }
-      );
-      if (ordersResp.ok) {
-        const { orders } = await ordersResp.json();
-        const recentOrders = orders.slice(-30);
-        revenue = recentOrders.reduce((sum: number, o: any) => sum + parseFloat(o.total_price || 0), 0);
-
-        const canceled = orders.filter((o: any) => o.cancelled_at).length;
-        const totalOrders = orders.length;
-        churn_rate = totalOrders ? (canceled / totalOrders) * 100 : 0;
-
-        const customerIds = new Set(orders.map((o: any) => o.customer?.id).filter(Boolean));
-        if (customerIds.size > 0) ltv = (revenue / customerIds.size) * 3;
-
-        const customersResp = await fetch(
-          `https://${shopify_shop}/admin/api/2024-01/customers.json?limit=250`,
-          { headers: { 'X-Shopify-Access-Token': shopify_access_token } }
+  await c.batch([
+    {
+      sql: `
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          stripe_id TEXT,
+          shopify_shop TEXT,
+          ga4_connected INTEGER DEFAULT 0,
+          hubspot_connected INTEGER DEFAULT 0,
+          ga4_access_token TEXT,
+          ga4_refresh_token TEXT,
+          ga4_property_id TEXT,
+          shopify_access_token TEXT,
+          hubspot_refresh_token TEXT,
+          hubspot_access_token TEXT,
+          gdpr_consented INTEGER DEFAULT 0,
+          ga4_last_refreshed TEXT,
+          created_at TEXT DEFAULT (datetime('now')),
+          trial_end TEXT,
+          subscription_status TEXT DEFAULT 'trial'
         );
-        if (customersResp.ok) {
-          const { customers } = await customersResp.json();
-          at_risk = customers.filter((c: any) => (c.orders_count || 0) === 0).length;
-        }
-      }
-    } catch (e) {
-      console.error('Shopify sync error:', e);
+      `,
+      args: [],
+    },
+    {
+      sql: `
+        CREATE TABLE IF NOT EXISTS metrics (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER,
+          date TEXT DEFAULT (datetime('now')),
+          revenue REAL DEFAULT 0,
+          churn_rate REAL DEFAULT 0,
+          at_risk INTEGER DEFAULT 0,
+          ltv REAL DEFAULT 0,
+          cac REAL DEFAULT 0,
+          top_channel TEXT DEFAULT '',
+          acquisition_cost REAL DEFAULT 0,
+          retention_rate REAL DEFAULT 0,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+      `,
+      args: [],
+    },
+    {
+      sql: `
+        CREATE TABLE IF NOT EXISTS rate_limits (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          endpoint TEXT NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+      `,
+      args: [],
+    },
+    { sql: 'CREATE INDEX IF NOT EXISTS idx_metrics_user ON metrics(user_id);', args: [] },
+    { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
+  ], 'write');
+
+  // Safe column additions
+  const info = await c.execute('PRAGMA table_info(users)');
+  const columns = info.rows.map((r: any) => r.name);
+
+  const additions = [
+    { name: 'hubspot_refresh_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_refresh_token TEXT' },
+    { name: 'shopify_access_token', sql: 'ALTER TABLE users ADD COLUMN shopify_access_token TEXT' },
+    { name: 'gdpr_consented', sql: 'ALTER TABLE users ADD COLUMN gdpr_consented INTEGER DEFAULT 0' },
+    { name: 'ga4_last_refreshed', sql: 'ALTER TABLE users ADD COLUMN ga4_last_refreshed TEXT' },
+    { name: 'hubspot_access_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_access_token TEXT' },
+    { name: 'trial_end', sql: 'ALTER TABLE users ADD COLUMN trial_end TEXT' },
+    { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
+  ];
+
+  for (const { name, sql } of additions) {
+    if (!columns.includes(name)) {
+      await c.execute(sql);
     }
   }
 
-  if (ga4_property_id && ga4_access_token) {
-    if (!ga4_last_refreshed || DateTime.fromISO(ga4_last_refreshed) < now.minus({ minutes: 50 })) {
-      ga4_access_token = (await refreshGA4Token(userId)) || ga4_access_token;
-    }
-
-    try {
-      const reportUrl = `https://analyticsdata.googleapis.com/v1/properties/${ga4_property_id}:runReport`;
-      const headers = { Authorization: `Bearer ${ga4_access_token}`, 'Content-Type': 'application/json' };
-
-      const channelPayload = {
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-        dimensions: [{ name: 'sessionDefaultChannelGrouping' }],
-        metrics: [{ name: 'newUsers' }],
-      };
-
-      const channelResp = await fetch(reportUrl, { method: 'POST', headers, body: JSON.stringify(channelPayload) });
-      if (channelResp.ok) {
-        const data = await resp.json();
-        const rows = data.rows || [];
-        if (rows.length > 0) {
-          top_channel = rows[0].dimensionValues[0].value || 'Organic';
-        }
-      }
-    } catch (e) {
-      console.error('GA4 sync error:', e);
-    }
-  }
-
-  if (hubspot_refresh_token && hubspot_access_token) {
-    try {
-      const contactsResp = await fetch(
-        'https://api.hubapi.com/crm/v3/objects/contacts?properties=hs_lifecyclestage',
-        { headers: { Authorization: `Bearer ${hubspot_access_token}` } }
-      );
-      if (contactsResp.ok) {
-        const { results } = await contactsResp.json();
-        const retained = results.filter((c: any) =>
-          ['customer', 'subscriber'].includes(c.properties?.hs_lifecyclestage)
-        ).length;
-        const total = results.length;
-        retention_rate = total > 0 ? (retained / total) * 100 : retention_rate;
-      }
-    } catch (e) {
-      console.error('HubSpot sync error:', e);
-    }
-  }
-
-  if (!cac && revenue > 0) cac = revenue * 0.05;
-
-  await run(
-    `INSERT OR REPLACE INTO metrics 
-     (user_id, date, revenue, churn_rate, at_risk, ltv, cac, top_channel, acquisition_cost, retention_rate)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      userId,
-      now.toISO(),
-      revenue,
-      churn_rate,
-      at_risk,
-      ltv,
-      cac,
-      top_channel,
-      acquisition_cost,
-      retention_rate,
-    ]
-  );
-
-  return NextResponse.json({
-    status: 'Synced',
-    revenue,
-    churn_rate,
-    at_risk,
-    ltv,
-    cac,
-    top_channel,
-    acquisition_cost,
-    retention_rate,
-  });
+  dbInitialized = true;
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 });
+// Auto-init wrapper — no duplicate exports
+const originalQuery = query;
+const originalGetRow = getRow;
+const originalGetRows = getRows;
+const originalRun = run;
+
+export const query = async (sql: string, args: any[] = []) => {
+  await ensureDbInitialized();
+  return originalQuery(sql, args);
+};
+
+export const getRow = async <T = any>(sql: string, args: any[] = []): Promise<T | null> => {
+  await ensureDbInitialized();
+  return originalGetRow(sql, args);
+};
+
+export const getRows = async <T = any>(sql: string, args: any[] = []): Promise<T[]> => {
+  await ensureDbInitialized();
+  return originalGetRows(sql, args);
+};
+
+export const run = async (sql: string, args: any[] = []) => {
+  await ensureDbInitialized();
+  return originalRun(sql, args);
+};
