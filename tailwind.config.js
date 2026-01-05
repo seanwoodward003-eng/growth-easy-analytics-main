@@ -32,6 +32,10 @@ module.exports = {
       fontFamily: {
         orbitron: ["Orbitron", "sans-serif"],
       },
+      // Safe area support for iPhone notch/home bar
+      padding: {
+        'safe': 'env(safe-area-inset-bottom)',
+      },
     },
   },
   plugins: [],
