@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from 'ai/react';
+import { Paperclip, Image, Smile, Send } from 'lucide-react';
 
 export default function AIGrowthCoachPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
@@ -8,152 +9,109 @@ export default function AIGrowthCoachPage() {
   });
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Messages Area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem 1rem 8rem 1rem' }}>
-        {/* Empty State - Pulsing Logo */}
+    <div className="min-h-screen bg-[#0a0f2c] flex flex-col relative">
+      {/* Subtle cyberpunk background depth */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-radial from-cyan-500/5 via-transparent to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-400/10 to-transparent" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 pb-32">
+        {/* Empty State */}
         {messages.length === 0 && (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                filter: 'blur(72px)',
-                background: 'rgba(0, 255, 255, 0.3)',
-                borderRadius: '9999px',
-                animation: 'pulse 3s infinite'
-              }} />
+          <div className="h-full flex items-center justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 blur-3xl bg-cyan-500/30 animate-pulse rounded-full" />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                style={{ width: '20rem', height: '20rem', color: '#00ffff', filter: 'drop-shadow(0 0 40px #00ffff)' }}
+                className="h-64 w-64 text-cyan-400 drop-shadow-2xl"
                 viewBox="0 0 163.53 163.53"
               >
-                <rect width="163.53" height="163.53" fill="currentColor" rx="40" opacity="0.2" />
-                <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" fill="currentColor" />
+                <rect width="163.53" height="163.53" fill="currentColor" rx="40" className="opacity-20" />
+                <polygon
+                  points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51"
+                  fill="currentColor"
+                />
               </svg>
             </div>
           </div>
         )}
 
         {/* Messages */}
-        <div style={{ maxWidth: '90rem', margin: '0 auto', padding: '0 1rem' }}>
-          {messages.map((m, index) => (
+        <div className="max-w-5xl mx-auto space-y-8">
+          {messages.map((m) => (
             <div
               key={m.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '1.5rem',
-                marginBottom: '3rem',
-                flexDirection: m.role === 'user' ? 'row-reverse' : 'row'
-              }}
+              className={`flex items-start gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
             >
               {/* Avatar */}
-              <div style={{
-                width: '3rem',
-                height: '3rem',
-                borderRadius: '50%',
-                background: 'rgba(30, 30, 60, 0.8)',
-                border: '3px solid rgba(0, 255, 255, 0.6)',
-                boxShadow: '0 0 20px rgba(0, 255, 255, 0.4)',
-                flexShrink: 0
-              }} />
-
-              {/* Message Group */}
-              <div style={{ maxWidth: '80%' }}>
-                {/* Status Text - Only for Assistant Messages */}
+              <div
+                className={`w-12 h-12 rounded-full flex-shrink-0 border-4 flex items-center justify-center ${
+                  m.role === 'user'
+                    ? 'bg-gradient-to-br from-purple-600 to-cyan-600 border-purple-500/70 shadow-lg shadow-purple-500/30'
+                    : 'bg-gray-800/80 border-cyan-500/50 shadow-lg shadow-cyan-500/30'
+                }`}
+              >
                 {m.role === 'assistant' && (
-                  <p className="glow-soft" style={{
-                    color: '#00ffff',
-                    fontSize: '0.9rem',
-                    marginBottom: '0.8rem',
-                    textAlign: 'left'  // Fixed: always left for assistant
-                  }}>
-                    {index === 0 ? 'User connected\nGrok online' : 'Grok online'}
-                  </p>
+                  <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                    <rect width="163.53" height="163.53" rx="30" opacity="0.3" />
+                    <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                  </svg>
+                )}
+                {m.role === 'user' && <div className="text-xl font-bold text-white">You</div>}
+              </div>
+
+              {/* Message Bubble */}
+              <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
+                {/* Status for assistant only */}
+                {m.role === 'assistant' && (
+                  <p className="text-cyan-400 text-sm mb-2 px-2 font-medium">Grok online</p>
                 )}
 
-                {/* Message Bubble */}
                 <div
-                  className={m.role === 'user' ? 'ai-chat-message-user' : 'ai-chat-message-assistant'}
+                  className={`relative px-6 py-4 rounded-2xl backdrop-blur-md border-2 ${
+                    m.role === 'user'
+                      ? 'bg-gradient-to-r from-purple-900/70 to-cyan-900/70 border-purple-500/60 text-white'
+                      : 'bg-cyan-900/40 border-cyan-500/50 text-cyan-100'
+                  }`}
                   style={{
-                    position: 'relative',
-                    padding: '1.8rem 2.5rem',
-                    borderRadius: '2.5rem',
-                    border: '4px solid',
-                    backdropFilter: 'blur(16px)',
-                    boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)',
-                    borderRadius: m.role === 'user' ? '2.5rem 2.5rem 0.5rem 2.5rem' : '2.5rem 2.5rem 2.5rem 0.5rem'
+                    borderRadius: m.role === 'user' ? '2.5rem 2.5rem 0.5rem 2.5rem' : '2.5rem 2.5rem 2.5rem 0.5rem',
                   }}
                 >
-                  {/* Speech Bubble Tail */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '1.8rem',
-                    width: '1.8rem',
-                    height: '1.8rem',
-                    background: 'inherit',
-                    border: 'inherit',
-                    clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
-                    [m.role === 'user' ? 'right' : 'left']: '-0.9rem',
-                    transform: 'rotate(45deg)'
-                  }} />
+                  {/* Tail */}
+                  <div
+                    className={`absolute top-0 w-4 h-4 border-2 ${
+                      m.role === 'user'
+                        ? 'right-0 -translate-x-full border-l-0 border-b-0 border-purple-500/60 bg-gradient-to-r from-purple-900/70 to-cyan-900/70 rounded-br-xl'
+                        : 'left-0 translate-x-0 border-r-0 border-t-0 border-cyan-500/50 bg-cyan-900/40 rounded-tl-xl'
+                    }`}
+                  />
 
-                  <p className="glow-medium" style={{
-                    fontSize: '1.6rem',
-                    margin: 0,
-                    whiteSpace: 'pre-wrap',
-                    color: '#ffffff'
-                  }}>
-                    {m.content}
-                  </p>
+                  <p className="text-lg md:text-xl leading-relaxed whitespace-pre-wrap">{m.content}</p>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Loading Indicator */}
+          {/* Loading */}
           {isLoading && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem', marginBottom: '3rem' }}>
-              <div style={{
-                width: '3rem',
-                height: '3rem',
-                borderRadius: '50%',
-                background: 'rgba(30, 30, 60, 0.8)',
-                border: '3px solid rgba(0, 255, 255, 0.6)',
-                boxShadow: '0 0 20px rgba(0, 255, 255, 0.4)'
-              }} />
-              <div>
-                <p className="glow-soft" style={{
-                  color: '#00ffff',
-                  fontSize: '0.9rem',
-                  marginBottom: '0.8rem',
-                  textAlign: 'left'
-                }}>
-                  Grok online
-                </p>
-                <div className="ai-chat-message-assistant" style={{
-                  position: 'relative',
-                  padding: '1.8rem 2.5rem',
-                  borderRadius: '2.5rem 2.5rem 2.5rem 0.5rem',
-                  border: '4px solid #00ffff80',
-                  backdropFilter: 'blur(16px)',
-                  boxShadow: '0 0 40px rgba(0, 255, 255, 0.4)'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '-0.9rem',
-                    top: '1.8rem',
-                    width: '1.8rem',
-                    height: '1.8rem',
-                    background: 'inherit',
-                    border: 'inherit',
-                    clipPath: 'polygon(0% 0%, 100% 100%, 0% 100%)',
-                    transform: 'rotate(45deg)'
-                  }} />
-                  <p style={{ fontSize: '1.8rem', color: '#00ffff', animation: 'pulse 1.5s infinite', margin: 0 }}>
-                    Thinking...
-                  </p>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-800/80 border-4 border-cyan-500/50 shadow-lg shadow-cyan-500/30 flex items-center justify-center">
+                <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                  <rect width="163.53" height="163.53" rx="30" opacity="0.3" />
+                  <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                </svg>
+              </div>
+              <div className="flex flex-col items-start">
+                <p className="text-cyan-400 text-sm mb-2 px-2 font-medium">Grok online</p>
+                <div
+                  className="relative px-6 py-4 rounded-2xl bg-cyan-900/40 border-2 border-cyan-500/50 backdrop-blur-md"
+                  style={{ borderRadius: '2.5rem 2.5rem 2.5rem 0.5rem' }}
+                >
+                  <div className="absolute top-0 left-0 w-4 h-4 bg-cyan-900/40 border-2 border-r-0 border-t-0 border-cyan-500/50 rounded-tl-xl" />
+                  <p className="text-lg md:text-xl text-cyan-300 animate-pulse">Thinking...</p>
                 </div>
               </div>
             </div>
@@ -162,97 +120,41 @@ export default function AIGrowthCoachPage() {
       </div>
 
       {/* Fixed Bottom Input Bar */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '1.5rem',
-        background: 'linear-gradient(to top, rgba(10,15,44,0.95), transparent)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '3px solid rgba(0,255,255,0.4)'
-      }}>
-        <div style={{
-          maxWidth: '90rem',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <button type="button" style={{
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(20,20,40,0.8)',
-            border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
-            fontSize: '1.5rem'
-          }}>📎</button>
+      <div className="fixed bottom-0 left-0 right-0 p-6 md:p-12 bg-gradient-to-t from-[#0a0f2c] to-[#0a0f2c]/80 backdrop-blur-2xl border-t-2 border-cyan-400/30">
+        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex items-center gap-4">
+          <button type="button" className="p-4 rounded-lg bg-cyan-900/30 border-2 border-cyan-500/40 hover:bg-cyan-900/50 transition">
+            <Paperclip className="w-6 h-6 text-cyan-300" />
+          </button>
+          <button type="button" className="p-4 rounded-lg bg-cyan-900/30 border-2 border-cyan-500/40 hover:bg-cyan-900/50 transition">
+            <Image className="w-6 h-6 text-cyan-300" />
+          </button>
 
-          <button type="button" style={{
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(20,20,40,0.8)',
-            border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
-            fontSize: '1.5rem'
-          }}>🖼</button>
-
-          <div style={{ flex: 1, position: 'relative' }}>
+          <div className="flex-1 relative">
             <input
               value={input}
               onChange={handleInputChange}
-              placeholder="Message..."
-              style={{
-                width: '100%',
-                padding: '1.5rem 4rem 1.5rem 4rem',
-                borderRadius: '2rem',
-                background: 'rgba(15,20,40,0.9)',
-                border: '4px solid rgba(0,255,255,0.6)',
-                color: 'white',
-                fontSize: '1.4rem',
-                backdropFilter: 'blur(12px)',
-                outline: 'none'
-              }}
+              placeholder="Ask about revenue, churn, acquisition, or growth..."
+              className="w-full bg-gray-900/70 text-white px-6 py-5 pr-12 rounded-2xl border-2 border-cyan-500/50 focus:outline-none focus:border-cyan-300 focus:shadow-lg focus:shadow-cyan-500/50 transition-all text-lg placeholder-cyan-400/60 backdrop-blur-md"
               autoFocus
             />
-            <span style={{
-              position: 'absolute',
-              left: '1.8rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '1.8rem',
-              color: '#00ffff'
-            }}>←</span>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none text-2xl">
+              →
+            </div>
           </div>
 
           <button
             type="submit"
-            onClick={handleSubmit}
             disabled={isLoading || !input.trim()}
-            className="cyber-btn"
-            style={{ padding: '1.5rem 3.5rem', fontSize: '1.8rem' }}
+            className="px-8 py-5 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl font-bold text-xl shadow-lg shadow-cyan-500/50 hover:shadow-purple-500/50 hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-3"
           >
             Send
+            <Send className="w-6 h-6" />
           </button>
 
-          <button type="button" style={{
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(20,20,40,0.8)',
-            border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
-            fontSize: '1.5rem'
-          }}>😊</button>
-
-          <button type="button" style={{
-            padding: '1rem',
-            borderRadius: '1rem',
-            background: 'rgba(20,20,40,0.8)',
-            border: '3px solid rgba(0,255,255,0.5)',
-            boxShadow: '0 0 15px rgba(0,255,255,0.3)',
-            fontSize: '1.5rem'
-          }}>🙂</button>
-        </div>
+          <button type="button" className="p-4 rounded-lg bg-cyan-900/30 border-2 border-cyan-500/40 hover:bg-cyan-900/50 transition">
+            <Smile className="w-6 h-6 text-cyan-300" />
+          </button>
+        </form>
       </div>
     </div>
   );
