@@ -3,24 +3,21 @@
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import Link from 'next/link';
-import { AIInsights } from "@/components/AIInsights";  // <-- Added import
+import { AIInsights } from "@/components/AIInsights";
 
 export default function Dashboard() {
   const { metrics, isLoading, isConnected } = useMetrics();
 
-  // Simple logic for biggest opportunity (expand later)
   const biggestOpportunity = metrics.churn.rate > 7 
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
   return (
     <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24">
-      {/* Header */}
       <h1 className="text-center text-6xl md:text-8xl font-black mb-12 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
         Dashboard
       </h1>
 
-      {/* Not Connected State */}
       {!isConnected && (
         <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
           <p className="text-3xl text-cyan-300 mb-6">
@@ -40,14 +37,13 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Biggest Opportunity Card */}
       <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
         <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
         <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
       </div>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
+      {/* Key Metrics Grid — Added AOV and Repeat Rate */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
         {/* Revenue */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
@@ -55,7 +51,6 @@ export default function Dashboard() {
             £{metrics.revenue.total.toLocaleString()}
           </p>
           <p className="text-3xl text-green-400">{metrics.revenue.trend}</p>
-          <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
         </div>
 
         {/* Churn */}
@@ -65,13 +60,28 @@ export default function Dashboard() {
             {metrics.churn.rate}%
           </p>
           <p className="text-3xl text-red-400">{metrics.churn.at_risk} at risk</p>
-          <p className="text-xl text-cyan-200 mt-6">
-            {metrics.churn.rate > 7 ? 'High churn — send win-back emails to at-risk customers' : 'Churn healthy — keep it up'}
+        </div>
+
+        {/* AOV — NEW */}
+        <div className="metric-card p-10 text-center">
+          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Average Order Value</h3>
+          <p className="text-7xl font-black text-green-400 mb-4">
+            £{metrics.aov?.toFixed(2) || '0.00'}
           </p>
+          <p className="text-xl text-cyan-200">Higher AOV = higher profits</p>
+        </div>
+
+        {/* Repeat Purchase Rate — NEW */}
+        <div className="metric-card p-10 text-center">
+          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Repeat Purchase Rate</h3>
+          <p className="text-7xl font-black text-green-400 mb-4">
+            {metrics.repeatRate?.toFixed(1) || '0'}%
+          </p>
+          <p className="text-xl text-cyan-200">Customers buying again</p>
         </div>
 
         {/* LTV:CAC */}
-        <div className="metric-card p-10 text-center">
+        <div className="metric-card p-10 text-center col-span-1 md:col-span-2 lg:col-span-4">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">LTV:CAC Ratio</h3>
           <p className="text-7xl font-black text-green-400 mb-8">
             {metrics.performance.ratio}:1
@@ -82,14 +92,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Chart */}
       <div className="max-w-6xl mx-auto mb-20">
         <div className="metric-card p-8">
           <RevenueChart />
         </div>
       </div>
 
-      {/* AI Insights at the bottom */}
       <AIInsights />
     </div>
   );
