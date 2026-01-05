@@ -67,7 +67,7 @@ export default function LandingPage() {
           Connect your Shopify store and get real-time insights on revenue, churn, acquisition, retention — with an AI Growth Coach that reads your data and tells you exactly what to fix to make more money.
         </p>
 
-        {/* CTA Form */}
+        {/* CTA Form - FULLY RESTORED & RESPONSIVE */}
         <div className="max-w-2xl mx-auto mb-20">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-cyan-400 mb-8">
             {mode === 'signup' ? 'Start Your 7-Day Free Trial' : 'Welcome Back'}
@@ -80,19 +80,19 @@ export default function LandingPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 w-full px-10 py-6 text-2xl bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 transition"
+              className="flex-1 w-full px-6 sm:px-10 py-4 sm:py-6 text-lg sm:text-2xl bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 transition"
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full md:w-auto px-16 py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-2xl font-black rounded-full hover:scale-105 transition shadow-2xl shadow-cyan-500/50 disabled:opacity-70"
+              className="w-full md:w-auto px-12 sm:px-16 py-4 sm:py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-xl sm:text-2xl font-black rounded-full hover:scale-105 transition shadow-2xl shadow-cyan-500/50 disabled:opacity-70"
             >
               {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
             </button>
           </form>
 
           {message && (
-            <p className={`mt-6 text-xl ${message.includes('Check') || message.includes('Welcome') ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`mt-6 text-lg sm:text-xl ${message.includes('Check') || message.includes('Welcome') ? 'text-green-400' : 'text-red-400'}`}>
               {message}
             </p>
           )}
@@ -104,7 +104,7 @@ export default function LandingPage() {
               setMessage('');
               setEmail('');
             }}
-            className="mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
+            className="mt-8 text-cyan-300 hover:text-cyan-100 underline text-lg sm:text-xl"
           >
             {mode === 'signup' ? 'Already have an account? Sign in' : 'New here? Sign up for free trial'}
           </button>
@@ -142,7 +142,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Pricing Preview - perfectly centered, no right-shift */}
+        {/* Pricing Preview - perfectly centered */}
         <div className="w-full px-4 sm:px-0">
           <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-cyan-400 mb-10 sm:mb-12 text-center">
             Lock In Lifetime Access
