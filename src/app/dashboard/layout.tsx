@@ -1,36 +1,20 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { AIInsights } from '@/components/AIInsights';
-import { usePathname } from 'next/navigation';
+import { AIInsights } from '@/components/aiinsights';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const user = await getCurrentUser();
-  if (!user) {
-    redirect('/');
-  }
-
-  return <ClientLayout>{children}</ClientLayout>;
-}
-
-// Client component to check the current page
+// Client component for pathname check
 'use client';
 import { usePathname } from 'next/navigation';
 
 function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  // Only hide insights on the full AI Growth Coach page
   const isAIGrowthCoachPage = pathname === '/dashboard/ai-growth-coach';
 
   return (
     <>
       {children}
 
-      {/* AI Insights on EVERY dashboard page except the full coach */}
+      {/* AI Insights on all dashboard pages except the full coach page */}
       {!isAIGrowthCoachPage && (
         <div className="mt-20 px-6">
           <AIInsights />
@@ -38,4 +22,19 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
       )}
     </>
   );
+}
+
+// Make the layout async so we can await getCurrentUser()
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/');
+  }
+
+  return <ClientLayout>{children}</ClientLayout>;
 }
