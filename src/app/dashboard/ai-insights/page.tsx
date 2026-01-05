@@ -8,20 +8,22 @@ export default function AIInsightsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-[#0a0f2c] flex flex-col px-6 py-12 md:px-12 lg:px-24">
+    <div className="min-h-screen bg-gradient-to-b from-black to-[#0a0f2c] flex flex-col">
       {/* Header */}
-      <div className="text-center mb-12">
+      <div className="p-8 md:p-12 text-center border-b border-cyan-400/30">
         <h1 className="glow-title text-6xl md:text-8xl font-black mb-6">
           AI Insights
         </h1>
-        <p className="text-2xl text-cyan-300">Powered by Grok • Real-time growth intelligence</p>
+        <p className="text-2xl md:text-3xl text-cyan-300">
+          Powered by Grok • Real-time growth intelligence
+        </p>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto mb-8 space-y-8">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8">
         {messages.length === 0 && (
           <div className="text-center mt-20">
-            <p className="text-3xl text-cyan-300 mb-12">
+            <p className="text-3xl md:text-4xl text-cyan-300 mb-12">
               Ask me anything about your revenue, churn, acquisition, or growth...
             </p>
             <div className="flex flex-wrap justify-center gap-6">
@@ -35,7 +37,7 @@ export default function AIInsightsPage() {
                 <button
                   key={q}
                   onClick={() => handleSubmit(new Event('submit') as any, { data: { prompt: q } })}
-                  className="text-cyan-300 text-xl px-8 py-4 rounded-full border-2 border-cyan-400/50 hover:bg-cyan-400/20 transition"
+                  className="text-cyan-300 text-lg md:text-xl px-8 py-4 rounded-full border-2 border-cyan-400/50 hover:bg-cyan-400/20 transition"
                 >
                   {q}
                 </button>
@@ -65,9 +67,9 @@ export default function AIInsightsPage() {
         )}
       </div>
 
-      {/* Input */}
-      <div className="max-w-5xl mx-auto">
-        <form onSubmit={handleSubmit} className="flex gap-6">
+      {/* Input Bar - Fixed Bottom */}
+      <div className="p-6 md:p-12 border-t border-cyan-400/30">
+        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto flex gap-6">
           <input
             value={input}
             onChange={handleInputChange}
