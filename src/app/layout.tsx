@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header - unchanged */}
+        {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link 
@@ -65,12 +65,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        {/* Mobile Menu - unchanged */}
+        {/* Mobile Menu — added Settings */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40" onClick={() => setMenuOpen(false)} />
             <nav className="fixed top-0 right-0 w-80 h-full bg-[#0a0f2c]/98 backdrop-blur-xl z-50 border-l-4 border-cyan-400 pt-32 px-8 overflow-y-auto">
-              {/* menu items unchanged */}
               <div className="space-y-6">
                 <Link href="/dashboard" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   Dashboard
@@ -92,6 +91,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
                 <Link href="/dashboard/ai-growth-coach" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard/ai-growth-coach') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   AI Growth Coach
+                </Link>
+                <Link href="/settings" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${pathname === '/settings' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
+                  Settings
                 </Link>
                 <Link href="/about" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${pathname === '/about' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   About
@@ -118,17 +120,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* MAIN CONTENT - THIS IS THE KEY FIX */}
+        {/* MAIN CONTENT */}
         <main className={isCoachPage ? 'min-h-dvh pt-20 sm:pt-24' : 'min-h-dvh pt-24 sm:pt-32 pb-40'}>
           <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-            {/* This wrapper now constrains ALL dashboard content properly */}
             <div className="max-w-5xl mx-auto">
               {children}
             </div>
           </div>
         </main>
 
-        {/* Cookie Banner - unchanged */}
+        {/* Cookie Banner */}
         {showCookieBanner && (
           <div className="fixed bottom-0 left-0 right-0 bg-[#0a0f2c]/95 backdrop-blur-lg border-t-4 border-cyan-400 p-6 z-50 shadow-2xl pb-safe">
             <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
@@ -161,7 +162,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
-        {/* Footer - unchanged */}
+        {/* Footer */}
         {!isCoachPage && (
           <footer className="py-8 text-center text-cyan-500 text-sm space-x-8 border-t border-cyan-900/50">
             <div className="max-w-7xl mx-auto px-6">
