@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 
-// Increase timeout for longer Grok responses on Vercel
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Log rate limit entry
   await run(
     'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
     [userId]
@@ -62,35 +60,32 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // Current top fast reasoning model (2M context, low cost)
-        // Alternative: 'grok-4-1-fast' works too in many cases
+        model: 'grok-4-1-fast-reasoning',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
         ],
         temperature: 0.7,
         max_tokens: 300,
+        stream: true,
       }),
     });
 
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error('[Grok API Error] Status:', resp.status, '| Body:', errorText);
-      return NextResponse.json({ 
-        reply: `Grok API error ${resp.status}: ${errorText.substring(0, 300)}` 
-      });
+      return NextResponse.json({ reply: `Grok error ${resp.status}: ${errorText.substring(0, 300)}` });
     }
 
-    const data = await resp.json();
-    const reply = data.choices[0]?.message?.content?.trim() || 'No reply.';
-
-    console.log('[Grok Success] Reply:', reply);
-    return NextResponse.json({ reply });
+    return new Response(resp.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
+    });
   } catch (e: any) {
     console.error('[Grok Fetch Error]', e.message || e);
-    return NextResponse.json({ 
-      reply: `Connection error: ${e.message || 'Could not reach Grok API'}` 
-    });
+    return NextResponse.json({ reply: `Connection error: ${e.message || 'Could not reach Grok'}` });
   }
 }
 
