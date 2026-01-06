@@ -109,6 +109,10 @@ export async function POST(request: NextRequest) {
     acquisition_cost = 0,
     retention_rate = 85;
 
+  // NEW: AOV and Repeat Rate
+  let aov = 0;
+  let repeatRate = 0;
+
   const now = DateTime.now().setZone('UTC');
   const monthAgo = now.minus({ months: 1 });
 
@@ -137,6 +141,13 @@ export async function POST(request: NextRequest) {
         if (customersResp.ok) {
           const { customers } = await customersResp.json();
           at_risk = customers.filter((c: any) => (c.orders_count || 0) === 0).length;
+
+          // AOV
+          aov = totalOrders ? revenue / totalOrders : 0;
+
+          // Repeat Purchase Rate
+          const repeatCustomers = customers.filter((c: any) => (c.orders_count || 0) > 1).length;
+          repeatRate = customers.length ? (repeatCustomers / customers.length) * 100 : 0;
         }
       }
     } catch (e) {
