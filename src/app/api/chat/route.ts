@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 
+// Allow up to 60 seconds for Grok responses (important on Vercel Hobby/Pro)
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   if (!verifyCSRF(request)) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Log this chat request
+  // Log this chat request for rate limiting
   await run(
     'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
     [userId]
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4',  // Flagship model — works on all accounts, most intelligent
+        model: 'grok-4-1-fast-reasoning',  // ← Fixed: now uses a valid, current model you have access to
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
