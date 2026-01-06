@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       const channelResp = await fetch(reportUrl, { method: 'POST', headers, body: JSON.stringify(channelPayload) });
       if (channelResp.ok) {
-        const data = await channelResp.json();  // FIXED: was 'resp' — now 'channelResp'
+        const data = await channelResp.json();
         const rows = data.rows || [];
         if (rows.length > 0) {
           top_channel = rows[0].dimensionValues[0].value || 'Organic';
@@ -209,6 +209,13 @@ export async function POST(request: NextRequest) {
       acquisition_cost,
       retention_rate,
     ]
+  );
+
+  // Insert current metrics into history for anomaly detection
+  await run(
+    `INSERT INTO metrics_history (user_id, sync_date, revenue, churn_rate, at_risk, aov, repeat_rate)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [userId, now.toISODate(), revenue, churn_rate, at_risk, aov, repeatRate]
   );
 
   return NextResponse.json({
