@@ -5,24 +5,17 @@ import { getRow, run } from '@/lib/db';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  console.log('[DEBUG] POST /api/chat request received');
-
   if (!verifyCSRF(request)) {
-    console.log('[DEBUG] CSRF verification FAILED');
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
-  console.log('[DEBUG] CSRF passed');
 
   const auth = await requireAuth();
-  console.log('[DEBUG] Auth result:', JSON.stringify(auth));
   if ('error' in auth) {
-    console.log('[DEBUG] Auth failed:', auth.error);
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   const userId = auth.user.id;
-  console.log('[DEBUG] Authenticated user ID:', userId);
 
-  // Rate limit check
+  // RATE LIMIT: 8 messages per minute per user
   const recentChats = await getRow<{ count: number }>(
     `SELECT COUNT(*) as count FROM rate_limits 
      WHERE user_id = ? AND endpoint = 'chat' 
@@ -31,10 +24,8 @@ export async function POST(request: NextRequest) {
   );
 
   const recentCount = recentChats?.count ?? 0;
-  console.log('[DEBUG] Recent chat count in last minute:', recentCount);
 
   if (recentCount >= 8) {
-    console.log('[DEBUG] Rate limit EXCEEDED');
     return NextResponse.json(
       { error: 'Rate limit exceeded — maximum 8 messages per minute' },
       { status: 429 }
@@ -45,43 +36,48 @@ export async function POST(request: NextRequest) {
     'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
     [userId]
   );
-  console.log('[DEBUG] Rate limit row inserted');
 
+  // Parse body
   let body;
   try {
     body = await request.json();
-    console.log('[DEBUG] Raw request body:', JSON.stringify(body));
-  } catch (e: any) {
-    console.log('[DEBUG] Failed to parse JSON body:', e.message);
+  } catch (e) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message } = body || {};
-  console.log('[DEBUG] Extracted message:', JSON.stringify(message));
+  // Extract the latest user message from Vercel AI SDK / useChat format
+  let userMessage = '';
+  if (Array.isArray(body.messages)) {
+    const latestUserMsg = [...body.messages]
+      .reverse()
+      .find(m => m.role === 'user' && typeof m.content === 'string');
+    userMessage = latestUserMsg?.content?.trim() || '';
+  }
 
-  if (!message?.trim()) {
-    console.log('[DEBUG] Message is empty/missing → sending fallback');
+  // Fallback for simple { message: "..." } format (in case you ever change frontend)
+  if (!userMessage && typeof body.message === 'string') {
+    userMessage = body.message.trim();
+  }
+
+  if (!userMessage) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
-  console.log('[DEBUG] Message valid → continuing to Grok');
-
+  // Fetch latest metrics for the user
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
     'SELECT revenue, churn_rate, at_risk FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
     [userId]
   );
-  console.log('[DEBUG] Metrics row:', JSON.stringify(metric));
 
   const summary = metric
     ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
     : 'No data';
 
   const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
-  Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${message}`;
+Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${userMessage}`;
 
   try {
-    console.log('[Grok Request] User:', userId, '| Message:', message);
-    console.log('[DEBUG] About to call xAI API...');
+    console.log('[Grok Request] User:', userId, '| Message:', userMessage);
 
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -93,7 +89,7 @@ export async function POST(request: NextRequest) {
         model: 'grok-4-1-fast-reasoning',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
+          { role: 'user', content: userMessage },
         ],
         temperature: 0.7,
         max_tokens: 300,
@@ -101,15 +97,12 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    console.log('[DEBUG] xAI API response status:', resp.status);
-
     if (!resp.ok) {
       const errorText = await resp.text();
-      console.error('[Grok API Error] Status:', resp.status, '| Body:', errorText.substring(0, 500));
+      console.error('[Grok API Error] Status:', resp.status, '| Body:', errorText);
       return NextResponse.json({ reply: `Grok error ${resp.status}: ${errorText.substring(0, 300)}` });
     }
 
-    console.log('[DEBUG] Streaming response from Grok');
     return new Response(resp.body, {
       headers: {
         'Content-Type': 'text/event-stream',
