@@ -1,7 +1,7 @@
 // app/api/generate-insights/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { getRow, getRows } from '@/lib/db';
+import { getRow } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth();
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   );
 
   const currentSummary = current
-    ? `Current: Revenue £${current.revenue}, Churn ${current.churn_rate}%, At-risk ${current.at_risk}, AOV £${current.aov?.toFixed(2)}, Repeat ${current.repeat_rate?.toFixed(1)}%`
+    ? `Current: Revenue £${current.revenue}, Churn ${current.churn_rate}%, At-risk ${current.at_risk}, AOV £${current.aov?.toFixed(2)}, Repeat ${current.repeat_rate?.toFixed(1)}%, LTV:CAC ${current.performance?.ratio}:1`
     : 'No current data';
 
   const previousSummary = previous
@@ -52,7 +52,7 @@ Generate 4 short, actionable insights (1 sentence each) on biggest opportunities
     if (!resp.ok) throw new Error('Grok failed');
     const data = await resp.json();
     const text = data.choices[0].message.content.trim();
-    const insights = text.split('\n').filter(line => line.trim()).slice(0, 4);
+    const insights = text.split('\n').filter((line: string) => line.trim()).slice(0, 4);  // FIXED: typed line as string
 
     return NextResponse.json({ insights });
   } catch (e) {
