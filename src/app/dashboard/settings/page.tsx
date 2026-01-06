@@ -120,9 +120,6 @@ export default function SettingsPage() {
             <button className="cyber-btn text-xl px-8 py-4">
               Change Email
             </button>
-            <button className="cyber-btn text-xl px-8 py-4">
-              Change Password
-            </button>
           </div>
         </div>
       </div>
