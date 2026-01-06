@@ -1,38 +1,39 @@
 // app/api/generate-insights/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { getRow } from '@/lib/db';
+import { getRow, getRows } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth();
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const userId = auth.user.id;
 
-  // Current metrics
+  // Current + last 7 days history for mini charts
   const current = await getRow<any>(
     'SELECT * FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1',
     [userId]
   );
 
-  // Previous metrics (for anomaly)
-  const previous = await getRow<any>(
-    'SELECT * FROM metrics WHERE user_id = ? AND date < ? ORDER BY date DESC LIMIT 1',
-    [userId, current?.date || new Date().toISOString()]
+  const history = await getRows<any>(
+    'SELECT date, churn_rate, revenue, aov FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 7',
+    [userId]
   );
 
+  const chartData = history.reverse().map((h, i) => ({
+    name: `Day ${i + 1}`,
+    value: h.churn_rate || h.revenue || h.aov || 0,
+  }));
+
   const currentSummary = current
-    ? `Current: Revenue £${current.revenue}, Churn ${current.churn_rate}%, At-risk ${current.at_risk}, AOV £${current.aov?.toFixed(2)}, Repeat ${current.repeat_rate?.toFixed(1)}%, LTV:CAC ${current.performance?.ratio}:1`
-    : 'No current data';
+    ? `Current: Revenue £${current.revenue}, Churn ${current.churn_rate}%, At-risk ${current.at_risk}, AOV £${current.aov?.toFixed(2)}, Repeat ${current.repeat_rate?.toFixed(1)}%`
+    : 'No data';
 
-  const previousSummary = previous
-    ? `Previous: Revenue £${previous.revenue}, Churn ${previous.churn_rate}%, At-risk ${previous.at_risk}`
-    : 'No previous data';
-
-  const prompt = `You are GrowthEasy AI. 
-Current metrics: ${currentSummary}
-Previous metrics: ${previousSummary}
-
-Generate 4 short, actionable insights (1 sentence each) on biggest opportunities. Highlight any anomalies/trends vs previous. Be specific, use numbers.`;
+  const prompt = `You are GrowthEasy AI. Current metrics: ${currentSummary}.
+Generate 4 insights (1 sentence each). For each:
+- Highlight anomaly/trend vs previous
+- Estimate £ impact/mo
+- Suggest 1 action
+Format as JSON array of objects: [{"text": "...", "impact": 2400, "historical": "Last month 2.1% — now 3.2%"}]`;
 
   try {
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -45,22 +46,22 @@ Generate 4 short, actionable insights (1 sentence each) on biggest opportunities
         model: 'grok-beta',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 400,
+        max_tokens: 600,
       }),
     });
 
     if (!resp.ok) throw new Error('Grok failed');
     const data = await resp.json();
-    const text = data.choices[0].message.content.trim();
-    const insights = text.split('\n').filter((line: string) => line.trim()).slice(0, 4);  // FIXED: typed line as string
+    let insights = JSON.parse(data.choices[0].message.content);
+
+    // Attach chart data to churn insight
+    insights = insights.map((ins: any) => ({
+      ...ins,
+      chartData: ins.text.toLowerCase().includes('churn') ? chartData : undefined,
+    }));
 
     return NextResponse.json({ insights });
   } catch (e) {
-    return NextResponse.json({ insights: [
-      "Revenue stable — focus on increasing AOV",
-      "Churn normal — monitor at-risk customers",
-      "Repeat rate good — encourage loyalty programs",
-      "LTV healthy — scale acquisition"
-    ] });
+    return NextResponse.json({ insights: [] });
   }
 }
