@@ -37,24 +37,7 @@ export default function ChurnPage() {
         Churn Rate
       </h1>
 
-      {!isConnected && (
-        <div className="max-w-5xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
-          <p className="text-3xl text-cyan-300 mb-6">
-            Connect your accounts to see real-time churn data and AI insights
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 mt-8">
-            <button onClick={() => window.location.href = '/api/auth/shopify'} className="cyber-btn text-2xl px-10 py-5">
-              Connect Shopify
-            </button>
-            <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
-              Connect GA4
-            </button>
-            <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
-              Connect HubSpot
-            </button>
-          </div>
-        </div>
-      )}
+     
 
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">Churn Rate</p>
