@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 
-// Allow up to 60 seconds for Grok responses (important on Vercel Hobby/Pro)
+// Increase timeout for longer Grok responses on Vercel
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Log this chat request for rate limiting
+  // Log rate limit entry
   await run(
     'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
     [userId]
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${message}`;
 
   try {
-    console.log('[Grok Request] Starting for user:', userId, '| Message:', message);
+    console.log('[Grok Request] User:', userId, '| Message:', message);
 
     const resp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // ← Fixed: now uses a valid, current model you have access to
+        model: 'grok-4-1-fast-reasoning',  // Current top fast reasoning model (2M context, low cost)
+        // Alternative: 'grok-4-1-fast' works too in many cases
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
@@ -75,7 +76,9 @@ export async function POST(request: NextRequest) {
     if (!resp.ok) {
       const errorText = await resp.text();
       console.error('[Grok API Error] Status:', resp.status, '| Body:', errorText);
-      throw new Error(`Grok API error ${resp.status}: ${errorText}`);
+      return NextResponse.json({ 
+        reply: `Grok API error ${resp.status}: ${errorText.substring(0, 300)}` 
+      });
     }
 
     const data = await resp.json();
@@ -84,8 +87,10 @@ export async function POST(request: NextRequest) {
     console.log('[Grok Success] Reply:', reply);
     return NextResponse.json({ reply });
   } catch (e: any) {
-    console.error('[Grok Catch Error]', e.message || e);
-    return NextResponse.json({ reply: 'Sorry, something went wrong. Try again in a moment.' });
+    console.error('[Grok Fetch Error]', e.message || e);
+    return NextResponse.json({ 
+      reply: `Connection error: ${e.message || 'Could not reach Grok API'}` 
+    });
   }
 }
 
