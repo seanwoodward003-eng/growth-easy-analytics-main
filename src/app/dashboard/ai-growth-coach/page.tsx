@@ -31,8 +31,8 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Messages — scrollable with safe padding */}
-      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-24">
+      {/* Messages — extra padding for input bar */}
+      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-32">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -73,8 +73,8 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Input bar — mobile-safe with safe-area padding */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30">
+      {/* Input bar — mobile-safe with safe-area */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
           <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
             <Paperclip className="w-6 h-6 text-cyan-300" />
