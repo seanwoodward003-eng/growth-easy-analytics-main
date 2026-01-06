@@ -31,8 +31,8 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Messages — scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-32">
+      {/* Messages — scrollable with safe padding */}
+      <div className="flex-1 overflow-y-auto px-4 pt-20 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -61,6 +61,7 @@ export default function AIGrowthCoachPage() {
               <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
                 {m.role === 'assistant' && <p className="text-cyan-400 text-sm mb-2">Grok online</p>}
                 <div className={`relative px-6 py-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 text-white' : 'bg-gray-800/90 text-cyan-100'} backdrop-blur-md border border-cyan-500/30`}>
+                  {/* Tail */}
                   <div className={`absolute top-0 w-0 h-0 border-8 border-transparent ${m.role === 'user' ? 'right-0 -mr-4 border-l-purple-900/80' : 'left-0 -ml-4 border-r-gray-800/90'}`} />
                   <p className="text-lg leading-relaxed whitespace-pre-wrap">{m.content}</p>
                 </div>
@@ -72,7 +73,7 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Input bar — mobile-safe fixed bottom */}
+      {/* Input bar — mobile-safe with safe-area padding */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
           <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
