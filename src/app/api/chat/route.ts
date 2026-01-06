@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
-import { StreamingTextResponse, AIStream } from 'ai';  // ← Correct imports for v3
+import { StreamingTextResponse, OpenAIStream } from 'ai';
 
 export const maxDuration = 60;
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Extract user message
+  // Extract latest user message
   let userMessage = '';
   if (Array.isArray(body.messages)) {
     const latest = [...body.messages].reverse().find(m => m.role === 'user' && typeof m.content === 'string');
@@ -88,23 +88,9 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
       return NextResponse.json({ reply: `Grok error ${grokResp.status}` });
     }
 
-    // Transform OpenAI/Grok stream → Vercel AI format using AIStream
-    const stream = AIStream(grokResp.body!, {
-      onStart: async () => {},
-      onToken: async (token: string) => {},
-      onCompletion: async (completion: string) => {},
-      // This maps Grok's delta.content → token
-      transform(chunk: string) {
-        try {
-          const data = JSON.parse(chunk);
-          return data.choices?.[0]?.delta?.content || '';
-        } catch {
-          return '';
-        }
-      },
-    });
+    // Convert Grok/OpenAI-compatible stream to Vercel AI SDK format
+    const stream = OpenAIStream(grokResp);
 
-    // Return in format useChat expects
     return new StreamingTextResponse(stream);
   } catch (e: any) {
     console.error('[Grok Error]', e);
