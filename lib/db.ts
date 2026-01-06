@@ -44,7 +44,7 @@ async function baseRun(sql: string, args: any[] = []) {
   await baseQuery(sql, args);
 }
 
-// Schema initialization + rate_limits table
+// Schema initialization + rate_limits table + metrics_history
 let dbInitialized = false;
 
 async function ensureDbInitialized() {
@@ -91,6 +91,10 @@ async function ensureDbInitialized() {
           top_channel TEXT DEFAULT '',
           acquisition_cost REAL DEFAULT 0,
           retention_rate REAL DEFAULT 0,
+          aov REAL DEFAULT 0,
+          repeat_rate REAL DEFAULT 0,
+          ltv_new REAL DEFAULT 0,
+          ltv_returning REAL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id)
         );
       `,
@@ -108,15 +112,32 @@ async function ensureDbInitialized() {
       `,
       args: [],
     },
+    // NEW: metrics_history for anomaly detection
+    {
+      sql: `
+        CREATE TABLE IF NOT EXISTS metrics_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER,
+          sync_date TEXT,
+          revenue REAL,
+          churn_rate REAL,
+          at_risk INTEGER,
+          aov REAL,
+          repeat_rate REAL,
+          FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+      `,
+      args: [],
+    },
     { sql: 'CREATE INDEX IF NOT EXISTS idx_metrics_user ON metrics(user_id);', args: [] },
     { sql: 'CREATE INDEX IF NOT EXISTS idx_rate_limits_user_endpoint ON rate_limits(user_id, endpoint, timestamp);', args: [] },
   ], 'write');
 
-  // Safe column additions
-  const info = await c.execute('PRAGMA table_info(users)');
-  const columns = info.rows.map((r: any) => r.name);
+  // Safe column additions for users
+  const userInfo = await c.execute('PRAGMA table_info(users)');
+  const userColumns = userInfo.rows.map((r: any) => r.name);
 
-  const additions = [
+  const userAdditions = [
     { name: 'hubspot_refresh_token', sql: 'ALTER TABLE users ADD COLUMN hubspot_refresh_token TEXT' },
     { name: 'shopify_access_token', sql: 'ALTER TABLE users ADD COLUMN shopify_access_token TEXT' },
     { name: 'gdpr_consented', sql: 'ALTER TABLE users ADD COLUMN gdpr_consented INTEGER DEFAULT 0' },
@@ -126,8 +147,25 @@ async function ensureDbInitialized() {
     { name: 'subscription_status', sql: "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'trial'" },
   ];
 
-  for (const { name, sql } of additions) {
-    if (!columns.includes(name)) {
+  for (const { name, sql } of userAdditions) {
+    if (!userColumns.includes(name)) {
+      await c.execute(sql);
+    }
+  }
+
+  // Safe column additions for metrics (new analytics)
+  const metricsInfo = await c.execute('PRAGMA table_info(metrics)');
+  const metricsColumns = metricsInfo.rows.map((r: any) => r.name);
+
+  const metricsAdditions = [
+    { name: 'aov', sql: 'ALTER TABLE metrics ADD COLUMN aov REAL DEFAULT 0' },
+    { name: 'repeat_rate', sql: 'ALTER TABLE metrics ADD COLUMN repeat_rate REAL DEFAULT 0' },
+    { name: 'ltv_new', sql: 'ALTER TABLE metrics ADD COLUMN ltv_new REAL DEFAULT 0' },
+    { name: 'ltv_returning', sql: 'ALTER TABLE metrics ADD COLUMN ltv_returning REAL DEFAULT 0' },
+  ];
+
+  for (const { name, sql } of metricsAdditions) {
+    if (!metricsColumns.includes(name)) {
       await c.execute(sql);
     }
   }
