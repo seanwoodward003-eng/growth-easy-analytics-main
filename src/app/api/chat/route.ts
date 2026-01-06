@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, verifyCSRF } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 
-export const maxDuration = 60;  // ← Kept from your original
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   console.log('[DEBUG] POST /api/chat request received');
@@ -29,9 +29,11 @@ export async function POST(request: NextRequest) {
      AND timestamp > datetime('now', '-1 minute')`,
     [userId]
   );
-  console.log('[DEBUG] Recent chat count in last minute:', recentChats?.count ?? 'null');
 
-  if (recentChats?.count >= 8) {
+  const recentCount = recentChats?.count ?? 0;
+  console.log('[DEBUG] Recent chat count in last minute:', recentCount);
+
+  if (recentCount >= 8) {
     console.log('[DEBUG] Rate limit EXCEEDED');
     return NextResponse.json(
       { error: 'Rate limit exceeded — maximum 8 messages per minute' },
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message } = body;
+  const { message } = body || {};
   console.log('[DEBUG] Extracted message:', JSON.stringify(message));
 
   if (!message?.trim()) {
@@ -120,4 +122,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 });  // ← Kept from your original
+export const OPTIONS = () => new Response(null, { status: 200 });
