@@ -8,9 +8,8 @@ import { AIInsights } from "@/components/AIInsights";
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
-  const { metrics, isLoading, refetch } = useMetrics(); // ← refetch must be exposed
+  const { metrics, isLoading, isError, shopifyConnected, refresh } = useMetrics();
 
-  // Shopify connection input state
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
@@ -19,26 +18,22 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
-  const anyConnectionMissing = !metrics.shopify?.connected || !metrics.ga4?.connected || !metrics.hubspot?.connected;
+  const anyConnectionMissing = !shopifyConnected || !metrics.ga4?.connected || !metrics.hubspot?.connected;
 
-  // Trigger refetch if we just came back from successful Shopify OAuth
+  // Trigger immediate refresh when returning from successful Shopify OAuth
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
-    if (justConnected && refetch) {
-      refetch(); // Pull fresh data using the new access token
+    if (justConnected && refresh) {
+      refresh(); // Forces fresh data from /api/metrics using new token
 
-      // Clean the URL so the param doesn't linger
+      // Clean URL
       window.history.replaceState({}, '', '/dashboard');
     }
-  }, [searchParams, refetch]);
+  }, [searchParams, refresh]);
 
   const handleShopifyConnect = () => {
-    if (!shopDomain) {
-      setError('Please enter your Shopify store domain');
-      return;
-    }
     if (!shopDomain.endsWith('.myshopify.com')) {
-      setError('Domain must end with .myshopify.com (e.g., my-store.myshopify.com)');
+      setError('Please enter a valid .myshopify.com domain');
       return;
     }
     setError('');
@@ -60,8 +55,8 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify Connect */}
-            {!metrics.shopify?.connected && (
+            {/* Shopify */}
+            {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -77,19 +72,19 @@ export default function Dashboard() {
                   <button
                     onClick={handleShopifyConnect}
                     disabled={isConnecting || !shopDomain}
-                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50"
                   >
                     {isConnecting ? 'Connecting...' : 'Connect Shopify'}
                   </button>
                 </div>
                 {error && <p className="text-red-400 text-lg">{error}</p>}
                 <p className="text-cyan-200 text-sm max-w-md">
-                  Enter your store’s myshopify.com domain (found in Settings → Domains in Shopify admin)
+                  Found in Settings → Domains in your Shopify admin
                 </p>
               </div>
             )}
 
-            {/* Other integrations */}
+            {/* GA4 & HubSpot */}
             {!metrics.ga4?.connected && (
               <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
                 Connect GA4
@@ -104,14 +99,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Biggest Opportunity */}
+      {/* Biggest Opportunity Card */}
       <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
         <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
         <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
       </div>
 
-      {/* Key Metrics Grid */}
+      {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+        {/* Revenue */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
           <p className="text-7xl font-black text-cyan-400 mb-4">
@@ -121,17 +117,17 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
         </div>
 
+        {/* Churn */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Churn Rate</h3>
           <p className="text-7xl font-black text-red-400 mb-4">
             {metrics.churn?.rate ?? 0}%
           </p>
           <p className="text-3xl text-red-400">{metrics.churn?.at_risk ?? 0} at risk</p>
-          <p className="text-xl text-cyan-200 mt-6">
-            High churn — send win-back emails to at-risk customers
-          </p>
+          <p className="text-xl text-cyan-200 mt-6">High churn — send win-back emails</p>
         </div>
 
+        {/* AOV */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Average Order Value</h3>
           <p className="text-7xl font-black text-green-400 mb-4">
@@ -140,6 +136,7 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Increase with bundles & upsells</p>
         </div>
 
+        {/* Repeat Rate */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Repeat Purchase Rate</h3>
           <p className="text-7xl font-black text-green-400 mb-4">
@@ -148,14 +145,13 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Customers buying again</p>
         </div>
 
+        {/* LTV:CAC */}
         <div className="metric-card p-10 text-center col-span-1 md:col-span-2 lg:col-span-4">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">LTV:CAC Ratio</h3>
           <p className="text-7xl font-black text-green-400 mb-8">
             {metrics.performance?.ratio || '0'}:1
           </p>
-          <p className="text-xl text-cyan-200">
-            Ratio healthy — scale acquisition safely
-          </p>
+          <p className="text-xl text-cyan-200">Ratio healthy — scale acquisition safely</p>
         </div>
       </div>
 
