@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe';
 import { getRow } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
-  console.log('>>> CREATE-CHECKOUT ROUTE LOADED - FULL FLOW VERSION');
+  console.log('>>> CREATE-CHECKOUT ROUTE LOADED');
 
   const auth = await requireAuth();
   if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -16,15 +16,13 @@ export async function POST(request: NextRequest) {
   console.log('Received plan:', plan);
 
   const priceMap: Record<string, string> = {
-    early_ltd: 'price_1Smxq1CgNPe1tGLh7s77dSe6', // ← TEMP HARDCODED FOR TESTING
+    early_ltd: process.env.STRIPE_PRICE_EARLY_LTD!,
     standard_ltd: process.env.STRIPE_PRICE_STANDARD_LTD!,
     monthly: process.env.STRIPE_PRICE_MONTHLY!,
     annual: process.env.STRIPE_PRICE_ANNUAL!,
   };
 
-  // Optional: log the resolved price ID so you can see it in Vercel logs
   const priceId = priceMap[plan];
-  console.log('Resolved priceId for', plan, ':', priceId);
 
   if (!priceId) {
     return NextResponse.json({ error: 'Invalid plan', received: plan }, { status: 400 });
@@ -35,8 +33,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await stripe.checkout.sessions.create({
       customer: user?.stripe_id || undefined,
-      client_reference_id: userId.toString(),  // ← Crucial for webhook
-      metadata: { plan },                       // ← Optional backup
+      client_reference_id: userId.toString(),  // Crucial for webhook
+      metadata: { plan },                       // Optional backup
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: plan === 'monthly' || plan === 'annual' ? 'subscription' : 'payment',
@@ -44,7 +42,6 @@ export async function POST(request: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/pricing`,
     });
 
-    console.log('Checkout session created successfully:', session.id);
     return NextResponse.json({ sessionId: session.id });
   } catch (error: any) {
     console.error('Stripe error:', error);
