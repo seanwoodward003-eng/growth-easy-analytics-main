@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
   let property_id: string | null = null;
 
   try {
-    // Correct endpoint: v1beta + :list method
     const summariesResp = await fetch(
       'https://analyticsadmin.googleapis.com/v1beta/accountSummaries:list',
       {
@@ -56,20 +55,16 @@ export async function GET(request: NextRequest) {
       const data = await summariesResp.json();
       const summaries = data.accountSummaries || [];
       if (summaries.length > 0) {
-        // Take the first property from the first account
         const firstProperty = summaries[0].propertySummaries?.[0];
         if (firstProperty?.property) {
-          property_id = firstProperty.property.split('/').pop(); // e.g., "properties/123456789"
+          property_id = firstProperty.property.split('/').pop();
         }
       }
-    } else {
-      console.warn('Failed to fetch account summaries:', summariesResp.status);
     }
   } catch (e) {
     console.warn('GA4 property detection failed:', e);
   }
 
-  // Save to DB
   await run(
     `UPDATE users SET 
       ga4_connected = 1,
@@ -81,8 +76,17 @@ export async function GET(request: NextRequest) {
     [access_token, refresh_token || null, property_id, userId]
   );
 
+  // Fixed string — using template literals to avoid quote hell
+  const message = property_id 
+    ? `GA4 Connected Successfully! Property ID: ${property_id}`
+    : 'GA4 Connected Successfully!';
+
   return new Response(
-    '<script>alert("GA4 Connected Successfully!" + (property_id ? " Property ID: ' + property_id + '"' : '')); window.close(); window.opener?.location.reload();</script>',
+    `<script>
+      alert("${message}");
+      window.close();
+      if (window.opener) window.opener.location.reload();
+    </script>`,
     { headers: { 'Content-Type': 'text/html' } }
   );
 }
