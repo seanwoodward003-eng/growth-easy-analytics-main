@@ -14,8 +14,7 @@ export default function Dashboard() {
     isError, 
     shopifyConnected, 
     ga4Connected, 
-    hubspotConnected, 
-    hasRealData,
+    hubspotConnected,
     refresh 
   } = useMetrics();
 
@@ -27,14 +26,14 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
-  // Hide the entire banner if ANY integration provides real data
-  const anyConnectionMissing = !hasRealData;
+  // Keep the banner visible until ALL three integrations are connected (or change to !shopifyConnected if you only care about Shopify)
+  const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
   // Trigger immediate refresh when returning from successful Shopify OAuth
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
     if (justConnected && refresh) {
-      refresh(); // Pull fresh data instantly
+      refresh();
 
       // Clean the URL
       window.history.replaceState({}, '', '/dashboard');
@@ -57,7 +56,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Connect Accounts Banner */}
+      {/* Connect Accounts Banner - shows all 3 buttons until each is connected */}
       {anyConnectionMissing && (
         <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
           <p className="text-3xl text-cyan-300 mb-6">
@@ -65,7 +64,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify */}
+            {/* Shopify - input + button */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
@@ -94,14 +93,14 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* GA4 */}
+            {/* GA4 button */}
             {!ga4Connected && (
               <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
                 Connect GA4
               </button>
             )}
 
-            {/* HubSpot */}
+            {/* HubSpot button */}
             {!hubspotConnected && (
               <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
                 Connect HubSpot
@@ -119,7 +118,6 @@ export default function Dashboard() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
-        {/* Revenue */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
           <p className="text-7xl font-black text-cyan-400 mb-4">
@@ -129,7 +127,6 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
         </div>
 
-        {/* Churn */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Churn Rate</h3>
           <p className="text-7xl font-black text-red-400 mb-4">
@@ -139,7 +136,6 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">High churn — send win-back emails</p>
         </div>
 
-        {/* AOV */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Average Order Value</h3>
           <p className="text-7xl font-black text-green-400 mb-4">
@@ -148,7 +144,6 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Increase with bundles & upsells</p>
         </div>
 
-        {/* Repeat Rate */}
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Repeat Purchase Rate</h3>
           <p className="text-7xl font-black text-green-400 mb-4">
@@ -157,7 +152,6 @@ export default function Dashboard() {
           <p className="text-xl text-cyan-200 mt-6">Customers buying again</p>
         </div>
 
-        {/* LTV:CAC */}
         <div className="metric-card p-10 text-center col-span-1 md:col-span-2 lg:col-span-4">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">LTV:CAC Ratio</h3>
           <p className="text-7xl font-black text-green-400 mb-8">
