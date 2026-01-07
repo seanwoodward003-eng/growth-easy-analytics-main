@@ -92,9 +92,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/dashboard/ai-growth-coach" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${isActive('/dashboard/ai-growth-coach') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   AI Growth Coach
                 </Link>
-                <Link href="/settings" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${pathname === '/settings' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Settings
-                </Link>
+                <Link 
+  href="/dashboard/settings"
+  onClick={() => setMenuOpen(false)}
+  className={`block text-3xl py-4 border-b border-cyan-600/50 ${
+    pathname === '/dashboard/settings' ? 'text-cyan-400 font-bold' : 'text-cyan-300'
+  }`}
+>
+  Settings
+</Link>
+                  
+                
                 <Link href="/about" onClick={() => setMenuOpen(false)} className={`block text-3xl py-4 border-b border-cyan-600/50 ${pathname === '/about' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   About
                 </Link>
