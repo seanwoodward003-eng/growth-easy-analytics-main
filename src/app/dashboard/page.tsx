@@ -113,4 +113,4 @@ export default function Dashboard() {
       <AIInsights />
     </div>
   );
-}
+} 
