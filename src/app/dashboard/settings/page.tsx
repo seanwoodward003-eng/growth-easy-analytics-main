@@ -2,23 +2,121 @@
 
 import useMetrics from "@/hooks/useMetrics";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { metrics, isLoading } = useMetrics();
   const [deleting, setDeleting] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const router = useRouter();
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
     if (!confirm(`Disconnect ${type.toUpperCase()}? Your data will stop syncing.`)) return;
-    // Add disconnect logic later (clear tokens in DB)
-    alert(`${type.toUpperCase()} disconnected (implement backend)`);
+    try {
+      const res = await fetch('/api/integrations/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+      if (res.ok) {
+        alert(`${type.toUpperCase()} disconnected successfully`);
+        router.refresh(); // Refresh to update metrics
+      } else {
+        alert('Failed to disconnect. Please try again.');
+      }
+    } catch (error) {
+      alert('Error disconnecting. Check console for details.');
+      console.error(error);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Cancel your subscription? This action cannot be undone.')) return;
+    try {
+      const res = await fetch('/api/subscription/cancel', { method: 'POST' });
+      if (res.ok) {
+        alert('Subscription cancelled successfully');
+        router.refresh();
+      } else {
+        alert('Failed to cancel. Please try again.');
+      }
+    } catch (error) {
+      alert('Error cancelling subscription.');
+      console.error(error);
+    }
+  };
+
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || !/\S+@\S+\.\S+/.test(newEmail)) {
+      setEmailError('Please enter a valid email.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/user/change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail }),
+      });
+      if (res.ok) {
+        alert('Email changed successfully');
+        setChangingEmail(false);
+        setNewEmail('');
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setEmailError(data.error || 'Failed to change email.');
+      }
+    } catch (error) {
+      setEmailError('Error changing email.');
+      console.error(error);
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const res = await fetch('/api/user/export-data');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'growth-easy-data.json'; // Or CSV, etc.
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        alert('Failed to export data.');
+      }
+    } catch (error) {
+      alert('Error exporting data.');
+      console.error(error);
+    }
   };
 
   const handleDeleteAccount = async () => {
     if (!confirm('Delete your account? This is permanent — all data will be lost.')) return;
     setDeleting(true);
-    // Add delete logic later
-    alert('Account deletion requested (implement backend)');
-    setDeleting(false);
+    try {
+      const res = await fetch('/api/user/delete', { method: 'DELETE' });
+      if (res.ok) {
+        // Clear cookies like in logout
+        document.cookie = 'access_token=; Max-Age=0; path=/';
+        document.cookie = 'refresh_token=; Max-Age=0; path=/';
+        document.cookie = 'csrf_token=; Max-Age=0; path=/';
+        alert('Account deleted successfully');
+        router.push('/');
+      } else {
+        alert('Failed to delete account.');
+      }
+    } catch (error) {
+      alert('Error deleting account.');
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -97,11 +195,11 @@ export default function SettingsPage() {
             </p>
           )}
           <div className="flex justify-center gap-6">
-            <button className="cyber-btn text-2xl px-10 py-5">
+            <button onClick={() => router.push('/pricing')} className="cyber-btn text-2xl px-10 py-5">
               Upgrade Plan
             </button>
             {metrics.subscription?.plan !== 'Lifetime' && (
-              <button className="cyber-btn text-2xl px-10 py-5 bg-red-600/80 hover:bg-red-600">
+              <button onClick={handleCancelSubscription} className="cyber-btn text-2xl px-10 py-5 bg-red-600/80 hover:bg-red-600">
                 Cancel Subscription
               </button>
             )}
@@ -117,10 +215,30 @@ export default function SettingsPage() {
             Email: {metrics.user?.email || 'loading...'}
           </p>
           <div className="flex justify-center gap-6">
-            <button className="cyber-btn text-xl px-8 py-4">
+            <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
               Change Email
             </button>
           </div>
+          {changingEmail && (
+            <form onSubmit={handleChangeEmail} className="mt-8">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="New email address"
+                className="w-full p-4 mb-4 bg-[#0a0f2c] border-2 border-cyan-400 text-cyan-200 rounded-xl"
+              />
+              {emailError && <p className="text-red-400 mb-4">{emailError}</p>}
+              <div className="flex justify-end gap-4">
+                <button type="button" onClick={() => setChangingEmail(false)} className="cyber-btn text-xl px-8 py-4 bg-gray-600/80">
+                  Cancel
+                </button>
+                <button type="submit" className="cyber-btn text-xl px-8 py-4">
+                  Save
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 
@@ -133,7 +251,7 @@ export default function SettingsPage() {
             <p className="text-xl text-cyan-200 mb-8">
               Download all your metrics and insights
             </p>
-            <button className="cyber-btn text-xl px-10 py-5">
+            <button onClick={handleExportData} className="cyber-btn text-xl px-10 py-5">
               Export Data
             </button>
           </div>
