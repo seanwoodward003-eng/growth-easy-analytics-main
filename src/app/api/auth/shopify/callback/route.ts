@@ -9,7 +9,7 @@ function verifyHMAC(params: URLSearchParams) {
   if (!hmac) return false;
   const message = Array.from(params.entries())
     .filter(([k]) => !['hmac', 'signature'].includes(k))
-    .sort()
+    .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([k, v]) => `${k}=${v}`)
     .join('&');
   const digest = crypto.createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!).update(message).digest('hex');
@@ -18,19 +18,36 @@ function verifyHMAC(params: URLSearchParams) {
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
+
+  // Verify Shopify signature
   if (!verifyHMAC(params)) {
-    return new Response('<script>alert("Invalid signature");window.close();</script>', { status: 400 });
+    return new Response(
+      `<script>alert("Invalid signature"); window.location.href="/dashboard";</script>`,
+      { headers: { 'Content-Type': 'text/html' }, status: 400 }
+    );
   }
 
   const code = params.get('code');
   const state = params.get('state');
-  if (!code || !state) return new Response('<script>alert("Auth failed");window.close();</script>', { status: 400 });
+  if (!code || !state) {
+    return new Response(
+      `<script>alert("Authentication failed"); window.location.href="/dashboard";</script>`,
+      { headers: { 'Content-Type': 'text/html' }, status: 400 }
+    );
+  }
 
   const [userIdStr, shop] = state.split('|');
   const userId = parseInt(userIdStr);
-  const user = await getCurrentUser();
-  if (!user || user.id !== userId) return new Response('Unauthorized', { status: 401 });
 
+  const user = await getCurrentUser();
+  if (!user || user.id !== userId) {
+    return new Response(
+      `<script>alert("Unauthorized"); window.location.href="/login";</script>`,
+      { headers: { 'Content-Type': 'text/html' }, status: 401 }
+    );
+  }
+
+  // Exchange code for access token
   const tokenResp = await fetch(`https://${shop}/admin/oauth/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -41,13 +58,27 @@ export async function GET(request: NextRequest) {
     }),
   });
 
-  if (!tokenResp.ok) return new Response('Shopify auth failed', { status: 400 });
+  if (!tokenResp.ok) {
+    return new Response(
+      `<script>alert("Shopify authentication failed"); window.location.href="/dashboard";</script>`,
+      { headers: { 'Content-Type': 'text/html' }, status: 500 }
+    );
+  }
+
   const { access_token } = await tokenResp.json();
 
-  await run('UPDATE users SET shopify_shop = ?, shopify_access_token = ? WHERE id = ?', [shop, access_token, userId]);
+  // Save to database
+  await run(
+    'UPDATE users SET shopify_shop = ?, shopify_access_token = ? WHERE id = ?',
+    [shop, access_token, userId]
+  );
 
+  // SUCCESS: Redirect back to dashboard (forces fresh data load → button disappears instantly)
   return new Response(
-    '<script>alert("Shopify Connected Successfully!");window.close();window.opener?.location.reload();</script>',
+    `<script>
+      alert("Shopify Connected Successfully! 🎉");
+      window.location.href = "/dashboard";
+    </script>`,
     { headers: { 'Content-Type': 'text/html' } }
   );
 }
