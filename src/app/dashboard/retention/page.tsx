@@ -5,7 +5,13 @@ import { RetentionChart } from "@/components/charts/RetentionChart";
 import { AIInsights } from "@/components/AIInsights";
 
 export default function RetentionPage() {
-  const { metrics, isLoading, isError, isConnected } = useMetrics();
+  const { 
+  metrics, 
+  isLoading, 
+  isError, 
+  shopifyConnected, 
+  hasRealData 
+} = useMetrics();
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
