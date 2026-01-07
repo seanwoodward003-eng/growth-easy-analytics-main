@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
   await run('UPDATE users SET shopify_shop = ?, shopify_access_token = ? WHERE id = ?', [shop, access_token, userId]);
 
   return new Response(
-    '<script>alert("Shopify Connected Successfully!");window.close();window.opener.location.reload();</script>'
+    '<script>alert("Shopify Connected Successfully!");window.close();window.opener?.location.reload();</script>',
+    { headers: { 'Content-Type': 'text/html' } }
   );
 }
