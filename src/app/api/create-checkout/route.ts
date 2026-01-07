@@ -10,15 +10,19 @@ export async function POST(request: NextRequest) {
   const userId = auth.user.id;
 
   const { plan } = await request.json();
+
+  // Fixed mapping — keys now match what frontend sends
   const priceMap: Record<string, string> = {
-    lifetime_early: process.env.STRIPE_PRICE_EARLY_LTD!,
-    lifetime: process.env.STRIPE_PRICE_STANDARD_LTD!,
+    early_ltd: process.env.STRIPE_PRICE_EARLY_LTD!,
+    standard_ltd: process.env.STRIPE_PRICE_STANDARD_LTD!,
     monthly: process.env.STRIPE_PRICE_MONTHLY!,
     annual: process.env.STRIPE_PRICE_ANNUAL!,
   };
 
   const priceId = priceMap[plan];
-  if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+  if (!priceId) {
+    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+  }
 
   const user = await getRow<{ stripe_id: string | null }>('SELECT stripe_id FROM users WHERE id = ?', [userId]);
 
@@ -27,7 +31,7 @@ export async function POST(request: NextRequest) {
       customer: user?.stripe_id || undefined,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: plan.includes('monthly') || plan.includes('annual') ? 'subscription' : 'payment',
+      mode: plan === 'monthly' || plan === 'annual' ? 'subscription' : 'payment',
       success_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/pricing`,
     });
@@ -49,7 +53,6 @@ export async function POST(request: NextRequest) {
         type: error.type,
         code: error.code,
         param: error.param,
-        decline_code: error.decline_code,
       },
       { status: 500 }
     );
