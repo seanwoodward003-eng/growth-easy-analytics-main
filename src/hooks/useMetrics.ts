@@ -1,3 +1,4 @@
+// hooks/useMetrics.ts
 'use client';
 
 import useSWR from 'swr';
@@ -18,22 +19,27 @@ const DEMO_DATA = {
   acquisition: { top_channel: "Organic Search", acquisition_cost: 87 },
   retention: { rate: 68 },
   ai_insight: "Connect accounts for real insights.",
+  shopify: { connected: false },
+  ga4: { connected: false },
+  hubspot: { connected: false },
 };
 
 export default function useMetrics() {
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
-    refreshInterval: 60000,
+    refreshInterval: 60000, // Refresh every minute when connected
     fallbackData: DEMO_DATA,
   });
 
   const metrics = data || DEMO_DATA;
-  const isConnected = !!data && data.revenue.total > 0;
+
+  // Better connection detection
+  const shopifyConnected = !!metrics.shopify?.connected;
 
   return {
     metrics,
     isLoading,
     isError: !!error,
-    isConnected,
-    refresh: mutate,
+    shopifyConnected,        // Use this in dashboard instead of guessing from revenue
+    refresh: mutate,         // This will trigger fresh fetch
   };
-} 
+}
