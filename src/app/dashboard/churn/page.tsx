@@ -6,7 +6,13 @@ import { useState } from 'react';
 import { AIInsights } from "@/components/AIInsights";
 
 export default function ChurnPage() {
-  const { metrics, isLoading, isError, isConnected } = useMetrics();
+  const { 
+  metrics, 
+  isLoading, 
+  isError, 
+  shopifyConnected, 
+  hasRealData 
+} = useMetrics();
   const [emailTemplate, setEmailTemplate] = useState<string | null>(null);
   const [loadingEmail, setLoadingEmail] = useState(false);
 
