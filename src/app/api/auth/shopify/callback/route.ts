@@ -19,11 +19,10 @@ function verifyHMAC(params: URLSearchParams) {
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
-  // Verify Shopify signature
   if (!verifyHMAC(params)) {
     return new Response(
-      `<script>alert("Invalid signature"); window.location.href="/dashboard";</script>`,
-      { headers: { 'Content-Type': 'text/html' }, status: 400 }
+      '<script>alert("Invalid signature"); window.location.href = "/dashboard";</script>',
+      { status: 400, headers: { 'Content-Type': 'text/html' } }
     );
   }
 
@@ -31,23 +30,22 @@ export async function GET(request: NextRequest) {
   const state = params.get('state');
   if (!code || !state) {
     return new Response(
-      `<script>alert("Authentication failed"); window.location.href="/dashboard";</script>`,
-      { headers: { 'Content-Type': 'text/html' }, status: 400 }
+      '<script>alert("Auth failed"); window.location.href = "/dashboard";</script>',
+      { status: 400, headers: { 'Content-Type': 'text/html' } }
     );
   }
 
   const [userIdStr, shop] = state.split('|');
   const userId = parseInt(userIdStr);
-
   const user = await getCurrentUser();
+
   if (!user || user.id !== userId) {
     return new Response(
-      `<script>alert("Unauthorized"); window.location.href="/login";</script>`,
-      { headers: { 'Content-Type': 'text/html' }, status: 401 }
+      '<script>alert("Unauthorized"); window.location.href = "/dashboard";</script>',
+      { status: 401, headers: { 'Content-Type': 'text/html' } }
     );
   }
 
-  // Exchange code for access token
   const tokenResp = await fetch(`https://${shop}/admin/oauth/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -60,25 +58,27 @@ export async function GET(request: NextRequest) {
 
   if (!tokenResp.ok) {
     return new Response(
-      `<script>alert("Shopify authentication failed"); window.location.href="/dashboard";</script>`,
-      { headers: { 'Content-Type': 'text/html' }, status: 500 }
+      '<script>alert("Shopify auth failed"); window.location.href = "/dashboard";</script>',
+      { status: 400, headers: { 'Content-Type': 'text/html' } }
     );
   }
 
   const { access_token } = await tokenResp.json();
 
-  // Save to database
   await run(
     'UPDATE users SET shopify_shop = ?, shopify_access_token = ? WHERE id = ?',
     [shop, access_token, userId]
   );
 
-  // SUCCESS: Redirect back to dashboard (forces fresh data load → button disappears instantly)
+  // Success: Redirect to dashboard with trigger param
   return new Response(
     `<script>
-      alert("Shopify Connected Successfully! 🎉");
-      window.location.href = "/dashboard";
+      alert("Shopify Connected Successfully!");
+      window.location.href = "/dashboard?shopify_connected=true";
     </script>`,
-    { headers: { 'Content-Type': 'text/html' } }
+    {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
+    }
   );
 }
