@@ -26,7 +26,7 @@ export default function Pricing() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }), // Only send the plan name — secure
+        body: JSON.stringify({ plan }),
       });
 
       const data = await res.json();
