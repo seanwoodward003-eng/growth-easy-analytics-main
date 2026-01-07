@@ -8,7 +8,16 @@ import { AIInsights } from "@/components/AIInsights";
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
-  const { metrics, isLoading, isError, shopifyConnected, refresh } = useMetrics();
+  const { 
+    metrics, 
+    isLoading, 
+    isError, 
+    shopifyConnected, 
+    ga4Connected, 
+    hubspotConnected, 
+    hasRealData,
+    refresh 
+  } = useMetrics();
 
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
@@ -18,15 +27,16 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
-  const anyConnectionMissing = !shopifyConnected || !metrics.ga4?.connected || !metrics.hubspot?.connected;
+  // Hide the entire banner if ANY integration provides real data
+  const anyConnectionMissing = !hasRealData;
 
   // Trigger immediate refresh when returning from successful Shopify OAuth
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
     if (justConnected && refresh) {
-      refresh(); // Forces fresh data from /api/metrics using new token
+      refresh(); // Pull fresh data instantly
 
-      // Clean URL
+      // Clean the URL
       window.history.replaceState({}, '', '/dashboard');
     }
   }, [searchParams, refresh]);
@@ -84,13 +94,15 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* GA4 & HubSpot */}
-            {!metrics.ga4?.connected && (
+            {/* GA4 */}
+            {!ga4Connected && (
               <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
                 Connect GA4
               </button>
             )}
-            {!metrics.hubspot?.connected && (
+
+            {/* HubSpot */}
+            {!hubspotConnected && (
               <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
                 Connect HubSpot
               </button>
