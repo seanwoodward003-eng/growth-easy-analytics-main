@@ -4,10 +4,7 @@
 import useSWR from 'swr';
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url, {
-    credentials: 'include',
-  });
-
+  const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch metrics');
   return res.json();
 };
@@ -26,20 +23,25 @@ const DEMO_DATA = {
 
 export default function useMetrics() {
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
-    refreshInterval: 60000, // Refresh every minute when connected
+    refreshInterval: 60000,
     fallbackData: DEMO_DATA,
   });
 
   const metrics = data || DEMO_DATA;
 
-  // Better connection detection
   const shopifyConnected = !!metrics.shopify?.connected;
+  const ga4Connected = !!metrics.ga4?.connected;
+  const hubspotConnected = !!metrics.hubspot?.connected;
+  const hasRealData = shopifyConnected || ga4Connected || hubspotConnected;
 
   return {
     metrics,
     isLoading,
     isError: !!error,
-    shopifyConnected,        // Use this in dashboard instead of guessing from revenue
-    refresh: mutate,         // This will trigger fresh fetch
+    shopifyConnected,
+    ga4Connected,
+    hubspotConnected,
+    hasRealData,
+    refresh: mutate,
   };
 }
