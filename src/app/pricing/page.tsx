@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import getStripe from '@/lib/getStripe';  // ← Adjust path if you put getStripe elsewhere (e.g. '../../lib/getStripe')
 
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -30,11 +31,24 @@ export default function Pricing() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Checkout failed');
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
 
-      const stripe = await (window as any).Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-      await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
+
+      if (error) {
+        throw error;
+      }
     } catch (err: any) {
+      console.error('Checkout error:', err);
       alert('Checkout failed: ' + (err.message || 'Please try again'));
       setLoading(null);
     }
