@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
 
   const { plan } = await request.json();
   const priceMap: Record<string, string> = {
-    lifetime_early: process.env.STRIPE_PRICE_LTD_EARLY!,
-    lifetime: process.env.STRIPE_PRICE_LTD!,
+    lifetime_early: process.env.STRIPE_PRICE_EARLY_LTD!,
+    lifetime: process.env.STRIPE_PRICE_STANDARD_LTD!,
     monthly: process.env.STRIPE_PRICE_MONTHLY!,
     annual: process.env.STRIPE_PRICE_ANNUAL!,
   };
@@ -34,10 +34,23 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error: any) {
-    console.error('Stripe error:', error);
-    // This will show the detailed message from Stripe
+    console.error('Stripe error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      param: error.param,
+      decline_code: error.decline_code,
+      raw: error.raw || error,
+    });
+
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
+      {
+        error: error.message || 'Failed to create checkout session',
+        type: error.type,
+        code: error.code,
+        param: error.param,
+        decline_code: error.decline_code,
+      },
       { status: 500 }
     );
   }
