@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/ga4/callback`;
+
   const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -24,13 +26,15 @@ export async function GET(request: NextRequest) {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/ga4/callback`,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
   });
 
   if (!tokenResp.ok) {
-    return new Response('Token exchange failed', { status: 400 });
+    const error = await tokenResp.text();
+    console.error('Token exchange failed:', error);
+    return new Response('<script>alert("Failed to get GA4 token");window.close();</script>', { status: 400 });
   }
 
   const tokenData = await tokenResp.json();
@@ -38,34 +42,47 @@ export async function GET(request: NextRequest) {
   const refresh_token = tokenData.refresh_token;
 
   let property_id: string | null = null;
+
   try {
-    const summariesResp = await fetch('https://analyticsadmin.googleapis.com/v1/accountSummaries', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+    // Correct endpoint: v1beta + :list method
+    const summariesResp = await fetch(
+      'https://analyticsadmin.googleapis.com/v1beta/accountSummaries:list',
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+      }
+    );
+
     if (summariesResp.ok) {
       const data = await summariesResp.json();
       const summaries = data.accountSummaries || [];
-      if (summaries.length > 0 && summaries[0].propertySummaries?.[0]?.property) {
-        property_id = summaries[0].propertySummaries[0].property.split('/').pop();
+      if (summaries.length > 0) {
+        // Take the first property from the first account
+        const firstProperty = summaries[0].propertySummaries?.[0];
+        if (firstProperty?.property) {
+          property_id = firstProperty.property.split('/').pop(); // e.g., "properties/123456789"
+        }
       }
+    } else {
+      console.warn('Failed to fetch account summaries:', summariesResp.status);
     }
   } catch (e) {
     console.warn('GA4 property detection failed:', e);
   }
 
+  // Save to DB
   await run(
     `UPDATE users SET 
       ga4_connected = 1,
       ga4_access_token = ?,
       ga4_refresh_token = ?,
       ga4_property_id = COALESCE(?, ga4_property_id),
-      ga4_last_refreshed = ?
+      ga4_last_refreshed = datetime('now')
      WHERE id = ?`,
-    [access_token, refresh_token, property_id, new Date().toISOString(), userId]
+    [access_token, refresh_token || null, property_id, userId]
   );
 
   return new Response(
-    '<script>alert("GA4 Connected Successfully!"); window.close(); window.opener.location.reload();</script>',
+    '<script>alert("GA4 Connected Successfully!" + (property_id ? " Property ID: ' + property_id + '"' : '')); window.close(); window.opener?.location.reload();</script>',
     { headers: { 'Content-Type': 'text/html' } }
   );
 }
