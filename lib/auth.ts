@@ -10,6 +10,18 @@ const REFRESH_SECRET = process.env.REFRESH_SECRET!;
 export interface AuthUser {
   id: number;
   email: string;
+
+  // Shopify integration fields
+  shopify_shop?: string | null;
+  shopify_access_token?: string | null;
+
+  // GA4 integration fields (adjust names later if you use tokens instead)
+  ga4_connected?: boolean | null;
+
+  // HubSpot integration fields (adjust names later if you use tokens instead)
+  hubspot_connected?: boolean | null;
+
+  // You can add more fields here in the future if needed
 }
 
 export function generateTokens(userId: number, email: string) {
@@ -60,6 +72,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   try {
     const payload = jwt.verify(accessToken, JWT_SECRET) as { sub: string; email: string };
+    
+    // We only return basic fields here — extra DB fields are fetched in requireAuth if needed
     return { id: Number(payload.sub), email: payload.email };
   } catch {
     return null;
@@ -70,8 +84,15 @@ export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) return { error: 'Unauthorized', status: 401 };
 
-  const row = await getRow<{ trial_end: string; subscription_status: string }>(
-    'SELECT trial_end, subscription_status FROM users WHERE id = ?',
+  const row = await getRow<{
+    trial_end: string;
+    subscription_status: string;
+    shopify_shop?: string | null;
+    shopify_access_token?: string | null;
+    ga4_connected?: boolean | null;
+    hubspot_connected?: boolean | null;
+  }>(
+    'SELECT trial_end, subscription_status, shopify_shop, shopify_access_token, ga4_connected, hubspot_connected FROM users WHERE id = ?',
     [user.id]
   );
 
@@ -84,7 +105,20 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
-  return { user, subscription: row };
+  // Merge the DB fields into the user object
+  return {
+    user: {
+      ...user,
+      shopify_shop: row.shopify_shop,
+      shopify_access_token: row.shopify_access_token,
+      ga4_connected: row.ga4_connected,
+      hubspot_connected: row.hubspot_connected,
+    },
+    subscription: {
+      trial_end: row.trial_end,
+      subscription_status: row.subscription_status,
+    },
+  };
 }
 
 // Make async (returns Promise<boolean>)
