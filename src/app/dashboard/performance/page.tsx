@@ -5,7 +5,13 @@ import { PerformanceChart } from "@/components/charts/PerformanceChart";
 import { AIInsights } from "@/components/AIInsights";
 
 export default function PerformancePage() {
-  const { metrics, isLoading, isError, isConnected } = useMetrics();
+  const { 
+  metrics, 
+  isLoading, 
+  isError, 
+  shopifyConnected, 
+  hasRealData 
+} = useMetrics();
 
   // Health Score (0-100)
   const healthScore = Math.min(100, 
