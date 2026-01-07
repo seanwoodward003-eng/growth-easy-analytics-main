@@ -5,7 +5,13 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { AIInsights } from "@/components/AIInsights";
 
 export default function RevenuePage() {
-  const { metrics, isLoading, isError, isConnected } = useMetrics();
+  const { 
+  metrics, 
+  isLoading, 
+  isError, 
+  shopifyConnected, 
+  hasRealData 
+} = useMetrics();
 
   // Simple forecast
   const forecast = metrics.revenue.total * 1.15;
