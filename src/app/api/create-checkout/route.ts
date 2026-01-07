@@ -1,42 +1,46 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+// app/api/create-checkout/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+import { stripe } from '@/lib/stripe';
+import { getRow } from '@/lib/db';
 
-const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
-  apiVersion: '2024-06-20',
-});
+export async function POST(request: NextRequest) {
+  const auth = await requireAuth();
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  const userId = auth.user.id;
 
-const priceMap: Record<string, string> = {
-  early_ltd: process.env.STRIPE_PRICE_EARLY_LTD!,
-  standard_ltd: process.env.STRIPE_PRICE_STANDARD_LTD!,
-  monthly: process.env.STRIPE_PRICE_MONTHLY!,
-  annual: process.env.STRIPE_PRICE_ANNUAL!,
-};
+  const { plan } = await request.json();
+  const priceMap: Record<string, string> = {
+    lifetime_early: process.env.STRIPE_PRICE_LTD_EARLY!,
+    lifetime: process.env.STRIPE_PRICE_LTD!,
+    monthly: process.env.STRIPE_PRICE_MONTHLY!,
+    annual: process.env.STRIPE_PRICE_ANNUAL!,
+  };
 
-export async function POST(request: Request) {
+  const priceId = priceMap[plan];
+  if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+
+  const user = await getRow<{ stripe_id: string | null }>('SELECT stripe_id FROM users WHERE id = ?', [userId]);
+
   try {
-    const { plan } = await request.json();
-
-    const priceId = priceMap[plan];
-    if (!priceId) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
-    }
-
     const session = await stripe.checkout.sessions.create({
-      mode: priceId.includes('price_') && priceId.startsWith('price_1') ? 'payment' : 'subscription', // one-time vs recurring
+      customer: user?.stripe_id || undefined,
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.NEXT_PUBLIC_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/pricing?cancelled=true`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: plan.includes('monthly') || plan.includes('annual') ? 'subscription' : 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/pricing`,
     });
 
     return NextResponse.json({ sessionId: session.id });
-  } catch (err: any) {
-    console.error('Stripe checkout error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error: any) {
+    console.error('Stripe error:', error);
+    // This will show the detailed message from Stripe
+    return NextResponse.json(
+      { error: error.message || 'Failed to create checkout session' },
+      { status: 500 }
+    );
   }
 }
+
+export const OPTIONS = () => new Response(null, { status: 200 });
