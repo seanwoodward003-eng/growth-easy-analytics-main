@@ -16,13 +16,16 @@ export async function POST(request: NextRequest) {
   console.log('Received plan:', plan);
 
   const priceMap: Record<string, string> = {
-    early_ltd: process.env.STRIPE_PRICE_EARLY_LTD!,
+    early_ltd: 'price_1Smxq1CgNPe1tGLh7s77dSe6', // ← TEMP HARDCODED FOR TESTING
     standard_ltd: process.env.STRIPE_PRICE_STANDARD_LTD!,
     monthly: process.env.STRIPE_PRICE_MONTHLY!,
     annual: process.env.STRIPE_PRICE_ANNUAL!,
   };
 
+  // Optional: log the resolved price ID so you can see it in Vercel logs
   const priceId = priceMap[plan];
+  console.log('Resolved priceId for', plan, ':', priceId);
+
   if (!priceId) {
     return NextResponse.json({ error: 'Invalid plan', received: plan }, { status: 400 });
   }
@@ -41,6 +44,7 @@ export async function POST(request: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/pricing`,
     });
 
+    console.log('Checkout session created successfully:', session.id);
     return NextResponse.json({ sessionId: session.id });
   } catch (error: any) {
     console.error('Stripe error:', error);
