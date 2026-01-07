@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import useMetrics from "@/hooks/useMetrics";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { AIInsights } from "@/components/AIInsights";
@@ -7,11 +8,30 @@ import { AIInsights } from "@/components/AIInsights";
 export default function Dashboard() {
   const { metrics, isLoading, isConnected } = useMetrics();
 
+  // New state for Shopify connection input
+  const [shopDomain, setShopDomain] = useState('');
+  const [error, setError] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+
   const biggestOpportunity = metrics.churn.rate > 7 
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
   const anyConnectionMissing = !metrics.shopify?.connected || !metrics.ga4?.connected || !metrics.hubspot?.connected;
+
+  const handleShopifyConnect = () => {
+    if (!shopDomain) {
+      setError('Please enter your Shopify store domain');
+      return;
+    }
+    if (!shopDomain.endsWith('.myshopify.com')) {
+      setError('Domain must end with .myshopify.com (e.g., my-store.myshopify.com)');
+      return;
+    }
+    setError('');
+    setIsConnecting(true);
+    window.location.href = `/api/auth/shopify?shop=${encodeURIComponent(shopDomain.trim().toLowerCase())}`;
+  };
 
   return (
     <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24">
@@ -26,11 +46,37 @@ export default function Dashboard() {
             Connect your accounts to unlock real-time data and AI-powered insights
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
+
+            {/* Shopify Connection with Input */}
             {!metrics.shopify?.connected && (
-              <button onClick={() => window.location.href = '/api/auth/shopify'} className="cyber-btn text-2xl px-10 py-5">
-                Connect Shopify
-              </button>
+              <div className="flex flex-col items-center gap-6">
+                <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <input
+                    type="text"
+                    placeholder="your-store.myshopify.com"
+                    value={shopDomain}
+                    onChange={(e) => setShopDomain(e.target.value.trim())}
+                    onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
+                    disabled={isConnecting}
+                    className="px-8 py-5 bg-white/10 backdrop-blur border border-cyan-500/50 rounded-xl text-white placeholder-cyan-300 text-xl focus:outline-none focus:border-cyan-300"
+                  />
+                  <button
+                    onClick={handleShopifyConnect}
+                    disabled={isConnecting || !shopDomain}
+                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+                  </button>
+                </div>
+                {error && <p className="text-red-400 text-lg">{error}</p>}
+                <p className="text-cyan-200 text-sm max-w-md">
+                  Enter your store’s myshopify.com domain (found in Settings → Domains in Shopify admin)
+                </p>
+              </div>
             )}
+
+            {/* GA4 and HubSpot buttons unchanged */}
             {!metrics.ga4?.connected && (
               <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
                 Connect GA4
@@ -113,4 +159,4 @@ export default function Dashboard() {
       <AIInsights />
     </div>
   );
-} 
+}
