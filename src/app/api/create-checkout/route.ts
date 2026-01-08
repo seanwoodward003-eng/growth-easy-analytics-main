@@ -1,4 +1,4 @@
-// app/api/create-checkout/route.ts
+// app/api/create-checkout/route.ts — FINAL FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireAuth();
 
-  // Allow trial_expired users to upgrade — only block real unauthorized
+  // ONLY block if not trial_expired or fully unauthorized
   if ('error' in auth && auth.error !== 'trial_expired') {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get userId — it's there even if trial expired
+  // Get userId — it's available even on trial_expired
   const userId = auth.user?.id;
 
   if (!userId) {
@@ -23,8 +23,6 @@ export async function POST(request: NextRequest) {
 
   const { plan } = await request.json();
 
-  console.log('Received plan:', plan);
-
   const priceMap: Record<string, string> = {
     early_ltd: process.env.STRIPE_PRICE_EARLY_LTD!,
     standard_ltd: process.env.STRIPE_PRICE_STANDARD_LTD!,
@@ -32,10 +30,10 @@ export async function POST(request: NextRequest) {
     annual: process.env.STRIPE_PRICE_ANNUAL!,
   };
 
-  const priceId = priceMap[plan];
+  const priceId = priceMap[plan as keyof typeof priceMap];
 
   if (!priceId) {
-    return NextResponse.json({ error: 'Invalid plan', received: plan }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
   }
 
   const dbUser = await getRow<{ stripe_id: string | null; email: string }>(
@@ -47,12 +45,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  let customerId = dbUser.stripe_id;
-
   try {
     const isSubscription = plan === 'monthly' || plan === 'annual';
 
-    const sessionParams: any = {
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       client_reference_id: userId.toString(),
       metadata: { plan, user_id: userId.toString() },
       payment_method_types: ['card'],
@@ -63,23 +59,22 @@ export async function POST(request: NextRequest) {
       customer_email: dbUser.email,
     };
 
-    if (customerId) {
-      sessionParams.customer = customerId;
+    if (dbUser.stripe_id) {
+      sessionParams.customer = dbUser.stripe_id;
     } else if (!isSubscription) {
       sessionParams.customer_creation = 'always';
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    if (session.customer && typeof session.customer === 'string' && !customerId) {
+    if (session.customer && typeof session.customer === 'string' && !dbUser.stripe_id) {
       await run('UPDATE users SET stripe_id = ? WHERE id = ?', [session.customer, userId]);
-      console.log(`Saved new Stripe customer ${session.customer} for user ${userId}`);
     }
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error: any) {
-    console.error('Stripe error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to create session' }, { status: 500 });
+    console.error('Stripe checkout error:', error);
+    return NextResponse.json({ error: error.message || 'Checkout failed' }, { status: 500 });
   }
 }
 
