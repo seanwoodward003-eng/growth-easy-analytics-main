@@ -37,39 +37,45 @@ async function handleSignup(json: any) {
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
 
-  // Send verification email
+  // Send verification email — NEW HIGH-CONVERTING DESIGN
   try {
     await resend.emails.send({
       from: 'GrowthEasy AI <verify@growtheasy.ai>',
       to: email,
       subject: 'Verify your email – Start your 7-day free trial',
       html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: auto; padding: 40px; background: #0a0f2c; color: #e0f8ff; border-radius: 16px; border: 2px solid #00ffff;">
-          <h1 style="text-align: center; color: #00ffff; text-shadow: 0 0 10px #00ffff;">Welcome to GrowthEasy AI</h1>
-          <p style="font-size: 18px; line-height: 1.6;">
-            You're one click away from unlocking your <strong>7-day free trial</strong> of real-time growth intelligence powered by Grok.
-          </p>
-          <p style="text-align: center; margin: 40px 0;">
-            <a href="${process.env.NEXT_PUBLIC_FRONTEND_URL}/api/verify?token=${verificationToken}"
-               style="display: inline-block; background: #00ffff; color: #000; font-weight: bold; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-size: 20px; box-shadow: 0 0 20px #00ffff;">
-              Verify Email & Activate Trial
-            </a>
-          </p>
-          <p style="font-size: 16px; color: #a0d8ef;">
-            This link expires in <strong>24 hours</strong>.<br>
-            After verification, you'll get full access to the AI Growth Coach that reads your real store data and gives actionable insights.
-          </p>
-          <hr style="border-color: #00ffff40; margin: 40px 0;">
-          <p style="text-align: center; color: #66cccc; font-size: 14px;">
-            — The GrowthEasy AI Team<br>
-            Making growth easy, one insight at a time.
-          </p>
-        </div>
+        <html>
+          <body style="font-family: system-ui, sans-serif; background: #0a0f2c; color: #e0f8ff; margin: 0; padding: 0;">
+            <div style="max-width: 600px; margin: 40px auto; padding: 40px; background: #0a0f2c; border-radius: 16px; border: 2px solid #00ffff; box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);">
+              <h1 style="text-align: center; color: #00ffff; font-size: 36px; text-shadow: 0 0 15px #00ffff; margin-bottom: 30px;">
+                GROWTHEASY AI
+              </h1>
+              <p style="font-size: 20px; line-height: 1.6; text-align: center;">
+                You're one click away from your <strong>7-day free trial</strong> of real-time growth intelligence.
+              </p>
+              <div style="text-align: center; margin: 50px 0;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/verify?token=${verificationToken}"
+                   style="display: inline-block; background: #00ffff; color: #000; font-weight: bold; padding: 20px 40px; border-radius: 12px; text-decoration: none; font-size: 24px; box-shadow: 0 0 30px #00ffff;">
+                  Activate Trial & Sign In
+                </a>
+              </div>
+              <p style="font-size: 16px; color: #a0d8ef; text-align: center;">
+                This link expires in <strong>24 hours</strong>.<br>
+                After activation, you'll get full access to the AI Growth Coach powered by Grok.
+              </p>
+              <hr style="border-color: #00ffff40; margin: 50px 0;">
+              <p style="text-align: center; color: #66cccc; font-size: 14px;">
+                — The GrowthEasy AI Team<br>
+                Making growth easy, one insight at a time.
+              </p>
+            </div>
+          </body>
+        </html>
       `,
     });
   } catch (emailError) {
     console.error('Failed to send verification email:', emailError);
-    // Don't fail signup if email fails — user can still get in via resend if needed
+    // Don't fail signup if email fails
   }
 
   const { access, refresh } = generateTokens(user.id, email);
