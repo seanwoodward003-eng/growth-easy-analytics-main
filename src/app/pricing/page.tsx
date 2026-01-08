@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import getStripe from '@/lib/getStripe';  // ← Adjust path if you put getStripe elsewhere (e.g. '../../lib/getStripe')
+import { useSearchParams } from 'next/navigation';
+import getStripe from '@/lib/getStripe';
 
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
   // TODO: Replace with real DB fetch in production
   const earlyBirdSold = 0;
@@ -56,6 +59,18 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen px-6 py-20 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
+      {/* Trial Expired Banner */}
+      {error === 'trial_expired' && (
+        <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/40 border-4 border-red-500 rounded-3xl shadow-2xl">
+          <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
+            Your 7-day free trial has ended
+          </h2>
+          <p className="text-3xl md:text-4xl text-cyan-300">
+            Upgrade now to unlock unlimited access to GrowthEasy AI forever
+          </p>
+        </div>
+      )}
+
       <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
       <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
 
