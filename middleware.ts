@@ -1,7 +1,8 @@
 // middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { getRow } from '@/lib/db';
+import { verifyRefreshToken } from '@/lib/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 
@@ -12,7 +13,7 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
@@ -44,20 +45,67 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard — verify JWT properly
+  // Protect all /dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    const token = request.cookies.get('access_token')?.value;
+    const accessToken = request.cookies.get('access_token')?.value;
 
-    if (!token) {
+    if (!accessToken) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
+      url.searchParams.set('error', 'login_required');
       return NextResponse.redirect(url);
     }
 
+    let payload: any;
     try {
-      jwt.verify(token, JWT_SECRET); // Throws if invalid/expired
-      // Valid token → allow
-    } catch {
+      payload = jwt.verify(accessToken, JWT_SECRET);
+    } catch (err) {
+      // Access token invalid/expired → clear cookies and redirect
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.searchParams.set('error', 'session_expired');
+
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.cookies.delete('access_token');
+      redirectResponse.cookies.delete('refresh_token');
+      redirectResponse.cookies.delete('csrf_token');
+      return redirectResponse;
+    }
+
+    const userId = payload.sub;
+
+    // Check trial status in DB
+    try {
+      const user = await getRow<{
+        trial_end: string | null;
+        subscription_status: string;
+      }>(
+        'SELECT trial_end, subscription_status FROM users WHERE id = ?',
+        [userId]
+      );
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const now = new Date();
+      const trialEnd = user.trial_end ? new Date(user.trial_end) : null;
+
+      if (
+        user.subscription_status === 'trial' &&
+        trialEnd &&
+        now > trialEnd
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/pricing';
+        url.searchParams.set('error', 'trial_expired');
+        return NextResponse.redirect(url);
+      }
+
+      // All good — pass userId to server components
+      response.headers.set('x-user-id', userId.toString());
+    } catch (dbError) {
+      console.error('Middleware DB error:', dbError);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
