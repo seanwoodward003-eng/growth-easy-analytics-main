@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { getRow } from '@/lib/db';
-import { verifyRefreshToken } from '@/lib/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 
@@ -60,7 +59,6 @@ export async function middleware(request: NextRequest) {
     try {
       payload = jwt.verify(accessToken, JWT_SECRET);
     } catch (err) {
-      // Access token invalid/expired → clear cookies and redirect
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
@@ -74,7 +72,6 @@ export async function middleware(request: NextRequest) {
 
     const userId = payload.sub;
 
-    // Check trial status in DB
     try {
       const user = await getRow<{
         trial_end: string | null;
@@ -84,9 +81,7 @@ export async function middleware(request: NextRequest) {
         [userId]
       );
 
-      if (!user) {
-        throw new Error('User not found');
-      }
+      if (!user) throw new Error('User not found');
 
       const now = new Date();
       const trialEnd = user.trial_end ? new Date(user.trial_end) : null;
@@ -97,15 +92,14 @@ export async function middleware(request: NextRequest) {
         now > trialEnd
       ) {
         const url = request.nextUrl.clone();
-        url.pathname = '/pricing';
+        url.pathname = '/';  // Redirect to home
         url.searchParams.set('error', 'trial_expired');
         return NextResponse.redirect(url);
       }
 
-      // All good — pass userId to server components
       response.headers.set('x-user-id', userId.toString());
     } catch (dbError) {
-      console.error('Middleware DB error:', dbError);
+      console.error('Middleware trial check error:', dbError);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
