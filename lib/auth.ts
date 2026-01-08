@@ -1,174 +1,156 @@
-'use client';
+// lib/auth.ts
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
+import { getRow } from './db';
 
-import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import getStripe from '@/lib/getStripe';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
+const REFRESH_SECRET = process.env.REFRESH_SECRET!;
 
-// Small Client Component that uses useSearchParams
-function TrialExpiredBanner() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+export interface AuthUser {
+  id: number;
+  email: string;
 
-  if (error !== 'trial_expired') return null;
-
-  return (
-    <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/40 border-4 border-red-500 rounded-3xl shadow-2xl">
-      <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
-        Your 7-day free trial has ended
-      </h2>
-      <p className="text-3xl md:text-4xl text-cyan-300">
-        Upgrade now to unlock unlimited access to GrowthEasy AI forever
-      </p>
-    </div>
-  );
+  shopify_shop?: string | null;
+  shopify_access_token?: string | null;
+  ga4_connected?: boolean | null;
+  hubspot_connected?: boolean | null;
 }
 
-export default function Pricing() {
-  const [loading, setLoading] = useState<string | null>(null);
+export function generateTokens(userId: number, email: string) {
+  const access = jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: '1h' });
+  const refresh = jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: '90d' }); // 90 days
+  return { access, refresh };
+}
 
-  // TODO: Replace with real DB fetch in production
-  const earlyBirdSold = 0;
-  const totalLifetimeSold = 0;
+export function generateCsrfToken() {
+  return randomBytes(32).toString('hex');
+}
 
-  const EARLY_CAP = 200;
-  const TOTAL_CAP = 500;
+export async function setAuthCookies(access: string, refresh: string, csrf: string) {
+  const cookieStore = await cookies();
 
-  const earlyLeft = EARLY_CAP - earlyBirdSold;
-  const totalLeft = TOTAL_CAP - totalLifetimeSold;
+  cookieStore.set('access_token', access, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 1, // 1 hour
+  });
 
-  const showEarly = earlyBirdSold < EARLY_CAP;
-  const showStandard = totalLifetimeSold < TOTAL_CAP;
-  const lifetimeSoldOut = totalLifetimeSold >= TOTAL_CAP;
+  cookieStore.set('refresh_token', refresh, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 90, // 90 days
+  });
 
-  const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
-    setLoading(plan);
-    try {
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
+  cookieStore.set('csrf_token', csrf, {
+    httpOnly: false, // Frontend needs to read it
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 90,
+  });
+}
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
+// FIXED VERSION — TypeScript-safe, no unsafe casts
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('access_token')?.value;
 
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error('Failed to load Stripe');
-      }
+  if (!accessToken) return null;
 
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
+  try {
+    const payload = jwt.verify(accessToken, JWT_SECRET);
 
-      if (error) {
-        throw error;
-      }
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      alert('Checkout failed: ' + (err.message || 'Please try again'));
-      setLoading(null);
+    // Type guard: ensure payload is object with correct shape
+    if (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'sub' in payload &&
+      typeof (payload as any).sub === 'number' &&
+      'email' in payload &&
+      typeof (payload as any).email === 'string'
+    ) {
+      return {
+        id: (payload as any).sub,
+        email: (payload as any).email,
+      };
     }
-  };
 
-  return (
-    <div className="min-h-screen px-6 py-20 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
-      {/* Wrap the banner in Suspense — fixes prerender error */}
-      <Suspense fallback={null}>
-        <TrialExpiredBanner />
-      </Suspense>
+    // Invalid shape — treat as bad token
+    return null;
+  } catch (error) {
+    // Expired, malformed, or tampered token
+    return null;
+  }
+}
 
-      <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
-      <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
+export async function requireAuth() {
+  const user = await getCurrentUser();
+  if (!user) return { error: 'Unauthorized', status: 401 };
 
-      {/* Urgency Counters */}
-      <div className="max-w-4xl mx-auto mb-20 space-y-6">
-        {showEarly && (
-          <p className="text-5xl font-black text-red-400 animate-pulse">
-            Only {earlyLeft} Early Bird spots left at £49!
-          </p>
-        )}
-        <p className="text-4xl font-bold text-purple-400">
-          Lifetime closes forever at {TOTAL_CAP} — {totalLeft} spots remaining
-        </p>
-        {lifetimeSoldOut && (
-          <p className="text-4xl font-bold text-gray-500">Lifetime Sold Out Forever</p>
-        )}
-      </div>
-
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-        {/* Early Bird */}
-        {showEarly && (
-          <div className="metric-bubble p-12 border-4 border-cyan-400/80 shadow-2xl">
-            <h2 className="text-4xl font-bold mb-6">Early Bird Lifetime</h2>
-            <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49</p>
-            <p className="text-2xl text-red-400 mb-10">One-time • {earlyLeft} left</p>
-            <button
-              onClick={() => handleCheckout('early_ltd')}
-              disabled={loading === 'early_ltd'}
-              className="cyber-btn text-3xl px-12 py-6 w-full"
-            >
-              {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
-            </button>
-          </div>
-        )}
-
-        {/* Standard Lifetime */}
-        {showStandard && (
-          <div className="metric-bubble p-12 border-4 border-purple-500/80 shadow-2xl">
-            <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
-            <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
-            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 500</p>
-            <button
-              onClick={() => handleCheckout('standard_ltd')}
-              disabled={loading === 'standard_ltd'}
-              className="cyber-btn text-3xl px-12 py-6 w-full"
-            >
-              {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
-            </button>
-          </div>
-        )}
-
-        {/* Monthly */}
-        <div className="metric-bubble p-12">
-          <h2 className="text-4xl font-bold mb-6">Monthly</h2>
-          <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49<span className="text-4xl">/mo</span></p>
-          <button
-            onClick={() => handleCheckout('monthly')}
-            disabled={loading === 'monthly'}
-            className="cyber-btn text-3xl px-12 py-6 w-full"
-          >
-            {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
-          </button>
-        </div>
-
-        {/* Annual – Best Value */}
-        <div className="metric-bubble p-12 border-4 border-green-500/80 shadow-2xl scale-105">
-          <div className="bg-green-500/20 text-green-400 text-xl font-bold px-6 py-3 rounded-full mb-6 inline-block">
-            BEST VALUE — SAVE 16%
-          </div>
-          <h2 className="text-4xl font-bold mb-6">Annual</h2>
-          <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£490<span className="text-4xl">/year</span></p>
-          <p className="text-2xl text-green-400 mb-10">= £41/mo</p>
-          <button
-            onClick={() => handleCheckout('annual')}
-            disabled={loading === 'annual'}
-            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-3xl px-12 py-6 w-full"
-          >
-            {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
-          </button>
-        </div>
-      </div>
-
-      {/* Guarantee */}
-      <div className="max-w-4xl mx-auto mt-32 text-gray-300 text-xl space-y-6">
-        <p className="text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
-        <p>Lifetime plans include: current version + bug fixes forever + 12 months of all future major features free after close.</p>
-        <p className="text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
-      </div>
-    </div>
+  const row = await getRow<{
+    trial_end: string;
+    subscription_status: string;
+    shopify_shop?: string | null;
+    shopify_access_token?: string | null;
+    ga4_connected?: boolean | null;
+    hubspot_connected?: boolean | null;
+  }>(
+    'SELECT trial_end, subscription_status, shopify_shop, shopify_access_token, ga4_connected, hubspot_connected FROM users WHERE id = ?',
+    [user.id]
   );
+
+  if (!row) return { error: 'User not found', status: 404 };
+
+  const now = new Date();
+  const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
+
+  if (
+    row.subscription_status === 'trial' &&
+    trialEnd &&
+    now > trialEnd
+  ) {
+    return { error: 'trial_expired', status: 403 };
+  }
+
+  if (row.subscription_status === 'canceled') {
+    return { error: 'subscription_canceled', status: 403 };
+  }
+
+  return {
+    user: {
+      ...user,
+      shopify_shop: row.shopify_shop,
+      shopify_access_token: row.shopify_access_token,
+      ga4_connected: row.ga4_connected,
+      hubspot_connected: row.hubspot_connected,
+    },
+    subscription: {
+      trial_end: row.trial_end,
+      subscription_status: row.subscription_status,
+    },
+  };
+}
+
+export async function verifyCSRF(request: Request): Promise<boolean> {
+  const cookieStore = await cookies();
+  const cookieCsrf = cookieStore.get('csrf_token')?.value;
+  const headerCsrf = request.headers.get('X-CSRF-Token');
+  return !!cookieCsrf && !!headerCsrf && cookieCsrf === headerCsrf;
+}
+
+export function verifyRefreshToken(token: string): { sub: number } | null {
+  try {
+    const payload = jwt.verify(token, REFRESH_SECRET);
+    if (typeof payload === 'object' && payload !== null && 'sub' in payload && typeof (payload as any).sub === 'number') {
+      return { sub: (payload as any).sub };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
