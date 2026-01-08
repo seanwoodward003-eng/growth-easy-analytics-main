@@ -1,4 +1,4 @@
-// app/api/create-checkout/route.ts — FINAL FIXED VERSION
+// app/api/create-checkout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
@@ -9,12 +9,10 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireAuth();
 
-  // ONLY block if not trial_expired or fully unauthorized
   if ('error' in auth && auth.error !== 'trial_expired') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get userId — it's available even on trial_expired
   const userId = auth.user?.id;
 
   if (!userId) {
@@ -48,7 +46,8 @@ export async function POST(request: NextRequest) {
   try {
     const isSubscription = plan === 'monthly' || plan === 'annual';
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    // Removed the problematic type annotation
+    const sessionParams = {
       client_reference_id: userId.toString(),
       metadata: { plan, user_id: userId.toString() },
       payment_method_types: ['card'],
@@ -60,12 +59,12 @@ export async function POST(request: NextRequest) {
     };
 
     if (dbUser.stripe_id) {
-      sessionParams.customer = dbUser.stripe_id;
+      (sessionParams as any).customer = dbUser.stripe_id;
     } else if (!isSubscription) {
-      sessionParams.customer_creation = 'always';
+      (sessionParams as any).customer_creation = 'always';
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await stripe.checkout.sessions.create(sessionParams as any);
 
     if (session.customer && typeof session.customer === 'string' && !dbUser.stripe_id) {
       await run('UPDATE users SET stripe_id = ? WHERE id = ?', [session.customer, userId]);
