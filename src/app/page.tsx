@@ -82,12 +82,10 @@ export default function LandingPage() {
     }
   };
 
-  const error = new URLSearchParams(window.location.search).get('error');
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative">
       {/* Trial Expired Banner */}
-      {error === 'trial_expired' && (
+      {message.includes('Your 7-day free trial has ended') && (
         <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/50 border-4 border-red-500 rounded-3xl shadow-2xl">
           <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
             Your 7-day free trial has ended
@@ -104,7 +102,7 @@ export default function LandingPage() {
       )}
 
       {/* General Message Banner */}
-      {message && !error && (
+      {message && !message.includes('Your 7-day free trial has ended') && (
         <div className={`max-w-2xl mx-auto mb-8 p-6 rounded-2xl text-center border-4 ${
           message.includes('Check') || message.includes('Welcome') || message.includes('Redirecting')
             ? 'bg-green-900/50 border-green-500 text-green-300'
@@ -150,7 +148,6 @@ export default function LandingPage() {
             </button>
           </form>
 
-          {/* Toggle Link */}
           <button
             type="button"
             onClick={() => {
