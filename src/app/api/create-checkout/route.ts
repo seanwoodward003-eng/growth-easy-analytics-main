@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
 
   const auth = await requireAuth();
 
+  // Allow trial_expired users to upgrade
   if ('error' in auth && auth.error !== 'trial_expired') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -46,11 +47,10 @@ export async function POST(request: NextRequest) {
   try {
     const isSubscription = plan === 'monthly' || plan === 'annual';
 
-    // Removed the problematic type annotation
     const sessionParams = {
       client_reference_id: userId.toString(),
       metadata: { plan, user_id: userId.toString() },
-      payment_method_types: ['card'],
+      payment_method_types: ['card'] as const,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: isSubscription ? 'subscription' : 'payment',
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
