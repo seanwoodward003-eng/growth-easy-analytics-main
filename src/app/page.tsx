@@ -9,17 +9,16 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Check URL params for errors + auto-redirect if logged in
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
 
-    if (error === 'session_expired') {
+    if (error === 'trial_expired') {
+      setMessage('Your 7-day free trial has ended — upgrade to continue');
+    } else if (error === 'session_expired') {
       setMessage('Your session expired — please sign in again');
     } else if (error === 'login_required') {
       setMessage('Please sign in to continue');
-    } else if (error === 'trial_expired') {
-      setMessage('Your free trial has ended — upgrade to keep growing!');
     }
 
     // Auto-redirect to dashboard if already logged in
@@ -33,7 +32,7 @@ export default function LandingPage() {
           window.location.href = '/dashboard';
         }
       } catch (err) {
-        // Silent fail — user stays on landing
+        // Silent — stay on landing
       }
     };
 
@@ -83,10 +82,29 @@ export default function LandingPage() {
     }
   };
 
+  const error = new URLSearchParams(window.location.search).get('error');
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative">
-      {/* Error / Status Message Banner */}
-      {message && (
+      {/* Trial Expired Banner */}
+      {error === 'trial_expired' && (
+        <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/50 border-4 border-red-500 rounded-3xl shadow-2xl">
+          <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
+            Your 7-day free trial has ended
+          </h2>
+          <p className="text-3xl md:text-4xl text-cyan-300 mb-8">
+            Upgrade now to keep full access to GrowthEasy AI forever
+          </p>
+          <Link href="/pricing">
+            <button className="px-16 py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-3xl font-black rounded-full hover:scale-105 transition shadow-2xl">
+              View Plans & Upgrade
+            </button>
+          </Link>
+        </div>
+      )}
+
+      {/* General Message Banner */}
+      {message && !error && (
         <div className={`max-w-2xl mx-auto mb-8 p-6 rounded-2xl text-center border-4 ${
           message.includes('Check') || message.includes('Welcome') || message.includes('Redirecting')
             ? 'bg-green-900/50 border-green-500 text-green-300'
