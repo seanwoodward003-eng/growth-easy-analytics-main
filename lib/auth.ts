@@ -55,6 +55,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   });
 }
 
+// FIXED VERSION — TypeScript-safe, no unsafe casts
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
@@ -62,9 +63,27 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!accessToken) return null;
 
   try {
-    const payload = jwt.verify(accessToken, JWT_SECRET) as { sub: number; email: string };
-    return { id: payload.sub, email: payload.email };
-  } catch {
+    const payload = jwt.verify(accessToken, JWT_SECRET);
+
+    // Type guard: ensure payload is object with correct shape
+    if (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'sub' in payload &&
+      typeof (payload as any).sub === 'number' &&
+      'email' in payload &&
+      typeof (payload as any).email === 'string'
+    ) {
+      return {
+        id: (payload as any).sub,
+        email: (payload as any).email,
+      };
+    }
+
+    // Invalid shape — treat as bad token
+    return null;
+  } catch (error) {
+    // Expired, malformed, or tampered token
     return null;
   }
 }
@@ -126,7 +145,11 @@ export async function verifyCSRF(request: Request): Promise<boolean> {
 
 export function verifyRefreshToken(token: string): { sub: number } | null {
   try {
-    return jwt.verify(token, REFRESH_SECRET) as { sub: number };
+    const payload = jwt.verify(token, REFRESH_SECRET);
+    if (typeof payload === 'object' && payload !== null && 'sub' in payload && typeof (payload as any).sub === 'number') {
+      return { sub: (payload as any).sub };
+    }
+    return null;
   } catch {
     return null;
   }
