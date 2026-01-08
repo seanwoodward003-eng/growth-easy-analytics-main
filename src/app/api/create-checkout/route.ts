@@ -2,15 +2,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
-import { getRow, run } from '@/lib/db'; // Add 'run' for updating stripe_id
+import { getRow, run } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   console.log('>>> CREATE-CHECKOUT ROUTE LOADED');
 
   const auth = await requireAuth();
-  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const user = auth.user;
-  const userId = user.id;
+
+  // Allow trial_expired users to upgrade — only block real unauthorized
+  if ('error' in auth && auth.error !== 'trial_expired') {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  // Get userId — it's there even if trial expired
+  const userId = auth.user?.id;
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const { plan } = await request.json();
 
@@ -29,7 +38,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid plan', received: plan }, { status: 400 });
   }
 
-  // Fetch current stripe_id and email
   const dbUser = await getRow<{ stripe_id: string | null; email: string }>(
     'SELECT stripe_id, email FROM users WHERE id = ?',
     [userId]
@@ -52,21 +60,17 @@ export async function POST(request: NextRequest) {
       mode: isSubscription ? 'subscription' : 'payment',
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
-      customer_email: dbUser.email, // Pre-fill email in Checkout
+      customer_email: dbUser.email,
     };
 
-    // If no existing customer, let Stripe create one (or force for one-time)
     if (customerId) {
       sessionParams.customer = customerId;
     } else if (!isSubscription) {
-      // For one-time payments: always create a customer object
       sessionParams.customer_creation = 'always';
     }
-    // For subscriptions: Stripe auto-creates customer if none provided
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    // If a new customer was created, save the ID to your DB
     if (session.customer && typeof session.customer === 'string' && !customerId) {
       await run('UPDATE users SET stripe_id = ? WHERE id = ?', [session.customer, userId]);
       console.log(`Saved new Stripe customer ${session.customer} for user ${userId}`);
