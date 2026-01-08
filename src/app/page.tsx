@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function LandingPage() {
@@ -8,6 +8,37 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Check URL params for errors + auto-redirect if logged in
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+
+    if (error === 'session_expired') {
+      setMessage('Your session expired — please sign in again');
+    } else if (error === 'login_required') {
+      setMessage('Please sign in to continue');
+    } else if (error === 'trial_expired') {
+      setMessage('Your free trial has ended — upgrade to keep growing!');
+    }
+
+    // Auto-redirect to dashboard if already logged in
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          window.location.href = '/dashboard';
+        }
+      } catch (err) {
+        // Silent fail — user stays on landing
+      }
+    };
+
+    checkSession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +85,17 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative">
+      {/* Error / Status Message Banner */}
+      {message && (
+        <div className={`max-w-2xl mx-auto mb-8 p-6 rounded-2xl text-center border-4 ${
+          message.includes('Check') || message.includes('Welcome') || message.includes('Redirecting')
+            ? 'bg-green-900/50 border-green-500 text-green-300'
+            : 'bg-red-900/50 border-red-500 text-red-300'
+        }`}>
+          <p className="text-2xl font-bold">{message}</p>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="max-w-6xl mx-auto z-10 w-full">
         <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-4 md:mb-8 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent glow-title">
@@ -89,12 +131,6 @@ export default function LandingPage() {
               {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
             </button>
           </form>
-
-          {message && (
-            <p className={`mt-6 text-xl ${message.includes('Check') || message.includes('Welcome') ? 'text-green-400' : 'text-red-400'}`}>
-              {message}
-            </p>
-          )}
 
           {/* Toggle Link */}
           <button
