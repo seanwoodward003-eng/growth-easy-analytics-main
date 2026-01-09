@@ -44,12 +44,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Skip middleware for Shopify OAuth callbacks (safety)
-  if (request.nextUrl.pathname.includes('auth/callback') || request.nextUrl.pathname.includes('shopify')) {
-    return NextResponse.next();
-  }
-
-  // Protect all /dashboard routes
+  // Protect only dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
@@ -115,5 +110,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*'],
+  matcher: ['/dashboard/:path*'],  // Only dashboard — all /api free
 };
