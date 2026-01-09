@@ -26,19 +26,21 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
-  // Keep the banner visible until ALL three integrations are connected (or change to !shopifyConnected if you only care about Shopify)
   const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
-  // Trigger immediate refresh when returning from successful Shopify OAuth
+  // Trigger refresh on successful connect + debug connected status
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
-    if (justConnected && refresh) {
-      refresh();
+    console.log('Dashboard useEffect triggered, justConnected:', justConnected);
+    console.log('Shopify connected status:', shopifyConnected);
 
-      // Clean the URL
+    if (justConnected && refresh) {
+      console.log('Refreshing metrics...');
+      refresh();
       window.history.replaceState({}, '', '/dashboard');
+      alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh]);
+  }, [searchParams, refresh, shopifyConnected]); // Add shopifyConnected to dependencies
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -56,7 +58,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Connect Accounts Banner - shows all 3 buttons until each is connected */}
+      {/* Connect Accounts Banner */}
       {anyConnectionMissing && (
         <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
           <p className="text-3xl text-cyan-300 mb-6">
@@ -64,7 +66,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify - input + button */}
+            {/* Shopify */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
@@ -93,14 +95,14 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* GA4 button */}
+            {/* GA4 */}
             {!ga4Connected && (
               <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
                 Connect GA4
               </button>
             )}
 
-            {/* HubSpot button */}
+            {/* HubSpot */}
             {!hubspotConnected && (
               <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
                 Connect HubSpot
