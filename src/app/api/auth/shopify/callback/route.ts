@@ -65,4 +65,4 @@ export async function GET(request: NextRequest) {
 
   // Success: Redirect to dashboard with success param
   return NextResponse.redirect('/dashboard?shopify_connected=true');
-}
+} 
