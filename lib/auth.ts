@@ -33,29 +33,28 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('access_token', access, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',  // ← FIXED: 'lax' for Shopify OAuth callbacks
     path: '/',
-    maxAge: 60 * 60 * 1, // 1 hour
+    maxAge: 60 * 60 * 1,
   });
 
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',  // ← FIXED: 'lax' for Shopify OAuth callbacks
     path: '/',
-    maxAge: 60 * 60 * 24 * 90, // 90 days
+    maxAge: 60 * 60 * 24 * 90,
   });
 
   cookieStore.set('csrf_token', csrf, {
-    httpOnly: false, // Frontend needs to read it
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',  // ← FIXED: 'lax' for consistency
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
 }
 
-// FIXED VERSION — TypeScript-safe, no unsafe casts
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
@@ -65,7 +64,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const payload = jwt.verify(accessToken, JWT_SECRET);
 
-    // Type guard: ensure payload is object with correct shape
     if (
       typeof payload === 'object' &&
       payload !== null &&
@@ -80,10 +78,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       };
     }
 
-    // Invalid shape — treat as bad token
     return null;
   } catch (error) {
-    // Expired, malformed, or tampered token
     return null;
   }
 }
