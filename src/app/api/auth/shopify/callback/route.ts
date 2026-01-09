@@ -1,5 +1,5 @@
 // app/api/auth/shopify/callback/route.ts
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { run } from '@/lib/db';
 import crypto from 'crypto';
@@ -20,30 +20,26 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
   if (!verifyHMAC(params)) {
-    return new Response(
-      '<script>alert("Invalid signature"); window.location.href = "/dashboard";</script>',
-      { status: 400, headers: { 'Content-Type': 'text/html' } }
-    );
+    return NextResponse.redirect('/dashboard?error=invalid_signature');
   }
 
   const code = params.get('code');
   const state = params.get('state');
   if (!code || !state) {
-    return new Response(
-      '<script>alert("Auth failed"); window.location.href = "/dashboard";</script>',
-      { status: 400, headers: { 'Content-Type': 'text/html' } }
-    );
+    return NextResponse.redirect('/dashboard?error=auth_failed');
   }
 
   const [userIdStr, shop] = state.split('|');
   const userId = parseInt(userIdStr);
+  if (isNaN(userId)) {
+    return NextResponse.redirect('/dashboard?error=invalid_state');
+  }
+
   const user = await getCurrentUser();
 
   if (!user || user.id !== userId) {
-    return new Response(
-      '<script>alert("Unauthorized"); window.location.href = "/dashboard";</script>',
-      { status: 401, headers: { 'Content-Type': 'text/html' } }
-    );
+    // Session lost → redirect to login with error (forces fresh login)
+    return NextResponse.redirect(`/login?error=session_lost&state=${encodeURIComponent(state)}&code=${encodeURIComponent(code)}`);
   }
 
   const tokenResp = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -57,10 +53,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!tokenResp.ok) {
-    return new Response(
-      '<script>alert("Shopify auth failed"); window.location.href = "/dashboard";</script>',
-      { status: 400, headers: { 'Content-Type': 'text/html' } }
-    );
+    return NextResponse.redirect('/dashboard?error=token_failed');
   }
 
   const { access_token } = await tokenResp.json();
@@ -70,15 +63,6 @@ export async function GET(request: NextRequest) {
     [shop, access_token, userId]
   );
 
-  // Success: Redirect to dashboard with trigger param
-  return new Response(
-    `<script>
-      alert("Shopify Connected Successfully!");
-      window.location.href = "/dashboard?shopify_connected=true";
-    </script>`,
-    {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
-    }
-  );
+  // Success: Redirect to dashboard with success param
+  return NextResponse.redirect('/dashboard?shopify_connected=true');
 }
