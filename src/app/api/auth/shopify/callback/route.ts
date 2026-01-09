@@ -38,8 +38,7 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
 
   if (!user || user.id !== userId) {
-    // Session lost → redirect to login with error (forces fresh login)
-    return NextResponse.redirect(`/login?error=session_lost&state=${encodeURIComponent(state)}&code=${encodeURIComponent(code)}`);
+    return NextResponse.redirect('/login?error=session_lost');
   }
 
   const tokenResp = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -63,6 +62,6 @@ export async function GET(request: NextRequest) {
     [shop, access_token, userId]
   );
 
-  // Success: Redirect to dashboard with success param
+  // Success: Redirect to dashboard with success param (triggers refresh/alert in frontend)
   return NextResponse.redirect('/dashboard?shopify_connected=true');
-} 
+}
