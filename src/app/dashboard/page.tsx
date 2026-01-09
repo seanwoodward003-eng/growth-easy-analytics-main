@@ -22,25 +22,28 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Debug connected status on every render
+  console.log('Dashboard render - shopifyConnected:', shopifyConnected);
+
   const biggestOpportunity = metrics.churn?.rate > 7 
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
+  // Banner shows if ANY integration is missing
   const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
-  // Trigger refresh on successful connect + debug connected status
+  // Trigger refresh on successful OAuth callback
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
-    console.log('Dashboard useEffect triggered, justConnected:', justConnected);
-    console.log('Shopify connected status:', shopifyConnected);
+    console.log('useEffect - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected && refresh) {
-      console.log('Refreshing metrics...');
-      refresh();
+      console.log('Refreshing metrics after connect');
+      refresh(); // Force fresh data fetch
       window.history.replaceState({}, '', '/dashboard');
       alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh, shopifyConnected]); // Add shopifyConnected to dependencies
+  }, [searchParams, refresh, shopifyConnected]); // Re-run when connected flag changes
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -58,7 +61,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Connect Accounts Banner */}
+      {/* Connect Banner - only shows if any connection missing */}
       {anyConnectionMissing && (
         <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
           <p className="text-3xl text-cyan-300 mb-6">
@@ -66,7 +69,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify */}
+            {/* Shopify Section - disappears when connected */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
