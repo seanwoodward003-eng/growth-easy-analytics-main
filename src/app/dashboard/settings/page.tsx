@@ -21,24 +21,29 @@ export default function SettingsPage() {
   const [emailError, setEmailError] = useState('');
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
-    if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? Your data from this source will stop syncing.`)) return;
+    if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? This will stop data syncing from this source.`)) return;
 
     try {
+      console.log(`Attempting disconnect for ${type}`);
+
       const res = await fetch('/api/integrations/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
+        console.log(`${type} disconnected successfully`);
         alert(`${type.toUpperCase()} disconnected successfully`);
-        refresh(); // Immediately update the UI
+        refresh(); // Force UI update (connect button reappears)
       } else {
-        const data = await res.json();
+        console.log('Disconnect failed:', data.error);
         alert(data.error || 'Failed to disconnect');
       }
     } catch (error) {
-      console.error('Disconnect error:', error);
+      console.error('Disconnect network error:', error);
       alert('Network error — please try again');
     }
   };
@@ -214,9 +219,95 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Subscription, Account, Data & Privacy sections remain the same */}
-      {/* ... (keep your existing code for these sections) ... */}
+      {/* Subscription */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
+        <div className="metric-card p-12 text-center">
+          <p className="text-4xl text-cyan-300 mb-8">
+            Current Plan: <span className="text-green-400 font-black">{metrics.subscription?.plan || 'Trial'}</span>
+          </p>
+          {metrics.subscription?.plan === 'Trial' && (
+            <p className="text-xl text-cyan-200 mb-8">
+              Trial ends in X days — upgrade to continue
+            </p>
+          )}
+          <div className="flex justify-center gap-6">
+            <button onClick={() => router.push('/pricing')} className="cyber-btn text-2xl px-10 py-5">
+              Upgrade Plan
+            </button>
+            {metrics.subscription?.plan !== 'Lifetime' && (
+              <button onClick={handleCancelSubscription} className="cyber-btn text-2xl px-10 py-5 bg-red-600/80 hover:bg-red-600">
+                Cancel Subscription
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
+      {/* Account */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
+        <div className="metric-card p-12">
+          <p className="text-2xl text-cyan-300 mb-8">
+            Email: {metrics.user?.email || 'loading...'}
+          </p>
+          <div className="flex justify-center gap-6">
+            <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
+              Change Email
+            </button>
+          </div>
+          {changingEmail && (
+            <form onSubmit={handleChangeEmail} className="mt-8">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="New email address"
+                className="w-full p-4 mb-4 bg-[#0a0f2c] border-2 border-cyan-400 text-cyan-200 rounded-xl"
+              />
+              {emailError && <p className="text-red-400 mb-4">{emailError}</p>}
+              <div className="flex justify-end gap-4">
+                <button type="button" onClick={() => setChangingEmail(false)} className="cyber-btn text-xl px-8 py-4 bg-gray-600/80">
+                  Cancel
+                </button>
+                <button type="submit" className="cyber-btn text-xl px-8 py-4">
+                  Save
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Data & Privacy */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="metric-card p-10 text-center">
+            <h3 className="text-3xl font-bold text-cyan-300 mb-6">Export Your Data</h3>
+            <p className="text-xl text-cyan-200 mb-8">
+              Download all your metrics and insights
+            </p>
+            <button onClick={handleExportData} className="cyber-btn text-xl px-10 py-5">
+              Export Data
+            </button>
+          </div>
+
+          <div className="metric-card p-10 text-center">
+            <h3 className="text-3xl font-bold text-red-400 mb-6">Delete Account</h3>
+            <p className="text-xl text-cyan-200 mb-8">
+              Permanently delete your account and all data
+            </p>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="cyber-btn text-xl px-10 py-5 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
+            >
+              {deleting ? 'Deleting...' : 'Delete Account'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
