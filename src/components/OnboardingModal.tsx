@@ -5,16 +5,22 @@ import useMetrics from "@/hooks/useMetrics";
 
 export function OnboardingModal() {
   const [show, setShow] = useState(false);
-  const { shopifyConnected, ga4Connected, hubspotConnected } = useMetrics();
+  const { 
+    shopifyConnected, 
+    ga4Connected, 
+    hubspotConnected,
+    isLoading 
+  } = useMetrics();
 
   useEffect(() => {
     const hasSeen = localStorage.getItem('seenOnboarding');
     const anyConnected = shopifyConnected || ga4Connected || hubspotConnected;
 
-    if (!hasSeen && !anyConnected) {
+    // Show only on first visit AND no integrations connected yet
+    if (!hasSeen && !anyConnected && !isLoading) {
       setShow(true);
     }
-  }, [shopifyConnected, ga4Connected, hubspotConnected]);
+  }, [shopifyConnected, ga4Connected, hubspotConnected, isLoading]);
 
   if (!show) return null;
 
@@ -31,7 +37,7 @@ export function OnboardingModal() {
         </h1>
 
         <p className="text-3xl md:text-4xl text-center text-cyan-200 mb-16 leading-relaxed">
-          Connect your accounts to get started — your AI growth coach is ready!
+          Your AI-powered growth coach is ready. Connect your accounts to unlock real-time insights, churn alerts, revenue growth, and more.
         </p>
 
         <div className="text-center">
