@@ -5,23 +5,18 @@ import useMetrics from "@/hooks/useMetrics";
 
 export function OnboardingModal() {
   const [show, setShow] = useState(false);
-  const { metrics, isLoading } = useMetrics();
+  const { shopifyConnected, ga4Connected, hubspotConnected } = useMetrics();
 
   useEffect(() => {
-    // Show only on first visit after login
-    const hasSeenOnboarding = localStorage.getItem('seenOnboarding');
-    if (!hasSeenOnboarding && !isLoading) {
+    const hasSeen = localStorage.getItem('seenOnboarding');
+    const anyConnected = shopifyConnected || ga4Connected || hubspotConnected;
+
+    if (!hasSeen && !anyConnected) {
       setShow(true);
     }
-  }, [isLoading]);
+  }, [shopifyConnected, ga4Connected, hubspotConnected]);
 
   if (!show) return null;
-
-  const insights = [
-    `Revenue: £${(metrics?.revenue?.total || 12700).toLocaleString()} ${metrics?.revenue?.trend || ''}`,
-    `Churn Rate: ${metrics?.churn?.rate || 3.2}% (${metrics?.churn?.at_risk || 18} at risk)`,
-    `Top Channel: ${metrics?.acquisition?.top_channel || 'Organic'}`,
-  ];
 
   const handleStart = () => {
     localStorage.setItem('seenOnboarding', 'true');
@@ -36,21 +31,7 @@ export function OnboardingModal() {
         </h1>
 
         <p className="text-3xl md:text-4xl text-center text-cyan-200 mb-16 leading-relaxed">
-          Your AI-powered growth coach is ready. Here's a quick look at your store:
-        </p>
-
-        <div className="space-y-10 mb-16">
-          {insights.map((insight, i) => (
-            <div key={i} className="metric-bubble text-center">
-              <p className="text-3xl md:text-4xl text-cyan-300 glow-medium">
-                {insight}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <p className="text-3xl md:text-4xl text-center text-cyan-200 mb-16">
-          Ask me anything about churn, revenue, acquisition — I'm here to help you grow faster.
+          Connect your accounts to get started — your AI growth coach is ready!
         </p>
 
         <div className="text-center">
