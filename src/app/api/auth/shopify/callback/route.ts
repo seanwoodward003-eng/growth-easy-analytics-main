@@ -19,26 +19,30 @@ function verifyHMAC(params: URLSearchParams) {
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
+  // Absolute base URL (use env or request origin)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+
   if (!verifyHMAC(params)) {
-    return NextResponse.redirect('/dashboard?error=invalid_signature');
+    return NextResponse.redirect(`${baseUrl}/dashboard?error=invalid_signature`);
   }
 
   const code = params.get('code');
   const state = params.get('state');
   if (!code || !state) {
-    return NextResponse.redirect('/dashboard?error=auth_failed');
+    return NextResponse.redirect(`${baseUrl}/dashboard?error=auth_failed`);
   }
 
   const [userIdStr, shop] = state.split('|');
   const userId = parseInt(userIdStr);
   if (isNaN(userId)) {
-    return NextResponse.redirect('/dashboard?error=invalid_state');
+    return NextResponse.redirect(`${baseUrl}/dashboard?error=invalid_state`);
   }
 
   const user = await getCurrentUser();
 
   if (!user || user.id !== userId) {
-    return NextResponse.redirect('/login?error=session_lost');
+    // Session lost → redirect to login (absolute URL)
+    return NextResponse.redirect(`${baseUrl}/login?error=session_lost`);
   }
 
   const tokenResp = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -52,7 +56,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!tokenResp.ok) {
-    return NextResponse.redirect('/dashboard?error=token_failed');
+    return NextResponse.redirect(`${baseUrl}/dashboard?error=token_failed`);
   }
 
   const { access_token } = await tokenResp.json();
@@ -62,6 +66,6 @@ export async function GET(request: NextRequest) {
     [shop, access_token, userId]
   );
 
-  // Success: Redirect to dashboard with success param (triggers refresh/alert in frontend)
-  return NextResponse.redirect('/dashboard?shopify_connected=true');
+  // Success: Redirect to dashboard with trigger
+  return NextResponse.redirect(`${baseUrl}/dashboard?shopify_connected=true`);
 }
