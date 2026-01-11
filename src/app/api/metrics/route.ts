@@ -4,16 +4,30 @@ import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 
 export async function GET() {
+  console.log('[METRICS-API] Endpoint called at', new Date().toISOString());
+
   const auth = await requireAuth();
-  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if ('error' in auth) {
+    console.log('[METRICS-API] Auth error:', auth.error, 'status:', auth.status);
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
 
   const user = auth.user;
   const userId = user.id;
+
+  console.log('[METRICS-API] Auth successful - User ID:', userId);
+  console.log('[METRICS-API]   shopify_shop value:', user.shopify_shop || '(null or undefined)');
+  console.log('[METRICS-API]   shopify_access_token exists:', !!user.shopify_access_token ? 'YES (length ' + (user.shopify_access_token?.length || 0) + ')' : 'NO');
 
   // Determine connection status
   const shopifyConnected = !!(user.shopify_shop && user.shopify_access_token);
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
+
+  console.log('[METRICS-API] Final connection flags:');
+  console.log('[METRICS-API]   → shopifyConnected:', shopifyConnected);
+  console.log('[METRICS-API]   → ga4Connected:', ga4Connected);
+  console.log('[METRICS-API]   → hubspotConnected:', hubspotConnected);
 
   // Fetch real metrics from DB
   const rows = await getRows<{
@@ -49,6 +63,8 @@ export async function GET() {
     const monthlyChurnImpact = Math.round(latest.revenue * (latest.churn_rate / 100));
     const insight = `Churn ${latest.churn_rate.toFixed(1)}% – Send win-backs to ${latest.at_risk} at-risk customers to save ~£${monthlyChurnImpact}/mo.`;
 
+    console.log('[METRICS-API] Returning real metrics + connection status');
+
     return NextResponse.json({
       revenue: {
         total: latest.revenue,
@@ -74,6 +90,8 @@ export async function GET() {
   }
 
   // No real metrics yet → show clean zeros (not fake demo data)
+  console.log('[METRICS-API] No real metrics found → returning empty state with connection flags');
+
   return NextResponse.json({
     revenue: { total: 0, trend: '0%', history: { labels: [], values: [] } },
     churn: { rate: 0, at_risk: 0 },
