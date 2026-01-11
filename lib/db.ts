@@ -2,7 +2,7 @@
 import { createClient } from "@libsql/client";
 import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import * as schema from "@/src/db/schema"; // ← points to src/db/schema.ts
+import * as schema from "@/src/db/schema"; // adjust path if needed (e.g. "../src/db/schema")
 
 // Lazy-loaded client (exactly as you had it)
 let client: Client | null = null;
@@ -25,7 +25,7 @@ function getClient(): Client {
   return client;
 }
 
-// Drizzle instance – for typed queries when you're ready to migrate them
+// Drizzle instance – ready for typed queries when you want them
 export const db = drizzle(getClient(), { schema });
 
 // ────────────────────────────────────────────────────────────────
@@ -53,24 +53,63 @@ async function baseRun(sql: string, args: any[] = []) {
   await baseQuery(sql, args);
 }
 
+// ────────────────────────────────────────────────────────────────
+// AUTOMATIC SCHEMA FIX: Add missing columns on first query (permanent, automatic)
+// Just like your original working setup – no manual intervention ever again
+// ────────────────────────────────────────────────────────────────
+
+let initialized = false;
+
+async function initMissingColumns() {
+  if (initialized) return;
+
+  const c = getClient();
+
+  // Get current columns in users table
+  const userInfo = await c.execute('PRAGMA table_info(users)');
+  const userColumns = userInfo.rows.map((r: any) => r.name);
+
+  // List of columns that MUST exist (add new ones here in future)
+  const requiredColumns = [
+    { name: 'verification_token', sql: 'ALTER TABLE users ADD COLUMN verification_token TEXT' },
+    { name: 'verification_token_expires', sql: 'ALTER TABLE users ADD COLUMN verification_token_expires TEXT' },
+    // Example future: { name: 'email_verified', sql: 'ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0' },
+  ];
+
+  for (const { name, sql } of requiredColumns) {
+    if (!userColumns.includes(name)) {
+      await c.execute(sql);
+      console.log(`[DB Auto-Init] Added missing column: ${name}`);
+    }
+  }
+
+  initialized = true;
+}
+
 // Exported functions – your app calls these (no changes needed in routes!)
+// They now auto-init on first call
 export async function query(sql: string, args: any[] = []) {
+  await initMissingColumns();
   return baseQuery(sql, args);
 }
 
 export async function getRow<T = any>(sql: string, args: any[] = []): Promise<T | null> {
+  await initMissingColumns();
   return baseGetRow(sql, args);
 }
 
 export async function getRows<T = any>(sql: string, args: any[] = []): Promise<T[]> {
+  await initMissingColumns();
   return baseGetRows(sql, args);
 }
 
 export async function run(sql: string, args: any[] = []) {
+  await initMissingColumns();
   return baseRun(sql, args);
 }
 
-// Optional: if any route uses batch
+// Optional: Keep batch if you use it anywhere
 export async function batch(statements: { sql: string; args: any[] }[]) {
+  await initMissingColumns();
   await getClient().batch(statements, "write");
 }
