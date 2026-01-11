@@ -18,8 +18,8 @@ export default function Dashboard() {
     refresh 
   } = useMetrics();
 
-  // Debug log on every render - check console to see if connected flag updates
-  console.log('Dashboard render - shopifyConnected:', shopifyConnected);
+  // Debug logs on every render
+  console.log('Dashboard render - shopifyConnected:', shopifyConnected, 'isLoading:', isLoading);
 
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
@@ -29,39 +29,21 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
-  // Banner only shows if ANY integration is missing
   const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
-  // Safety net: force a refresh on first mount if we might be connected but flag is stale
-  useEffect(() => {
-    if (!shopifyConnected) {
-      console.log('Initial mount check — forcing metrics refresh');
-      refresh();
-    }
-  }, []); // empty deps = run once on component mount
-
-  // Handle successful OAuth callback - force multiple strong refreshes
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
+    console.log('useEffect - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected) {
-      console.log('OAuth success detected → starting aggressive refresh sequence');
-
-      // Immediate + staggered + longer-delay refreshes to handle slow session/DB propagation
-      refresh();                         // 0s
-      setTimeout(() => refresh(), 600);  // 0.6s
-      setTimeout(() => refresh(), 1800); // 1.8s
-      setTimeout(() => refresh(), 4000); // 4s — most backends should be settled by now
-
-      // Clean the URL so reload doesn't re-trigger the logic
+      console.log('Strong refresh after connect');
+      refresh();                    // Immediate
+      setTimeout(() => refresh(), 500);   // 0.5s
+      setTimeout(() => refresh(), 1500);  // 1.5s (forces cache bust)
       window.history.replaceState({}, '', '/dashboard');
-
-      // User feedback — delayed so they see UI update first
-      setTimeout(() => {
-        alert('Shopify Connected Successfully! Data should now be loading...');
-      }, 2500);
+      alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh]); // IMPORTANT: removed shopifyConnected from deps to prevent loops
+  }, [searchParams, refresh, shopifyConnected, isLoading]); // Extra dependency
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -79,15 +61,18 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Connect Accounts Banner - only shows if any integration is missing */}
+      {/* Connect Banner - forced re-render with key */}
       {anyConnectionMissing && (
-        <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
+        <div 
+          key={`banner-${shopifyConnected}-${Date.now()}`} // Force re-render on connect change + time
+          className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md"
+        >
           <p className="text-3xl text-cyan-300 mb-6">
             Connect your accounts to unlock real-time data and AI-powered insights
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify section - completely disappears when connected */}
+            {/* Shopify - disappears when connected */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
