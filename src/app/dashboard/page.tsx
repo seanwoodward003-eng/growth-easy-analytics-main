@@ -18,7 +18,7 @@ export default function Dashboard() {
     refresh 
   } = useMetrics();
 
-  // Debug: log connected status on every render
+  // Debug log on every render - check console to see if connected flag updates
   console.log('Dashboard render - shopifyConnected:', shopifyConnected);
 
   const [shopDomain, setShopDomain] = useState('');
@@ -29,20 +29,23 @@ export default function Dashboard() {
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
     : `Scale acquisition — your CAC is healthy`;
 
+  // Banner only shows if ANY integration is missing
   const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
+  // Handle successful OAuth callback - force multiple refreshes for stubborn SWR cache
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
     console.log('useEffect triggered - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected) {
-      console.log('Strong refresh after connect');
-      refresh(); // First refresh
-      setTimeout(() => refresh(), 1000); // Second refresh after delay (forces SWR revalidate)
+      console.log('Strong refresh after successful connect');
+      refresh();                    // First refresh
+      setTimeout(() => refresh(), 500);   // Second after 0.5s
+      setTimeout(() => refresh(), 1500);  // Third after 1.5s (catches cache issues)
       window.history.replaceState({}, '', '/dashboard');
       alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh, shopifyConnected]); // Dependency on shopifyConnected ensures re-run on flag change
+  }, [searchParams, refresh, shopifyConnected]); // Re-run when connected flag changes
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -60,7 +63,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Connect Banner - hides when all connected */}
+      {/* Connect Accounts Banner - only shows if any integration is missing */}
       {anyConnectionMissing && (
         <div className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
           <p className="text-3xl text-cyan-300 mb-6">
@@ -68,7 +71,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify - disappears when connected */}
+            {/* Shopify section - completely disappears when connected */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
@@ -114,12 +117,13 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Rest of dashboard */}
+      {/* Biggest Opportunity Card */}
       <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
         <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
         <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
       </div>
 
+      {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
         <div className="metric-card p-10 text-center">
           <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
