@@ -32,20 +32,36 @@ export default function Dashboard() {
   // Banner only shows if ANY integration is missing
   const anyConnectionMissing = !shopifyConnected || !ga4Connected || !hubspotConnected;
 
-  // Handle successful OAuth callback - force multiple refreshes for stubborn SWR cache
+  // Safety net: force a refresh on first mount if we might be connected but flag is stale
+  useEffect(() => {
+    if (!shopifyConnected) {
+      console.log('Initial mount check — forcing metrics refresh');
+      refresh();
+    }
+  }, []); // empty deps = run once on component mount
+
+  // Handle successful OAuth callback - force multiple strong refreshes
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
-    console.log('useEffect triggered - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected) {
-      console.log('Strong refresh after successful connect');
-      refresh();                    // First refresh
-      setTimeout(() => refresh(), 500);   // Second after 0.5s
-      setTimeout(() => refresh(), 1500);  // Third after 1.5s (catches cache issues)
+      console.log('OAuth success detected → starting aggressive refresh sequence');
+
+      // Immediate + staggered + longer-delay refreshes to handle slow session/DB propagation
+      refresh();                         // 0s
+      setTimeout(() => refresh(), 600);  // 0.6s
+      setTimeout(() => refresh(), 1800); // 1.8s
+      setTimeout(() => refresh(), 4000); // 4s — most backends should be settled by now
+
+      // Clean the URL so reload doesn't re-trigger the logic
       window.history.replaceState({}, '', '/dashboard');
-      alert('Shopify Connected Successfully!');
+
+      // User feedback — delayed so they see UI update first
+      setTimeout(() => {
+        alert('Shopify Connected Successfully! Data should now be loading...');
+      }, 2500);
     }
-  }, [searchParams, refresh, shopifyConnected]); // Re-run when connected flag changes
+  }, [searchParams, refresh]); // IMPORTANT: removed shopifyConnected from deps to prevent loops
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
