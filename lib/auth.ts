@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
@@ -19,7 +18,7 @@ export interface AuthUser {
 
 export function generateTokens(userId: number, email: string) {
   const access = jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: '1h' });
-  const refresh = jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: '90d' }); // 90 days
+  const refresh = jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: '90d' });
   return { access, refresh };
 }
 
@@ -30,10 +29,12 @@ export function generateCsrfToken() {
 export async function setAuthCookies(access: string, refresh: string, csrf: string) {
   const cookieStore = await cookies();
 
+  console.log('[AUTH] Setting cookies — access_token length:', access.length);
+
   cookieStore.set('access_token', access, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',  // ← FIXED: 'lax' for Shopify OAuth callbacks
+    sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 1,
   });
@@ -41,7 +42,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',  // ← FIXED: 'lax' for Shopify OAuth callbacks
+    sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
@@ -49,7 +50,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('csrf_token', csrf, {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',  // ← FIXED: 'lax' for consistency
+    sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
@@ -59,7 +60,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
 
-  if (!accessToken) return null;
+  if (!accessToken) {
+    console.log('[AUTH] getCurrentUser → no access_token cookie');
+    return null;
+  }
+
+  console.log('[AUTH] getCurrentUser → verifying access_token (length:', accessToken.length, ')');
 
   try {
     const payload = jwt.verify(accessToken, JWT_SECRET);
@@ -72,21 +78,30 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       'email' in payload &&
       typeof (payload as any).email === 'string'
     ) {
+      console.log('[AUTH] getCurrentUser → valid token, user id:', (payload as any).sub);
       return {
         id: (payload as any).sub,
         email: (payload as any).email,
       };
     }
 
+    console.log('[AUTH] getCurrentUser → payload invalid');
     return null;
   } catch (error) {
+    console.log('[AUTH] getCurrentUser → token verification failed:', error);
     return null;
   }
 }
 
 export async function requireAuth() {
+  console.log('[AUTH] requireAuth called');
   const user = await getCurrentUser();
-  if (!user) return { error: 'Unauthorized', status: 401 };
+  if (!user) {
+    console.log('[AUTH] requireAuth → no user');
+    return { error: 'Unauthorized', status: 401 };
+  }
+
+  console.log('[AUTH] requireAuth → loading full user row from DB for id:', user.id);
 
   const row = await getRow<{
     trial_end: string;
@@ -100,7 +115,13 @@ export async function requireAuth() {
     [user.id]
   );
 
-  if (!row) return { error: 'User not found', status: 404 };
+  if (!row) {
+    console.log('[AUTH] requireAuth → user row not found in DB');
+    return { error: 'User not found', status: 404 };
+  }
+
+  console.log('[AUTH] requireAuth → DB row loaded → shopify_shop:', row.shopify_shop || '(null)');
+  console.log('[AUTH] requireAuth → shopify_access_token exists:', !!row.shopify_access_token);
 
   const now = new Date();
   const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
@@ -110,10 +131,12 @@ export async function requireAuth() {
     trialEnd &&
     now > trialEnd
   ) {
+    console.log('[AUTH] requireAuth → trial expired');
     return { error: 'trial_expired', status: 403 };
   }
 
   if (row.subscription_status === 'canceled') {
+    console.log('[AUTH] requireAuth → subscription canceled');
     return { error: 'subscription_canceled', status: 403 };
   }
 
