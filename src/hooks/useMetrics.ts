@@ -25,7 +25,12 @@ const EMPTY_STATE = {
 
 export default function useMetrics() {
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
-    refreshInterval: 60000,
+    refreshInterval: 30000,           // background refresh every 30s
+    revalidateOnMount: true,          // always fetch when component mounts
+    revalidateOnFocus: true,          // ← very important: refresh when user returns to tab
+    revalidateOnReconnect: true,
+    dedupingInterval: 2000,           // don't duplicate requests within 2s
+    focusThrottleInterval: 5000,      // don't spam when focusing window repeatedly
   });
 
   // Logged-in users always get real data or clean zeros — NEVER demo/fake data
@@ -36,6 +41,9 @@ export default function useMetrics() {
   const hubspotConnected = !!metrics.hubspot?.connected;
   const hasRealData = shopifyConnected || ga4Connected || hubspotConnected;
 
+  // More explicit refresh function (optional but clearer)
+  const refresh = () => mutate(undefined, { revalidate: true });
+
   return {
     metrics,
     isLoading,
@@ -44,6 +52,6 @@ export default function useMetrics() {
     ga4Connected,
     hubspotConnected,
     hasRealData,
-    refresh: mutate,
+    refresh,
   };
 }
