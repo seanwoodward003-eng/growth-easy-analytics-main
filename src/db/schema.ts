@@ -1,0 +1,62 @@
+// src/db/schema.ts
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").unique().notNull(),
+  stripeId: text("stripe_id"),
+  shopifyShop: text("shopify_shop"),
+  ga4Connected: integer("ga4_connected").default(0),
+  hubspotConnected: integer("hubspot_connected").default(0),
+  ga4AccessToken: text("ga4_access_token"),
+  ga4RefreshToken: text("ga4_refresh_token"),
+  ga4PropertyId: text("ga4_property_id"),
+  shopifyAccessToken: text("shopify_access_token"),
+  hubspotRefreshToken: text("hubspot_refresh_token"),
+  hubspotAccessToken: text("hubspot_access_token"),
+  gdprConsented: integer("gdpr_consented").default(0),
+  ga4LastRefreshed: text("ga4_last_refreshed"),
+  createdAt: text("created_at").default("(datetime('now'))"),
+  trialEnd: text("trial_end"),
+  subscriptionStatus: text("subscription_status").default("trial"),
+
+  // ← These fix your original error!
+  verificationToken: text("verification_token"),
+  verificationTokenExpires: text("verification_token_expires"), // ISO string, e.g. '2026-01-12T12:00:00Z'
+});
+
+export const metrics = sqliteTable("metrics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id),
+  date: text("date").default("(datetime('now'))"),
+  revenue: real("revenue").default(0),
+  churnRate: real("churn_rate").default(0),
+  atRisk: integer("at_risk").default(0),
+  ltv: real("ltv").default(0),
+  cac: real("cac").default(0),
+  topChannel: text("top_channel").default(""),
+  acquisitionCost: real("acquisition_cost").default(0),
+  retentionRate: real("retention_rate").default(0),
+  aov: real("aov").default(0),
+  repeatRate: real("repeat_rate").default(0),
+  ltvNew: real("ltv_new").default(0),
+  ltvReturning: real("ltv_returning").default(0),
+});
+
+export const rateLimits = sqliteTable("rate_limits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  timestamp: text("timestamp").default("CURRENT_TIMESTAMP"),
+});
+
+export const metricsHistory = sqliteTable("metrics_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id),
+  syncDate: text("sync_date"),
+  revenue: real("revenue"),
+  churnRate: real("churn_rate"),
+  atRisk: integer("at_risk"),
+  aov: real("aov"),
+  repeatRate: real("repeat_rate"),
+});
