@@ -36,7 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
-    "drizzle-kit": "^0.24.2",           // ← added
+    "drizzle-kit": "^0.24.2",           
     "postcss": "^8",
     "tailwindcss": "^3.4.13",
     "typescript": "^5"
