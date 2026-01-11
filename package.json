@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push": "drizzle-kit push:turso",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@ai-sdk/react": "^0.0.41",
     "@libsql/client": "^0.10.0",
     "ai": "^3.4.5",
+    "drizzle-orm": "^0.33.0",           // ← added
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.463.0",
     "luxon": "^3.5.0",
@@ -33,6 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
+    "drizzle-kit": "^0.24.2",           // ← added
     "postcss": "^8",
     "tailwindcss": "^3.4.13",
     "typescript": "^5"
