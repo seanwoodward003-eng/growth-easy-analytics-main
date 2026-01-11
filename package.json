@@ -14,7 +14,7 @@
     "@ai-sdk/react": "^0.0.41",
     "@libsql/client": "^0.10.0",
     "ai": "^3.4.5",
-    "drizzle-orm": "^0.33.0",           // ← added
+    "drizzle-orm": "^0.33.0",           
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.463.0",
     "luxon": "^3.5.0",
