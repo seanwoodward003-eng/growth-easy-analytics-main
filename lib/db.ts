@@ -2,9 +2,9 @@
 import { createClient } from "@libsql/client";
 import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import * as schema from "@/src/db/schema"; // ← adjust path if schema.ts is elsewhere (e.g. "@/lib/schema")
+import * as schema from "@/src/db/schema"; // ← points to src/db/schema.ts
 
-// Lazy-loaded client (kept from your code)
+// Lazy-loaded client (exactly as you had it)
 let client: Client | null = null;
 
 function getClient(): Client {
@@ -25,12 +25,17 @@ function getClient(): Client {
   return client;
 }
 
-// Drizzle instance – now handles schema automatically
+// Drizzle instance – for typed queries when you're ready to migrate them
 export const db = drizzle(getClient(), { schema });
 
-// Base functions (bridged over Drizzle – your old code keeps working!)
+// ────────────────────────────────────────────────────────────────
+// Bridge: Re-implement your original raw helpers using the RAW client
+// This ensures ALL your existing API routes continue working unchanged
+// ────────────────────────────────────────────────────────────────
+
 async function baseQuery(sql: string, args: any[] = []) {
-  const result = await db.execute({ sql, args });
+  const c = getClient();
+  const result = await c.execute({ sql, args });
   return result;
 }
 
@@ -48,7 +53,7 @@ async function baseRun(sql: string, args: any[] = []) {
   await baseQuery(sql, args);
 }
 
-// Exported functions – your app calls these (no changes needed!)
+// Exported functions – your app calls these (no changes needed in routes!)
 export async function query(sql: string, args: any[] = []) {
   return baseQuery(sql, args);
 }
@@ -65,7 +70,7 @@ export async function run(sql: string, args: any[] = []) {
   return baseRun(sql, args);
 }
 
-// Optional: if you use batch somewhere, keep it
+// Optional: if any route uses batch
 export async function batch(statements: { sql: string; args: any[] }[]) {
   await getClient().batch(statements, "write");
 }
