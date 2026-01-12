@@ -47,36 +47,32 @@ export default function SettingsPage() {
 
       console.log('[DEBUG] Fetch finished');
       console.log('[DEBUG] Status:', res.status);
-      console.log('[DEBUG] Response ok?', res.ok);
+      console.log('[DEBUG] ok?', res.ok);
       console.log('[DEBUG] Content-Type:', res.headers.get('Content-Type'));
 
-      // Log the raw body to see exactly what the server sent (this is key for the "Invalid JSON" bug)
       const raw = await res.clone().text();
-      console.log('[DEBUG] Raw server response body (first 500 chars):', raw.substring(0, 500));
+      console.log('[DEBUG] Raw server response (full):', raw);
 
       let data;
       try {
         data = await res.json();
-        console.log('[DEBUG] Response JSON parsed successfully:', data);
+        console.log('[DEBUG] Parsed JSON successfully:', data);
       } catch (jsonErr) {
-        console.error('[DEBUG] Failed to parse JSON response:', jsonErr);
+        console.error('[DEBUG] JSON parse failed:', jsonErr.message);
         data = { error: 'Invalid JSON from server' };
       }
 
       if (res.ok) {
         console.log(`[DEBUG] Success — ${type} disconnected`);
         alert(`${type.toUpperCase()} disconnected successfully`);
-        refresh(); // Force UI update (connect button reappears)
+        refresh();
       } else {
-        console.warn('[DEBUG] Server returned error status');
-        console.log('[DEBUG] Error message from server:', data?.error);
+        console.warn('[DEBUG] Server returned non-ok status');
+        console.log('[DEBUG] Server error data:', data);
         alert(data?.error || `Failed to disconnect (${res.status})`);
       }
     } catch (error) {
-      console.error('[DEBUG] Network / fetch level error:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('[DEBUG] Possible CORS or network failure — check Network tab for OPTIONS request');
-      }
+      console.error('[DEBUG] Fetch / network error:', error);
       alert('Network error — check console for details');
     } finally {
       setDeleting(false);
