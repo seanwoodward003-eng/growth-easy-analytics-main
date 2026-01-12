@@ -30,7 +30,7 @@ export default function SettingsPage() {
 
     console.log('[DEBUG] User confirmed → starting disconnect attempt');
 
-    setDeleting(true); // reuse your existing loading state variable
+    setDeleting(true);
 
     try {
       console.log('[DEBUG] Preparing fetch to /api/integrations/disconnect');
@@ -38,7 +38,7 @@ export default function SettingsPage() {
 
       const res = await fetch('/api/integrations/disconnect', {
         method: 'POST',
-        credentials: 'include',           // ← this sends cookies (access_token etc.)
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -46,8 +46,13 @@ export default function SettingsPage() {
       });
 
       console.log('[DEBUG] Fetch finished');
-      console.log('[DEBUG] Response status:', res.status);
+      console.log('[DEBUG] Status:', res.status);
       console.log('[DEBUG] Response ok?', res.ok);
+      console.log('[DEBUG] Content-Type:', res.headers.get('Content-Type'));
+
+      // Log the raw body to see exactly what the server sent (this is key for the "Invalid JSON" bug)
+      const raw = await res.clone().text();
+      console.log('[DEBUG] Raw server response body (first 500 chars):', raw.substring(0, 500));
 
       let data;
       try {
@@ -61,7 +66,7 @@ export default function SettingsPage() {
       if (res.ok) {
         console.log(`[DEBUG] Success — ${type} disconnected`);
         alert(`${type.toUpperCase()} disconnected successfully`);
-        refresh(); // should trigger re-fetch of metrics → update connected flags
+        refresh(); // Force UI update (connect button reappears)
       } else {
         console.warn('[DEBUG] Server returned error status');
         console.log('[DEBUG] Error message from server:', data?.error);
@@ -85,7 +90,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/subscription/cancel', { 
         method: 'POST',
-        credentials: 'include',  // ← added for consistency
+        credentials: 'include',
       });
       if (res.ok) {
         alert('Subscription cancelled successfully');
@@ -109,7 +114,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/user/change-email', {
         method: 'POST',
-        credentials: 'include',  // ← added
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newEmail }),
       });
@@ -133,7 +138,7 @@ export default function SettingsPage() {
   const handleExportData = async () => {
     try {
       const res = await fetch('/api/user/export-data', {
-        credentials: 'include',  // ← added
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('Export failed');
 
@@ -157,7 +162,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/user/delete', { 
         method: 'DELETE',
-        credentials: 'include',  // ← added
+        credentials: 'include',
       });
       if (res.ok) {
         document.cookie = 'access_token=; Max-Age=0; path=/';
