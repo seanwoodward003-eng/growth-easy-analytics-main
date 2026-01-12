@@ -21,30 +21,61 @@ export default function SettingsPage() {
   const [emailError, setEmailError] = useState('');
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
-    if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? This will stop data syncing from this source.`)) return;
+    console.log(`[DEBUG] Disconnect button clicked — type = ${type}`);
+
+    if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? This will stop data syncing from this source.`)) {
+      console.log('[DEBUG] User cancelled the confirmation dialog');
+      return;
+    }
+
+    console.log('[DEBUG] User confirmed → starting disconnect attempt');
+
+    setDeleting(true); // reuse your existing loading state variable
 
     try {
-      console.log(`Attempting disconnect for ${type}`);
+      console.log('[DEBUG] Preparing fetch to /api/integrations/disconnect');
+      console.log('[DEBUG] Sending body:', JSON.stringify({ type }));
 
       const res = await fetch('/api/integrations/disconnect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',           // ← this sends cookies (access_token etc.)
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ type }),
       });
 
-      const data = await res.json();
+      console.log('[DEBUG] Fetch finished');
+      console.log('[DEBUG] Response status:', res.status);
+      console.log('[DEBUG] Response ok?', res.ok);
+
+      let data;
+      try {
+        data = await res.json();
+        console.log('[DEBUG] Response JSON parsed successfully:', data);
+      } catch (jsonErr) {
+        console.error('[DEBUG] Failed to parse JSON response:', jsonErr);
+        data = { error: 'Invalid JSON from server' };
+      }
 
       if (res.ok) {
-        console.log(`${type} disconnected successfully`);
+        console.log(`[DEBUG] Success — ${type} disconnected`);
         alert(`${type.toUpperCase()} disconnected successfully`);
-        refresh(); // Force UI update (connect button reappears)
+        refresh(); // should trigger re-fetch of metrics → update connected flags
       } else {
-        console.log('Disconnect failed:', data.error);
-        alert(data.error || 'Failed to disconnect');
+        console.warn('[DEBUG] Server returned error status');
+        console.log('[DEBUG] Error message from server:', data?.error);
+        alert(data?.error || `Failed to disconnect (${res.status})`);
       }
     } catch (error) {
-      console.error('Disconnect network error:', error);
-      alert('Network error — please try again');
+      console.error('[DEBUG] Network / fetch level error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('[DEBUG] Possible CORS or network failure — check Network tab for OPTIONS request');
+      }
+      alert('Network error — check console for details');
+    } finally {
+      setDeleting(false);
+      console.log('[DEBUG] handleDisconnect finished');
     }
   };
 
@@ -52,7 +83,10 @@ export default function SettingsPage() {
     if (!confirm('Cancel your subscription? You will lose access at the end of your billing period.')) return;
 
     try {
-      const res = await fetch('/api/subscription/cancel', { method: 'POST' });
+      const res = await fetch('/api/subscription/cancel', { 
+        method: 'POST',
+        credentials: 'include',  // ← added for consistency
+      });
       if (res.ok) {
         alert('Subscription cancelled successfully');
         refresh();
@@ -75,6 +109,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/user/change-email', {
         method: 'POST',
+        credentials: 'include',  // ← added
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newEmail }),
       });
@@ -97,7 +132,9 @@ export default function SettingsPage() {
 
   const handleExportData = async () => {
     try {
-      const res = await fetch('/api/user/export-data');
+      const res = await fetch('/api/user/export-data', {
+        credentials: 'include',  // ← added
+      });
       if (!res.ok) throw new Error('Export failed');
 
       const blob = await res.blob();
@@ -118,7 +155,10 @@ export default function SettingsPage() {
 
     setDeleting(true);
     try {
-      const res = await fetch('/api/user/delete', { method: 'DELETE' });
+      const res = await fetch('/api/user/delete', { 
+        method: 'DELETE',
+        credentials: 'include',  // ← added
+      });
       if (res.ok) {
         document.cookie = 'access_token=; Max-Age=0; path=/';
         document.cookie = 'refresh_token=; Max-Age=0; path=/';
@@ -156,9 +196,10 @@ export default function SettingsPage() {
                 <p className="text-xl text-green-400 mb-4">Connected</p>
                 <button 
                   onClick={() => handleDisconnect('shopify')} 
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600"
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
                 >
-                  Disconnect
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
@@ -179,9 +220,10 @@ export default function SettingsPage() {
                 <p className="text-xl text-green-400 mb-4">Connected</p>
                 <button 
                   onClick={() => handleDisconnect('ga4')} 
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600"
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
                 >
-                  Disconnect
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
@@ -202,9 +244,10 @@ export default function SettingsPage() {
                 <p className="text-xl text-green-400 mb-4">Connected</p>
                 <button 
                   onClick={() => handleDisconnect('hubspot')} 
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600"
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
                 >
-                  Disconnect
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
