@@ -4,27 +4,21 @@ import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 
 export async function GET() {
-  console.log('[METRICS-API] Endpoint invoked at', new Date().toISOString());
+  console.log('[METRICS-API] Invoked at', new Date().toISOString());
 
   const auth = await requireAuth();
   if ('error' in auth) {
-    console.error('[METRICS-API] Authentication failed:', auth.error);
+    console.error('[METRICS-API] Auth failed:', auth.error);
     return NextResponse.json({ error: auth.error }, { status: auth.status || 401 });
   }
 
   const userId = auth.user.id;
 
-  console.log('[METRICS-API] User authenticated → ID:', userId);
-  console.log('[METRICS-API] Shopify shop:', auth.user.shopify_shop || '(not connected)');
-  console.log('[METRICS-API] Shopify token:', auth.user.shopify_access_token ? 'present' : 'missing');
-
   const shopifyConnected = !!(auth.user.shopify_shop && auth.user.shopify_access_token);
   const ga4Connected = !!auth.user.ga4_connected;
   const hubspotConnected = !!auth.user.hubspot_connected;
 
-  // ────────────────────────────────────────────────────────────────
-  // Fetch all relevant paid orders (increase limit as your store grows)
-  // ────────────────────────────────────────────────────────────────
+  // Fetch paid orders (increase limit as you grow)
   const orders = await getRows<{
     total_price: number | string;
     created_at: string;
@@ -40,58 +34,40 @@ export async function GET() {
     [userId]
   );
 
-  console.log('[METRICS-API] Paid orders retrieved:', orders.length);
+  console.log('[METRICS-API] Paid orders count:', orders.length);
 
-  // ────────────────────────────────────────────────────────────────
-  // Early return if no data — informative, not just zeros
-  // ────────────────────────────────────────────────────────────────
   if (orders.length === 0) {
-    console.log('[METRICS-API] No paid orders found – returning diagnostic empty state');
     return NextResponse.json({
-      revenue: {
-        total: 0,
-        average_order_value: 0,
-        trend: '0%',
-        history: { labels: [], values: [] },
-      },
+      revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
       churn: { rate: 0, at_risk: 0 },
       performance: { ratio: '0.0', ltv: 0, cac: 0 },
       acquisition: { top_channel: '—', acquisition_cost: 0 },
       retention: { rate: 0, repeat_purchase_rate: 0 },
       returning_customers_ltv: 0,
-      ltv_breakdown: { one_time: 0, repeat: 0 },
+      ltv_breakdown: { one_time: 0, returning: 0 },
       cohort_retention: { data: [] },
       store_health_score: 0,
-      ai_insight: shopifyConnected
-        ? 'Shopify is connected but no paid orders detected yet. Verify webhook/sync or place a test order.'
-        : 'Connect Shopify to unlock revenue, retention, and full analytics.',
-      connections: {
-        shopify: shopifyConnected,
-        ga4: ga4Connected,
-        hubspot: hubspotConnected,
-      },
-      debug: { ordersFound: 0, message: 'Waiting for first paid order' },
+      ai_insight: shopifyConnected 
+        ? 'Shopify connected, but no paid orders yet. Place a test order or check webhook sync.'
+        : 'Connect Shopify to activate full analytics.',
+      connections: { shopify: shopifyConnected, ga4: ga4Connected, hubspot: hubspotConnected },
     });
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Core computations – everything you asked for
-  // ────────────────────────────────────────────────────────────────
+  // ── Calculations ──
 
-  // 1. Revenue & AOV
-  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_price || 0), 0);
-  const orderCount = orders.length;
-  const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+  // Revenue + AOV
+  const totalRevenue = orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+  const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
 
-  // 2. Daily revenue history (for charts – last 30 days)
+  // History (daily – last 30 days)
   const dailyRevenue = new Map<string, number>();
   orders.forEach(o => {
-    const date = o.created_at.split('T')[0]; // YYYY-MM-DD
+    const date = o.created_at.split('T')[0];
     dailyRevenue.set(date, (dailyRevenue.get(date) || 0) + Number(o.total_price || 0));
   });
-
   const sortedDays = Array.from(dailyRevenue.keys()).sort().reverse().slice(0, 30);
-  const historyLabels = sortedDays.reverse(); // oldest → newest
+  const historyLabels = sortedDays.reverse();
   const historyValues = historyLabels.map(d => dailyRevenue.get(d) || 0);
 
   const trend = historyValues.length > 1 && historyValues[0] !== 0
@@ -100,58 +76,49 @@ export async function GET() {
       )}%`
     : '0%';
 
-  // 3. Customer & repeat analysis
-  const customerOrders = new Map<string | number, { count: number; revenue: number }>();
+  // Customer analysis
+  const customerMap = new Map<string | number, { orders: number; revenue: number; first: string; last: string }>();
   orders.forEach(o => {
     const cid = o.customer_id;
     if (cid) {
-      const entry = customerOrders.get(cid) || { count: 0, revenue: 0 };
-      entry.count += 1;
+      const entry = customerMap.get(cid) || { orders: 0, revenue: 0, first: o.created_at, last: o.created_at };
+      entry.orders += 1;
       entry.revenue += Number(o.total_price || 0);
-      customerOrders.set(cid, entry);
+      entry.last = o.created_at > entry.last ? o.created_at : entry.last;
+      customerMap.set(cid, entry);
     }
   });
 
-  const uniqueCustomers = customerOrders.size;
-  const returningCustomers = Array.from(customerOrders.values()).filter(c => c.count > 1).length;
+  const uniqueCustomers = customerMap.size;
+  const returningCustomers = Array.from(customerMap.values()).filter(c => c.orders > 1).length;
   const repeatPurchaseRate = uniqueCustomers > 0 ? (returningCustomers / uniqueCustomers) * 100 : 0;
+  const retentionRate = repeatPurchaseRate; // same for now
 
-  // 4. LTV & breakdown
+  // LTV & breakdown
   const ltv = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
-  const returningCustomersLtv = returningCustomers > 0
-    ? customerOrders.size > 0
-      ? Array.from(customerOrders.values())
-          .filter(c => c.count > 1)
-          .reduce((sum, c) => sum + c.revenue, 0) / returningCustomers
-      : 0
+  const returningLtv = returningCustomers > 0
+    ? Array.from(customerMap.values())
+        .filter(c => c.orders > 1)
+        .reduce((s, c) => s + c.revenue, 0) / returningCustomers
     : 0;
+  const oneTimeLtv = (totalRevenue - (returningLtv * returningCustomers)) / (uniqueCustomers - returningCustomers) || 0;
 
-  const oneTimeLtv = (totalRevenue - (returningCustomersLtv * returningCustomers)) / (uniqueCustomers - returningCustomers) || 0;
-
-  // 5. Churn (simple: % of customers who bought once and never returned)
-  const oneTimeBuyers = Array.from(customerOrders.values()).filter(c => c.count === 1).length;
+  // Churn
+  const oneTimeBuyers = Array.from(customerMap.values()).filter(c => c.orders === 1).length;
   const churnRate = uniqueCustomers > 0 ? (oneTimeBuyers / uniqueCustomers) * 100 : 0;
 
-  // 6. Top channel
-  const channelCounts = new Map<string, number>();
+  // Top channel
+  const channelMap = new Map<string, number>();
   orders.forEach(o => {
-    const channel = o.source_name || 'Unknown';
-    channelCounts.set(channel, (channelCounts.get(channel) || 0) + 1);
+    const ch = o.source_name || 'Unknown';
+    channelMap.set(ch, (channelMap.get(ch) || 0) + 1);
   });
   let topChannel = '—';
-  let maxCount = 0;
-  channelCounts.forEach((count, channel) => {
-    if (count > maxCount) {
-      maxCount = count;
-      topChannel = channel;
-    }
-  });
+  let max = 0;
+  channelMap.forEach((c, ch) => { if (c > max) { max = c; topChannel = ch; } });
 
-  // 7. Retention rate (same as repeat purchase rate for simplicity)
-  const retentionRate = repeatPurchaseRate;
-
-  // 8. Cohort retention (basic monthly cohort – first purchase month)
-  const cohortData = new Map<string, { first: number; retained: number }>();
+  // Cohort retention (monthly cohorts – basic)
+  const cohortMap = new Map<string, { first: number; retained: Set<string | number> }>();
   const firstPurchase = new Map<string | number, string>();
 
   orders.forEach(o => {
@@ -160,52 +127,52 @@ export async function GET() {
       const month = o.created_at.slice(0, 7); // YYYY-MM
       if (!firstPurchase.has(cid)) {
         firstPurchase.set(cid, month);
-        cohortData.set(month, { first: (cohortData.get(month)?.first || 0) + 1, retained: 0 });
+        cohortMap.set(month, { first: (cohortMap.get(month)?.first || 0) + 1, retained: new Set() });
       }
     }
   });
 
-  // Count retained per cohort (customers who bought again in later months)
+  // Mark retained
   orders.forEach(o => {
     const cid = o.customer_id;
     if (cid) {
-      const firstMonth = firstPurchase.get(cid);
-      const currentMonth = o.created_at.slice(0, 7);
-      if (firstMonth && currentMonth > firstMonth) {
-        const cohort = cohortData.get(firstMonth);
-        if (cohort) cohort.retained += 1;
+      const first = firstPurchase.get(cid);
+      const current = o.created_at.slice(0, 7);
+      if (first && current > first) {
+        const cohort = cohortMap.get(first);
+        if (cohort) cohort.retained.add(cid);
       }
     }
   });
 
-  const cohortRetention = Array.from(cohortData.entries()).map(([month, { first, retained }]) => ({
+  const cohortRetention = Array.from(cohortMap.entries()).map(([month, { first, retained }]) => ({
     cohort: month,
     size: first,
-    retained,
-    rate: first > 0 ? Number(((retained / first) * 100).toFixed(1)) : 0,
+    retained: retained.size,
+    rate: first > 0 ? Number(((retained.size / first) * 100).toFixed(1)) : 0,
   }));
 
-  // 9. Store health score (0–100) – example weighted formula
+  // Store health score (0–100, example weights)
   const healthScore = Math.min(100,
     (totalRevenue > 0 ? 30 : 0) +
-    (repeatPurchaseRate > 15 ? 20 : repeatPurchaseRate * 1.33) +
+    (repeatPurchaseRate > 20 ? 20 : repeatPurchaseRate * 1) +
     (churnRate < 25 ? 20 : 0) +
     (ltv > 150 ? 15 : 0) +
     (topChannel !== '—' ? 15 : 0)
   );
 
-  // 10. AI insight – make it feel premium
-  let aiInsight = '';
+  // AI insight – premium feel
+  let insight = '';
   if (totalRevenue > 0) {
-    aiInsight = `Store generating £${totalRevenue.toFixed(0)} • ${trend} trend • AOV £${averageOrderValue.toFixed(0)}`;
-    if (repeatPurchaseRate > 20) aiInsight += ` • Strong loyalty (${repeatPurchaseRate.toFixed(0)}% repeat)`;
-    if (churnRate > 20) aiInsight += ` • Churn alert (${churnRate.toFixed(1)}%) – prioritize win-backs`;
-    aiInsight += ` • Top channel: ${topChannel} • Health score: ${healthScore}/100`;
+    insight = `£${totalRevenue.toFixed(0)} total revenue • ${trend} trend • AOV £${averageOrderValue.toFixed(0)}`;
+    if (repeatPurchaseRate > 20) insight += ` • Strong repeat (${repeatPurchaseRate.toFixed(0)}%)`;
+    if (churnRate > 20) insight += ` • Churn alert (${churnRate.toFixed(1)}%)`;
+    insight += ` • Top channel: ${topChannel} • Health: ${healthScore}/100`;
   } else {
-    aiInsight = 'No revenue yet – Shopify connected but no paid orders synced. Test an order or check webhooks.';
+    insight = shopifyConnected
+      ? 'Shopify connected – no paid orders yet. Test a sale or check sync.'
+      : 'Connect Shopify to activate revenue, retention & full insights.';
   }
-
-  console.log('[METRICS-API] Returning full computed analytics suite');
 
   return NextResponse.json({
     revenue: {
@@ -219,9 +186,9 @@ export async function GET() {
       at_risk: Math.round(uniqueCustomers * (churnRate / 100)),
     },
     performance: {
-      ratio: (ltv / 100).toFixed(1), // placeholder until CAC available
+      ratio: (ltv / 100).toFixed(1),
       ltv: Number(ltv.toFixed(0)),
-      cac: 0, // TODO: integrate ad spend
+      cac: 0, // TODO: ad spend integration
     },
     acquisition: {
       top_channel: topChannel,
@@ -231,19 +198,19 @@ export async function GET() {
       rate: Number(retentionRate.toFixed(1)),
       repeat_purchase_rate: Number(repeatPurchaseRate.toFixed(1)),
     },
+    returning_customers_ltv: Number(returningLtv.toFixed(0)),
+    ltv_breakdown: {
+      one_time: Number(oneTimeLtv.toFixed(0)),
+      returning: Number(returningLtv.toFixed(0)),
+    },
     ltv: {
       value: Number(ltv.toFixed(0)),
-      breakdown: {
-        one_time: Number(oneTimeLtv.toFixed(0)),
-        returning: Number(returningCustomersLtv.toFixed(0)),
-      },
-      returning_customers_ltv: Number(returningCustomersLtv.toFixed(0)),
     },
     cohort_retention: {
       data: cohortRetention,
     },
     store_health_score: healthScore,
-    ai_insight: aiInsight,
+    ai_insight: insight,
     connections: {
       shopify: shopifyConnected,
       ga4: ga4Connected,
@@ -252,8 +219,8 @@ export async function GET() {
     debug: {
       ordersProcessed: orders.length,
       uniqueCustomers,
-      totalRevenueRaw: totalRevenue,
       returningCustomers,
+      totalRevenue,
     },
   });
 }
