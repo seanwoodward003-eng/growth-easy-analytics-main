@@ -58,7 +58,7 @@ export default function SettingsPage() {
         data = await res.json();
         console.log('[DEBUG] Parsed JSON successfully:', data);
       } catch (jsonErr) {
-        console.error('[DEBUG] JSON parse failed:', jsonErr.message);
+        console.error('[DEBUG] JSON parse failed:', jsonErr instanceof Error ? jsonErr.message : String(jsonErr));
         data = { error: 'Invalid JSON from server' };
       }
 
