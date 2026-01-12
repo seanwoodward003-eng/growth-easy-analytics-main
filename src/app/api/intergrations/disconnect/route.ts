@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { run } from '@/lib/db';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   console.error('DISCONNECT FORCE LOG - ROUTE ENTERED AT ' + new Date().toISOString());
