@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { getRow } from '@/lib/db';
@@ -13,6 +12,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
+  console.error(`MIDDLEWARE DEBUG: ${request.method} ${request.nextUrl.pathname} at ${new Date().toISOString()}`);
+
   const origin = request.headers.get('origin');
   const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
@@ -110,5 +111,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],  // Only dashboard — all /api free
+  matcher: ['/dashboard/:path*'],
 };
