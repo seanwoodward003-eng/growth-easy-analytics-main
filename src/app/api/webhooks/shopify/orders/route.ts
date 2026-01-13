@@ -1,84 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'; // your Drizzle instance
-import { orders } from '@/src/db/schema'; // adjust path to your schema
+import { orders, users } from '@/src/db/schema'; // adjust if path/export name wrong (e.g. '@/db/schema')
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
-// Verify Shopify webhook HMAC (required)
+export const runtime = 'nodejs'; // Force Node.js to avoid Edge issues with crypto/libsql
+
+// Verify Shopify webhook HMAC
 function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean {
-  if (!hmacHeader) return false;
+  if (!hmacHeader) {
+    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
+    return false;
+  }
 
   const calculated = crypto
     .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
     .update(rawBody)
     .digest('base64');
 
-  return crypto.timingSafeEqual(Buffer.from(calculated), Buffer.from(hmacHeader));
+  const isValid = crypto.timingSafeEqual(Buffer.from(calculated), Buffer.from(hmacHeader));
+  if (!isValid) {
+    console.error('[WEBHOOK] HMAC mismatch — calculated:', calculated.substring(0, 10) + '...', 'provided:', hmacHeader.substring(0, 10) + '...');
+  }
+  return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  // Get raw body for HMAC (must be text(), not .json())
   const rawBody = await request.text();
-
-  // Verify HMAC
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
+
   if (!verifyWebhookHMAC(rawBody, hmac)) {
-    console.error('[WEBHOOK] HMAC verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  let payload;
+  let order;
   try {
-    payload = JSON.parse(rawBody);
+    order = JSON.parse(rawBody);
   } catch (e) {
-    console.error('[WEBHOOK] Invalid JSON');
+    console.error('[WEBHOOK] JSON parse error:', e.message);
     return NextResponse.json({ received: true });
   }
 
-  const order = payload;
-
-  // Basic validation
-  if (!order?.id || !order?.shop_domain || !order.total_price_set?.shop_money?.amount) {
-    console.warn('[WEBHOOK] Missing required fields');
+  // Validation
+  if (!order?.id || !order.shop_domain || !order.total_price_set?.shop_money?.amount) {
+    console.warn('[WEBHOOK] Invalid order payload — missing fields');
     return NextResponse.json({ received: true });
   }
 
-  // Lookup user by shop domain (prevents data crossover)
+  // Lookup user_id by shop_domain
   const user = await db.query.users.findFirst({
     where: eq(users.shopify_shop, order.shop_domain),
     columns: { id: true },
   });
 
   if (!user) {
-    console.warn('[WEBHOOK] No user found for shop:', order.shop_domain);
+    console.warn('[WEBHOOK] No user for shop_domain:', order.shop_domain);
     return NextResponse.json({ received: true });
   }
 
   const userId = user.id;
 
-  // Prepare data for insert
+  // Prepare data (type conversions for Drizzle)
   const orderData = {
-    id: order.id,
-    userId,
+    id: BigInt(order.id), // Shopify IDs are bigints
+    userId: BigInt(userId), // assuming bigint in schema
     totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: order.created_at,
+    createdAt: new Date(order.created_at), // timestamp expects Date
     financialStatus: order.financial_status,
-    customerId: order.customer?.id || null,
+    customerId: order.customer?.id ? BigInt(order.customer.id) : null,
     sourceName: order.source_name || null,
-    // add any other columns your schema has
+    // add other fields as needed
   };
 
   try {
-    // Upsert (insert or ignore if ID already exists)
     await db
       .insert(orders)
       .values(orderData)
-      .onConflictDoNothing(); // or .onConflictDoUpdate() if you want to update
+      .onConflictDoNothing(); // or .onConflictDoUpdate() if you want to update existing
 
-    console.log('[WEBHOOK] Order saved:', order.id, 'for user:', userId);
+    console.log('[WEBHOOK] Order inserted:', order.id, 'for user:', userId);
   } catch (err) {
-    console.error('[WEBHOOK] Insert failed:', err);
-    // still return 200 so Shopify doesn't retry forever
+    console.error('[WEBHOOK] Drizzle insert error:', err.message);
+    // 200 anyway
   }
 
   return NextResponse.json({ success: true });
