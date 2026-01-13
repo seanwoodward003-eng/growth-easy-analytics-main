@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // Lookup user_id by shop_domain
+  // Lookup user_id by shop_domain — FIXED COLUMN NAME
   const user = await db.query.users.findFirst({
-    where: eq(users.shopify_shop, order.shop_domain),
+    where: eq(users.shopifyShop, order.shop_domain),
     columns: { id: true },
   });
 
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     financialStatus: order.financial_status,
     customerId: order.customer?.id ? BigInt(order.customer.id) : null,
     sourceName: order.source_name || null,
+    shopDomain: order.shop_domain || order.domain || null, // stores the domain
   };
 
   try {
