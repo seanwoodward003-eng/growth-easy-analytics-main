@@ -1,3 +1,4 @@
+// app/api/webhooks/shopify/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'; // your Drizzle instance
 import { orders, users } from '@/src/db/schema'; // adjust if path/export name wrong
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // Lookup user_id by shop_domain — FIXED COLUMN NAME
+  // Lookup user_id by shop_domain
   const user = await db.query.users.findFirst({
     where: eq(users.shopifyShop, order.shop_domain),
     columns: { id: true },
@@ -65,11 +66,11 @@ export async function POST(request: NextRequest) {
     id: BigInt(order.id),
     userId: BigInt(userId),
     totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: new Date(order.created_at),
+    createdAt: order.created_at, // ← FIXED: pass ISO string directly (your schema uses text)
     financialStatus: order.financial_status,
     customerId: order.customer?.id ? BigInt(order.customer.id) : null,
     sourceName: order.source_name || null,
-    shopDomain: order.shop_domain || order.domain || null, // stores the domain
+    shopDomain: order.shop_domain || order.domain || null, // optional, for future lookups
   };
 
   try {
