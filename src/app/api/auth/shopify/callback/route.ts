@@ -98,4 +98,4 @@ export async function GET(request: NextRequest) {
 
   console.log('[SHOPIFY-OAUTH] Redirecting to dashboard with success param');
   return NextResponse.redirect(`${baseUrl}/dashboard?shopify_connected=true`);
-}
+} 
