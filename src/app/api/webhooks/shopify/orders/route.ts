@@ -1,4 +1,3 @@
-// app/api/webhooks/shopify/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db'; // your Drizzle instance
 import { orders, users } from '@/src/db/schema'; // adjust if path/export name wrong
@@ -63,14 +62,14 @@ export async function POST(request: NextRequest) {
 
   // Prepare data (type conversions for Drizzle)
   const orderData = {
-    id: BigInt(order.id),
-    userId: BigInt(userId),
+    id: Number(order.id),
+    userId: Number(userId),
     totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: order.created_at, // ← FIXED: pass ISO string directly (your schema uses text)
+    createdAt: order.created_at, // Shopify gives ISO string – pass directly
     financialStatus: order.financial_status,
-    customerId: order.customer?.id ? BigInt(order.customer.id) : null,
+    customerId: order.customer?.id ? Number(order.customer.id) : null,
     sourceName: order.source_name || null,
-    shopDomain: order.shop_domain || order.domain || null, // optional, for future lookups
+    shopDomain: order.shop_domain || order.domain || null,
   };
 
   try {
