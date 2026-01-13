@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db'; // your Drizzle instance
-import { orders, users } from '@/src/db/schema'; // adjust if path/export name wrong (e.g. '@/db/schema')
+import { db } from '@/lib/db';
+import { orders, users } from '@/src/db/schema'; // ← FIX THIS PATH/EXPORT if build error persists
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
-export const runtime = 'nodejs'; // Force Node.js to avoid Edge issues with crypto/libsql
+export const runtime = 'nodejs';
 
-// Verify Shopify webhook HMAC
 function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) {
-    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
+    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256');
     return false;
   }
 
@@ -19,9 +18,7 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     .digest('base64');
 
   const isValid = crypto.timingSafeEqual(Buffer.from(calculated), Buffer.from(hmacHeader));
-  if (!isValid) {
-    console.error('[WEBHOOK] HMAC mismatch — calculated:', calculated.substring(0, 10) + '...', 'provided:', hmacHeader.substring(0, 10) + '...');
-  }
+  if (!isValid) console.error('[WEBHOOK] HMAC mismatch');
   return isValid;
 }
 
@@ -41,47 +38,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // Validation
   if (!order?.id || !order.shop_domain || !order.total_price_set?.shop_money?.amount) {
-    console.warn('[WEBHOOK] Invalid order payload — missing fields');
+    console.warn('[WEBHOOK] Invalid payload');
     return NextResponse.json({ received: true });
   }
 
-  // Lookup user_id by shop_domain
   const user = await db.query.users.findFirst({
     where: eq(users.shopify_shop, order.shop_domain),
     columns: { id: true },
   });
 
   if (!user) {
-    console.warn('[WEBHOOK] No user for shop_domain:', order.shop_domain);
+    console.warn('[WEBHOOK] No user for shop:', order.shop_domain);
     return NextResponse.json({ received: true });
   }
 
   const userId = user.id;
 
-  // Prepare data (type conversions for Drizzle)
   const orderData = {
-    id: BigInt(order.id), // Shopify IDs are bigints
-    userId: BigInt(userId), // assuming bigint in schema
+    id: BigInt(order.id),
+    userId: BigInt(userId),
     totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: new Date(order.created_at), // timestamp expects Date
+    createdAt: new Date(order.created_at),
     financialStatus: order.financial_status,
     customerId: order.customer?.id ? BigInt(order.customer.id) : null,
     sourceName: order.source_name || null,
-    // add other fields as needed
+    shopDomain: order.shop_domain, // optional — helps future lookups
   };
 
   try {
-    await db
-      .insert(orders)
+    await db.insert(orders)
       .values(orderData)
-      .onConflictDoNothing(); // or .onConflictDoUpdate() if you want to update existing
+      .onConflictDoNothing();
 
-    console.log('[WEBHOOK] Order inserted:', order.id, 'for user:', userId);
+    console.log('[WEBHOOK] Order inserted:', order.id, 'user:', userId);
   } catch (err) {
-    console.error('[WEBHOOK] Drizzle insert error:', err.message);
-    // 200 anyway
+    console.error('[WEBHOOK] Insert failed:', err.message);
   }
 
   return NextResponse.json({ success: true });
