@@ -44,7 +44,6 @@ export const metrics = sqliteTable(
     ltvReturning: real("ltv_returning").default(0),
   },
   (table) => ({
-    // The same index you had before
     userIdx: index("idx_metrics_user").on(table.userId),
   })
 );
@@ -58,7 +57,6 @@ export const rateLimits = sqliteTable(
     timestamp: text("timestamp").default("CURRENT_TIMESTAMP"),
   },
   (table) => ({
-    // Composite index – user_id + endpoint + timestamp
     userEndpointTimestampIdx: index("idx_rate_limits_user_endpoint").on(
       table.userId,
       table.endpoint,
@@ -77,3 +75,19 @@ export const metricsHistory = sqliteTable("metrics_history", {
   aov: real("aov"),
   repeatRate: real("repeat_rate"),
 });
+
+// ────────────────────────────────────────────────────────────────
+// NEW: orders table (appended here for the webhook insert)
+// ────────────────────────────────────────────────────────────────
+export const orders = sqliteTable("orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }), // Shopify order ID
+  userId: integer("user_id").notNull().references(() => users.id),
+  totalPrice: real("total_price").notNull(), // Shopify total_price_set.shop_money.amount
+  createdAt: text("created_at").notNull(), // ISO string from Shopify
+  financialStatus: text("financial_status").notNull(),
+  customerId: integer("customer_id"),
+  sourceName: text("source_name"),
+}, (table) => ({
+  userIdx: index("idx_orders_user_id").on(table.userId),
+  dateIdx: index("idx_orders_created_at").on(table.createdAt),
+}));
