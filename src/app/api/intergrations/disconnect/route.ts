@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { run } from '@/lib/db';
-export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  console.error('DISCONNECT FORCE LOG - ROUTE ENTERED AT ' + new Date().toISOString());
-  // ↑ This line is new — put it first. Use .error so Vercel shows it more reliably
-
   console.log('DISCONNECT: Endpoint hit at', new Date().toISOString());
 
   const auth = await requireAuth();
