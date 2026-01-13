@@ -77,17 +77,17 @@ export const metricsHistory = sqliteTable("metrics_history", {
 });
 
 // ────────────────────────────────────────────────────────────────
-// NEW: orders table (appended here for the webhook insert)
+// ORDERS TABLE — added here for webhook insertion
 // ────────────────────────────────────────────────────────────────
 export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey({ autoIncrement: true }), // Shopify order ID
+  id: integer("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  totalPrice: real("total_price").notNull(), // Shopify total_price_set.shop_money.amount
-  createdAt: text("created_at").notNull(), // ISO string from Shopify
+  totalPrice: real("total_price").notNull(),
+  createdAt: text("created_at").notNull(), // ISO string from Shopify (e.g. "2026-01-13T18:37:00Z")
   financialStatus: text("financial_status").notNull(),
   customerId: integer("customer_id"),
   sourceName: text("source_name"),
 }, (table) => ({
-  userIdx: index("idx_orders_user_id").on(table.userId),
-  dateIdx: index("idx_orders_created_at").on(table.createdAt),
+  userIdIdx: index("idx_orders_user_id").on(table.userId),
+  createdAtIdx: index("idx_orders_created_at").on(table.createdAt),
 }));
