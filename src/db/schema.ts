@@ -74,3 +74,18 @@ export const metricsHistory = sqliteTable("metrics_history", {
   aov: real("aov"),
   repeatRate: real("repeat_rate"),
 });
+
+// ORDERS TABLE — added for webhook
+export const orders = sqliteTable("orders", {
+  id: integer("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  totalPrice: real("total_price").notNull(),
+  createdAt: text("created_at").notNull(),
+  financialStatus: text("financial_status").notNull(),
+  customerId: integer("customer_id"),
+  sourceName: text("source_name"),
+  shopDomain: text("shop_domain").notNull(),
+}, (table) => ({
+  userIdIdx: index("idx_orders_user_id").on(table.userId),
+  dateIdx: index("idx_orders_created_at").on(table.createdAt),
+}));
