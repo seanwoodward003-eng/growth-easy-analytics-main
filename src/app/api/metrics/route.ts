@@ -1,43 +1,60 @@
-// app/api/metrics/route.ts
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 
 export async function GET() {
-  console.log('[METRICS-API] Invoked at', new Date().toISOString());
+  console.log('[METRICS-API] ENDPOINT STARTED at', new Date().toISOString());
 
   const auth = await requireAuth();
+  console.log('[METRICS-API] Auth completed — user ID:', auth.user?.id || 'unknown');
+
   if ('error' in auth) {
-    console.error('[METRICS-API] Auth failed:', auth.error);
+    console.log('[METRICS-API] Auth ERROR:', auth.error, 'status:', auth.status);
     return NextResponse.json({ error: auth.error }, { status: auth.status || 401 });
   }
 
   const userId = auth.user.id;
+  console.log('[METRICS-API] User authenticated — ID:', userId);
 
   const shopifyConnected = !!(auth.user.shopify_shop && auth.user.shopify_access_token);
   const ga4Connected = !!auth.user.ga4_connected;
   const hubspotConnected = !!auth.user.hubspot_connected;
 
-  // Fetch paid orders (increase limit as you grow)
-  const orders = await getRows<{
-    total_price: number | string;
-    created_at: string;
-    customer_id: string | number | null;
-    source_name: string | null;
-    financial_status: string;
-  }>(
-    `SELECT total_price, created_at, customer_id, source_name, financial_status
-     FROM orders
-     WHERE user_id = ?
-     AND financial_status IN ('paid', 'partially_paid')
-     ORDER BY created_at DESC LIMIT 5000`,
-    [userId]
-  );
+  console.log('[METRICS-API] Connection flags:', {
+    shopify: shopifyConnected,
+    ga4: ga4Connected,
+    hubspot: hubspotConnected,
+    shop: auth.user.shopify_shop || 'not set',
+  });
 
-  console.log('[METRICS-API] Paid orders count:', orders.length);
+  // DEBUG: Before orders query
+  console.log('[METRICS-API] Preparing to query orders table for user:', userId);
+
+  let orders = [];
+  try {
+    orders = await getRows<{
+      total_price: number | string;
+      created_at: string;
+      customer_id: string | number | null;
+      source_name: string | null;
+      financial_status: string;
+    }>(
+      `SELECT total_price, created_at, customer_id, source_name, financial_status
+       FROM orders
+       WHERE user_id = ?
+       AND financial_status IN ('paid', 'partially_paid')
+       ORDER BY created_at DESC LIMIT 5000`,
+      [userId]
+    );
+    console.log('[METRICS-API] ORDERS QUERY SUCCESS — found', orders.length, 'rows');
+  } catch (queryErr) {
+    console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr instanceof Error ? queryErr.message : String(queryErr));
+    console.error('[METRICS-API] Full query error stack:', queryErr);
+  }
 
   if (orders.length === 0) {
-    return NextResponse.json({
+    console.log('[METRICS-API] No paid orders found — returning empty state');
+    const emptyState = {
       revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
       churn: { rate: 0, at_risk: 0 },
       performance: { ratio: '0.0', ltv: 0, cac: 0 },
@@ -51,14 +68,22 @@ export async function GET() {
         ? 'Shopify connected, but no paid orders yet. Place a test order or check webhook sync.'
         : 'Connect Shopify to activate full analytics.',
       connections: { shopify: shopifyConnected, ga4: ga4Connected, hubspot: hubspotConnected },
-    });
+      debug: { 
+        message: 'No orders found — likely webhook sync issue or empty table',
+        userId,
+        shopifyShop: auth.user.shopify_shop || 'not set'
+      },
+    };
+    console.log('[METRICS-API] Sending empty state response');
+    return NextResponse.json(emptyState);
   }
 
-  // ── Calculations ──
+  console.log('[METRICS-API] Orders found — starting calculations');
 
   // Revenue + AOV
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
   const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+  console.log('[METRICS-API] Calculated revenue:', totalRevenue, 'AOV:', averageOrderValue);
 
   // History (daily – last 30 days)
   const dailyRevenue = new Map<string, number>();
@@ -69,12 +94,15 @@ export async function GET() {
   const sortedDays = Array.from(dailyRevenue.keys()).sort().reverse().slice(0, 30);
   const historyLabels = sortedDays.reverse();
   const historyValues = historyLabels.map(d => dailyRevenue.get(d) || 0);
+  console.log('[METRICS-API] History labels:', historyLabels);
+  console.log('[METRICS-API] History values:', historyValues);
 
   const trend = historyValues.length > 1 && historyValues[0] !== 0
     ? `${Math.sign(historyValues[historyValues.length - 1] - historyValues[0]) >= 0 ? '+' : ''}${Math.round(
         ((historyValues[historyValues.length - 1] - historyValues[0]) / historyValues[0]) * 100
       )}%`
     : '0%';
+  console.log('[METRICS-API] Trend:', trend);
 
   // Customer analysis
   const customerMap = new Map<string | number, { orders: number; revenue: number; first: string; last: string }>();
@@ -92,7 +120,8 @@ export async function GET() {
   const uniqueCustomers = customerMap.size;
   const returningCustomers = Array.from(customerMap.values()).filter(c => c.orders > 1).length;
   const repeatPurchaseRate = uniqueCustomers > 0 ? (returningCustomers / uniqueCustomers) * 100 : 0;
-  const retentionRate = repeatPurchaseRate; // same for now
+  const retentionRate = repeatPurchaseRate;
+  console.log('[METRICS-API] Customers:', uniqueCustomers, 'returning:', returningCustomers, 'repeat rate:', repeatPurchaseRate);
 
   // LTV & breakdown
   const ltv = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
@@ -102,10 +131,12 @@ export async function GET() {
         .reduce((s, c) => s + c.revenue, 0) / returningCustomers
     : 0;
   const oneTimeLtv = (totalRevenue - (returningLtv * returningCustomers)) / (uniqueCustomers - returningCustomers) || 0;
+  console.log('[METRICS-API] LTV:', ltv, 'returning LTV:', returningLtv, 'one-time LTV:', oneTimeLtv);
 
   // Churn
   const oneTimeBuyers = Array.from(customerMap.values()).filter(c => c.orders === 1).length;
   const churnRate = uniqueCustomers > 0 ? (oneTimeBuyers / uniqueCustomers) * 100 : 0;
+  console.log('[METRICS-API] Churn rate:', churnRate);
 
   // Top channel
   const channelMap = new Map<string, number>();
@@ -116,6 +147,7 @@ export async function GET() {
   let topChannel = '—';
   let max = 0;
   channelMap.forEach((c, ch) => { if (c > max) { max = c; topChannel = ch; } });
+  console.log('[METRICS-API] Top channel:', topChannel);
 
   // Cohort retention (monthly cohorts – basic)
   const cohortMap = new Map<string, { first: number; retained: Set<string | number> }>();
@@ -132,7 +164,6 @@ export async function GET() {
     }
   });
 
-  // Mark retained
   orders.forEach(o => {
     const cid = o.customer_id;
     if (cid) {
@@ -151,8 +182,9 @@ export async function GET() {
     retained: retained.size,
     rate: first > 0 ? Number(((retained.size / first) * 100).toFixed(1)) : 0,
   }));
+  console.log('[METRICS-API] Cohort retention calculated');
 
-  // Store health score (0–100, example weights)
+  // Store health score
   const healthScore = Math.min(100,
     (totalRevenue > 0 ? 30 : 0) +
     (repeatPurchaseRate > 20 ? 20 : repeatPurchaseRate * 1) +
@@ -160,8 +192,9 @@ export async function GET() {
     (ltv > 150 ? 15 : 0) +
     (topChannel !== '—' ? 15 : 0)
   );
+  console.log('[METRICS-API] Health score:', healthScore);
 
-  // AI insight – premium feel
+  // AI insight
   let insight = '';
   if (totalRevenue > 0) {
     insight = `£${totalRevenue.toFixed(0)} total revenue • ${trend} trend • AOV £${averageOrderValue.toFixed(0)}`;
@@ -173,7 +206,9 @@ export async function GET() {
       ? 'Shopify connected – no paid orders yet. Test a sale or check sync.'
       : 'Connect Shopify to activate revenue, retention & full insights.';
   }
+  console.log('[METRICS-API] AI insight:', insight);
 
+  console.log('[METRICS-API] Returning full metrics response');
   return NextResponse.json({
     revenue: {
       total: totalRevenue,
@@ -188,7 +223,7 @@ export async function GET() {
     performance: {
       ratio: (ltv / 100).toFixed(1),
       ltv: Number(ltv.toFixed(0)),
-      cac: 0, // TODO: ad spend integration
+      cac: 0,
     },
     acquisition: {
       top_channel: topChannel,
@@ -221,6 +256,7 @@ export async function GET() {
       uniqueCustomers,
       returningCustomers,
       totalRevenue,
+      message: 'Full metrics calculated',
     },
   });
 }
