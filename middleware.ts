@@ -1,91 +1,113 @@
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import { getRow } from '@/lib/db';
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  email: text("email").unique().notNull(),
-  stripeId: text("stripe_id"),
-  shopifyShop: text("shopify_shop"),
-  ga4Connected: integer("ga4_connected").default(0),
-  hubspotConnected: integer("hubspot_connected").default(0),
-  ga4AccessToken: text("ga4_access_token"),
-  ga4RefreshToken: text("ga4_refresh_token"),
-  ga4PropertyId: text("ga4_property_id"),
-  shopifyAccessToken: text("shopify_access_token"),
-  hubspotRefreshToken: text("hubspot_refresh_token"),
-  hubspotAccessToken: text("hubspot_access_token"),
-  gdprConsented: integer("gdpr_consented").default(0),
-  ga4LastRefreshed: text("ga4_last_refreshed"),
-  createdAt: text("created_at").default("(datetime('now'))"),
-  trialEnd: text("trial_end"),
-  subscriptionStatus: text("subscription_status").default("trial"),
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 
-  verificationToken: text("verification_token"),
-  verificationTokenExpires: text("verification_token_expires"),
-});
+const ALLOWED_ORIGINS = [
+  process.env.NEXT_PUBLIC_FRONTEND_URL!,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+];
 
-export const metrics = sqliteTable(
-  "metrics",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: integer("user_id").references(() => users.id),
-    date: text("date").default("(datetime('now'))"),
-    revenue: real("revenue").default(0),
-    churnRate: real("churn_rate").default(0),
-    atRisk: integer("at_risk").default(0),
-    ltv: real("ltv").default(0),
-    cac: real("cac").default(0),
-    topChannel: text("top_channel").default(""),
-    acquisitionCost: real("acquisition_cost").default(0),
-    retentionRate: real("retention_rate").default(0),
-    aov: real("aov").default(0),
-    repeatRate: real("repeat_rate").default(0),
-    ltvNew: real("ltv_new").default(0),
-    ltvReturning: real("ltv_returning").default(0),
-  },
-  (table) => ({
-    userIdx: index("idx_metrics_user").on(table.userId),
-  })
-);
+export async function middleware(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
-export const rateLimits = sqliteTable(
-  "rate_limits",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    userId: integer("user_id").notNull().references(() => users.id),
-    endpoint: text("endpoint").notNull(),
-    timestamp: text("timestamp").default("CURRENT_TIMESTAMP"),
-  },
-  (table) => ({
-    userEndpointTimestampIdx: index("idx_rate_limits_user_endpoint").on(
-      table.userId,
-      table.endpoint,
-      table.timestamp
-    ),
-  })
-);
+  let response = NextResponse.next();
 
-export const metricsHistory = sqliteTable("metrics_history", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  userId: integer("user_id").references(() => users.id),
-  syncDate: text("sync_date"),
-  revenue: real("revenue"),
-  churnRate: real("churn_rate"),
-  atRisk: integer("at_risk"),
-  aov: real("aov"),
-  repeatRate: real("repeat_rate"),
-});
+  // Security headers
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-// ORDERS TABLE — added for webhook
-export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  totalPrice: real("total_price").notNull(),
-  createdAt: text("created_at").notNull(),
-  financialStatus: text("financial_status").notNull(),
-  customerId: integer("customer_id"),
-  sourceName: text("source_name"),
-  shopDomain: text("shop_domain").notNull(),
-}, (table) => ({
-  userIdIdx: index("idx_orders_user_id").on(table.userId),
-  dateIdx: index("idx_orders_created_at").on(table.createdAt),
-}));
+  // CORS for API
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    if (isAllowedOrigin) {
+      response.headers.set('Access-Control-Allow-Origin', origin!);
+    }
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
+
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { status: 204, headers: response.headers });
+    }
+  }
+
+  // HTTPS redirect
+  if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
+    const url = new URL(request.url);
+    url.protocol = 'https:';
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Protect only dashboard routes
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    const accessToken = request.cookies.get('access_token')?.value;
+
+    if (!accessToken) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.searchParams.set('error', 'login_required');
+      return NextResponse.redirect(url);
+    }
+
+    let payload: any;
+    try {
+      payload = jwt.verify(accessToken, JWT_SECRET);
+    } catch (err) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      url.searchParams.set('error', 'session_expired');
+
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.cookies.delete('access_token');
+      redirectResponse.cookies.delete('refresh_token');
+      redirectResponse.cookies.delete('csrf_token');
+      return redirectResponse;
+    }
+
+    const userId = payload.sub;
+
+    try {
+      const user = await getRow<{
+        trial_end: string | null;
+        subscription_status: string;
+      }>(
+        'SELECT trial_end, subscription_status FROM users WHERE id = ?',
+        [userId]
+      );
+
+      if (!user) throw new Error('User not found');
+
+      const now = new Date();
+      const trialEnd = user.trial_end ? new Date(user.trial_end) : null;
+
+      if (
+        user.subscription_status === 'trial' &&
+        trialEnd &&
+        now > trialEnd
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        url.searchParams.set('error', 'trial_expired');
+        return NextResponse.redirect(url);
+      }
+
+      response.headers.set('x-user-id', userId.toString());
+    } catch (dbError) {
+      console.error('Middleware trial check error:', dbError);
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*'],
+};
