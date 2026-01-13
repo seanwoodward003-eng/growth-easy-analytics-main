@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { orders, users } from '@/src/db/schema'; // ← FIX THIS PATH/EXPORT if build error persists
+import { db } from '@/lib/db'; // your Drizzle instance
+import { orders, users } from '@/src/db/schema'; // adjust if path/export name wrong
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'; // Force Node.js to avoid Edge issues
 
+// Verify Shopify webhook HMAC
 function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) {
-    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256');
+    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
     return false;
   }
 
@@ -30,31 +31,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  let order;
+  let payload;
   try {
-    order = JSON.parse(rawBody);
+    payload = JSON.parse(rawBody);
   } catch (e) {
-    console.error('[WEBHOOK] JSON parse error:', e.message);
+    console.error('[WEBHOOK] JSON parse error:', e instanceof Error ? e.message : String(e));
     return NextResponse.json({ received: true });
   }
 
+  const order = payload;
+
+  // Validation
   if (!order?.id || !order.shop_domain || !order.total_price_set?.shop_money?.amount) {
-    console.warn('[WEBHOOK] Invalid payload');
+    console.warn('[WEBHOOK] Invalid order payload');
     return NextResponse.json({ received: true });
   }
 
+  // Lookup user_id by shop_domain
   const user = await db.query.users.findFirst({
     where: eq(users.shopify_shop, order.shop_domain),
     columns: { id: true },
   });
 
   if (!user) {
-    console.warn('[WEBHOOK] No user for shop:', order.shop_domain);
+    console.warn('[WEBHOOK] No user for shop_domain:', order.shop_domain);
     return NextResponse.json({ received: true });
   }
 
   const userId = user.id;
 
+  // Prepare data (type conversions for Drizzle)
   const orderData = {
     id: BigInt(order.id),
     userId: BigInt(userId),
@@ -63,17 +69,17 @@ export async function POST(request: NextRequest) {
     financialStatus: order.financial_status,
     customerId: order.customer?.id ? BigInt(order.customer.id) : null,
     sourceName: order.source_name || null,
-    shopDomain: order.shop_domain, // optional — helps future lookups
   };
 
   try {
-    await db.insert(orders)
+    await db
+      .insert(orders)
       .values(orderData)
       .onConflictDoNothing();
 
     console.log('[WEBHOOK] Order inserted:', order.id, 'user:', userId);
   } catch (err) {
-    console.error('[WEBHOOK] Insert failed:', err.message);
+    console.error('[WEBHOOK] Insert failed:', err instanceof Error ? err.message : String(err));
   }
 
   return NextResponse.json({ success: true });
