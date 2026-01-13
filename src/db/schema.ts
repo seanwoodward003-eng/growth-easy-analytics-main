@@ -1,4 +1,3 @@
-// src/db/schema.ts
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
@@ -75,19 +74,3 @@ export const metricsHistory = sqliteTable("metrics_history", {
   aov: real("aov"),
   repeatRate: real("repeat_rate"),
 });
-
-// ────────────────────────────────────────────────────────────────
-// ORDERS TABLE — added here for webhook insertion
-// ────────────────────────────────────────────────────────────────
-export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  totalPrice: real("total_price").notNull(),
-  createdAt: text("created_at").notNull(), // ISO string from Shopify (e.g. "2026-01-13T18:37:00Z")
-  financialStatus: text("financial_status").notNull(),
-  customerId: integer("customer_id"),
-  sourceName: text("source_name"),
-}, (table) => ({
-  userIdIdx: index("idx_orders_user_id").on(table.userId),
-  createdAtIdx: index("idx_orders_created_at").on(table.createdAt),
-}));
