@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
 
   // Prepare data (type conversions for Drizzle)
   const orderData = {
-    id: Number(order.id),
-    userId: Number(userId),
+    id: Number(order.id), // FIXED: Number instead of BigInt
+    userId: Number(userId), // FIXED: Number instead of BigInt
     totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: order.created_at, // Shopify gives ISO string – pass directly
+    createdAt: order.created_at, // FIXED: pass ISO string directly
     financialStatus: order.financial_status,
     customerId: order.customer?.id ? Number(order.customer.id) : null,
     sourceName: order.source_name || null,
