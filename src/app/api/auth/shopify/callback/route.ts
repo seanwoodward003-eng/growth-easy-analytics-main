@@ -10,7 +10,6 @@ function verifyHMAC(params: URLSearchParams): boolean {
     return false;
   }
 
-  // Remove hmac before processing
   params.delete('hmac');
 
   // Convert to object and sort keys alphabetically (Shopify requirement)
@@ -113,7 +112,8 @@ export async function GET(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // WEBHOOK REGISTRATION WITH HEAVY DEBUG LOGGING
+  // WEBHOOK REGISTRATION WITH ALL ORIGINAL DEBUG LOGGING
+  // Using non-protected topic 'orders/paid'
   // ────────────────────────────────────────────────────────────────
   console.log('[DEBUG-REG] Reached webhook registration block');
   console.log('[DEBUG-REG] Current access_token length:', access_token.length);
@@ -121,43 +121,75 @@ export async function GET(request: NextRequest) {
   console.log('[DEBUG-REG] NEXT_PUBLIC_APP_URL value:', process.env.NEXT_PUBLIC_APP_URL || 'NOT SET!!!');
   console.log('[DEBUG-REG] Full webhook address to be sent:', `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`);
 
-  console.log('[SHOPIFY-OAUTH] Registering webhook for orders/create...');
+  const apiVersion = '2026-01';
+  const headers = {
+    'X-Shopify-Access-Token': access_token,
+    'Content-Type': 'application/json',
+  };
 
-  const webhookAddress = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`;
+  async function registerWebhook(topic: string, path: string) {
+    const address = `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
+    console.log(`[DEBUG-REG] Registering ${topic} at ${address}`);
 
-  try {
-    const webhookResp = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': access_token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        webhook: {
-          topic: 'orders/create',
-          address: webhookAddress,
-          format: 'json',
-        },
-      }),
-    });
+    // Check if already exists
+    try {
+      const checkRes = await fetch(`https://${shop}/admin/api/${apiVersion}/webhooks.json`, { headers });
+      console.log('[DEBUG-REG] Check response status:', checkRes.status);
+      if (!checkRes.ok) {
+        const errText = await checkRes.text();
+        console.error('[DEBUG-REG] Check failed:', checkRes.status, errText);
+        return false;
+      }
+      const { webhooks } = await checkRes.json();
+      const exists = webhooks?.some((w: any) => w.topic === topic && w.address === address);
 
-    console.log('[DEBUG-REG] Webhook API response status:', webhookResp.status);
-    console.log('[DEBUG-REG] Response headers:', Object.fromEntries(webhookResp.headers));
+      if (exists) {
+        console.log(`[DEBUG-REG] ${topic} already exists — skipping creation`);
+        return true;
+      }
+    } catch (checkErr) {
+      console.error('[DEBUG-REG] Existence check threw:', checkErr);
+    }
 
-    if (!webhookResp.ok) {
-      const errText = await webhookResp.text();
-      console.error('[SHOPIFY-OAUTH] Webhook registration FAILED:', webhookResp.status, errText);
-      console.error('[DEBUG-REG] Full Shopify error response body:', errText);
-    } else {
-      const respData = await webhookResp.json();
+    // Create
+    try {
+      const resp = await fetch(`https://${shop}/admin/api/${apiVersion}/webhooks.json`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          webhook: {
+            topic,
+            address,
+            format: 'json',
+          },
+        }),
+      });
+
+      console.log('[DEBUG-REG] Webhook API response status:', resp.status);
+      console.log('[DEBUG-REG] Response headers:', Object.fromEntries(resp.headers));
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('[SHOPIFY-OAUTH] Webhook registration FAILED:', resp.status, errText);
+        console.error('[DEBUG-REG] Full Shopify error response body:', errText);
+        return false;
+      }
+
+      const respData = await resp.json();
       console.log('[SHOPIFY-OAUTH] Webhook registered SUCCESSFULLY');
       console.log('[DEBUG-REG] Created webhook ID:', respData.webhook?.id);
       console.log('[DEBUG-REG] Full registration response:', JSON.stringify(respData, null, 2));
+      return true;
+    } catch (regError) {
+      console.error('[DEBUG-REG] Webhook registration THREW EXCEPTION:', regError instanceof Error ? regError.message : String(regError));
+      console.error('[DEBUG-REG] Error stack:', regError);
+      return false;
     }
-  } catch (regError) {
-    console.error('[DEBUG-REG] Webhook registration THREW EXCEPTION:', regError instanceof Error ? regError.message : String(regError));
-    console.error('[DEBUG-REG] Error stack:', regError);
   }
+
+  console.log('[WEBHOOK-REG] Starting registrations...');
+  await registerWebhook('orders/paid', '/api/webhooks/shopify/orders');        // Non-protected topic
+  await registerWebhook('app/uninstalled', '/api/webhooks/shopify/app-uninstalled');
 
   console.log('[SHOPIFY-OAUTH] Redirecting to dashboard with success param');
   return NextResponse.redirect(`${baseUrl}/dashboard?shopify_connected=true`);
