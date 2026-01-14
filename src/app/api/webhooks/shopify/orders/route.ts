@@ -1,15 +1,13 @@
-// src/app/api/webhooks/shopify/orders/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db, users, orders } from '@/lib/db';  // ← Now import orders too!
+import { db, users, orders } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
 
 function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) {
-    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
+    console.error('[ORDERS/WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
     return false;
   }
 
@@ -24,16 +22,13 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
   );
 
   if (!isValid) {
-    console.error('[WEBHOOK] HMAC mismatch');
-    console.error('[WEBHOOK] Received HMAC (first 20):', hmacHeader?.substring(0, 20) + '...');
-    console.error('[WEBHOOK] Calculated (first 20):', calculated.substring(0, 20) + '...');
+    console.error('[ORDERS/WEBHOOK] HMAC mismatch');
   }
 
   return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  // Get raw body FIRST (critical!)
   const rawBody = await request.text();
 
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
@@ -46,13 +41,15 @@ export async function POST(request: NextRequest) {
   try {
     payload = JSON.parse(rawBody);
   } catch (e) {
-    console.error('[WEBHOOK] JSON parse error:', e instanceof Error ? e.message : String(e));
+    console.error('[ORDERS/WEBHOOK] JSON parse error:', e);
     return NextResponse.json({ received: true });
   }
 
   const shopDomain = request.headers.get('X-Shopify-Shop-Domain');
+  console.log('[ORDERS/WEBHOOK] Webhook received for shop:', shopDomain);
+
   if (!shopDomain) {
-    console.warn('[WEBHOOK] Missing X-Shopify-Shop-Domain header');
+    console.warn('[ORDERS/WEBHOOK] Missing X-Shopify-Shop-Domain header');
     return NextResponse.json({ received: true });
   }
 
@@ -62,11 +59,11 @@ export async function POST(request: NextRequest) {
   });
 
   if (!user) {
-    console.warn('[WEBHOOK] No user found for shop:', shopDomain);
+    console.warn('[ORDERS/WEBHOOK] No user found for shop domain:', shopDomain);
     return NextResponse.json({ received: true });
   }
 
-  const userId = user.id;
+  console.log('[ORDERS/WEBHOOK] Matched to user ID:', user.id);
 
   const order = payload;
 
@@ -75,13 +72,13 @@ export async function POST(request: NextRequest) {
     !order.total_price_set?.shop_money?.amount ||
     !order.created_at
   ) {
-    console.warn('[WEBHOOK] Invalid or incomplete order payload');
+    console.warn('[ORDERS/WEBHOOK] Invalid or incomplete order payload');
     return NextResponse.json({ received: true });
   }
 
   const orderData = {
     id: Number(order.id),
-    userId: Number(userId),
+    userId: Number(user.id),
     totalPrice: Number(order.total_price_set.shop_money.amount),
     createdAt: order.created_at,
     financialStatus: order.financial_status || null,
@@ -92,13 +89,13 @@ export async function POST(request: NextRequest) {
 
   try {
     await db
-      .insert(orders)  // ← Now orders is imported and recognized!
+      .insert(orders)
       .values(orderData)
       .onConflictDoNothing();
 
-    console.log('[WEBHOOK] Order inserted successfully:', order.id, 'for user:', userId);
+    console.log('[ORDERS/WEBHOOK] Order inserted successfully:', order.id, 'for user:', user.id);
   } catch (err) {
-    console.error('[WEBHOOK] Database insert failed:', err instanceof Error ? err.message : String(err));
+    console.error('[ORDERS/WEBHOOK] Database insert failed:', err);
   }
 
   return NextResponse.json({ success: true });
