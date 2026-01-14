@@ -1,8 +1,8 @@
-// app/api/webhooks/shopify/orders/route.ts
+// src/app/api/webhooks/shopify/orders/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db, users } from '@/lib/db';  // ← Import db AND users table from your lib/db.ts
+import { db, users, orders } from '@/lib/db';  // ← Now import orders too!
 import { eq } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
@@ -15,7 +15,7 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
   const calculated = crypto
     .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
-    .update(rawBody, 'utf8')  // Explicit utf8 for consistency
+    .update(rawBody, 'utf8')
     .digest('base64');
 
   const isValid = crypto.timingSafeEqual(
@@ -25,7 +25,7 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
   if (!isValid) {
     console.error('[WEBHOOK] HMAC mismatch');
-    console.error('[WEBHOOK] Received HMAC (first 20):', hmacHeader.substring(0, 20) + '...');
+    console.error('[WEBHOOK] Received HMAC (first 20):', hmacHeader?.substring(0, 20) + '...');
     console.error('[WEBHOOK] Calculated (first 20):', calculated.substring(0, 20) + '...');
   }
 
@@ -33,18 +33,15 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Get raw body FIRST (critical for correct HMAC)
+  // Get raw body FIRST (critical!)
   const rawBody = await request.text();
 
-  // 2. Get HMAC header
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
 
-  // 3. Verify signature
   if (!verifyWebhookHMAC(rawBody, hmac)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  // 4. Parse payload safely
   let payload;
   try {
     payload = JSON.parse(rawBody);
@@ -53,14 +50,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // 5. Get shop domain from Shopify header (most reliable method)
   const shopDomain = request.headers.get('X-Shopify-Shop-Domain');
   if (!shopDomain) {
     console.warn('[WEBHOOK] Missing X-Shopify-Shop-Domain header');
     return NextResponse.json({ received: true });
   }
 
-  // 6. Find the user connected to this shop
   const user = await db.query.users.findFirst({
     where: eq(users.shopifyShop, shopDomain),
     columns: { id: true },
@@ -73,7 +68,6 @@ export async function POST(request: NextRequest) {
 
   const userId = user.id;
 
-  // 7. Extract order data from payload
   const order = payload;
 
   if (
@@ -93,13 +87,12 @@ export async function POST(request: NextRequest) {
     financialStatus: order.financial_status || null,
     customerId: order.customer?.id ? Number(order.customer.id) : null,
     sourceName: order.source_name || null,
-    shopDomain: shopDomain,  // Use the header value
+    shopDomain: shopDomain,
   };
 
-  // 8. Insert into database
   try {
     await db
-      .insert(orders)
+      .insert(orders)  // ← Now orders is imported and recognized!
       .values(orderData)
       .onConflictDoNothing();
 
@@ -108,6 +101,5 @@ export async function POST(request: NextRequest) {
     console.error('[WEBHOOK] Database insert failed:', err instanceof Error ? err.message : String(err));
   }
 
-  // 9. Always respond 200 OK to Shopify (they retry on non-2xx)
   return NextResponse.json({ success: true });
 }
