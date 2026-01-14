@@ -4,7 +4,7 @@ import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/src/db/schema"; // adjust path if needed (e.g. "../src/db/schema")
 
-// Lazy-loaded client (exactly as you had it)
+// Lazy-loaded client
 let client: Client | null = null;
 
 function getClient(): Client {
@@ -25,7 +25,7 @@ function getClient(): Client {
   return client;
 }
 
-// Drizzle instance – ready for typed queries when you want them
+// Drizzle instance – ready for typed queries
 export const db = drizzle(getClient(), { schema });
 
 // ────────────────────────────────────────────────────────────────
@@ -55,7 +55,6 @@ async function baseRun(sql: string, args: any[] = []) {
 
 // ────────────────────────────────────────────────────────────────
 // AUTOMATIC SCHEMA FIX: Add missing columns on first query (permanent, automatic)
-// Just like your original working setup – no manual intervention ever again
 // ────────────────────────────────────────────────────────────────
 
 let initialized = false;
@@ -113,3 +112,13 @@ export async function batch(statements: { sql: string; args: any[] }[]) {
   await initMissingColumns();
   await getClient().batch(statements, "write");
 }
+
+// ────────────────────────────────────────────────────────────────
+// RE-EXPORT SCHEMA TABLES
+// This allows you to do: import { db, users, orders } from '@/lib/db';
+// ────────────────────────────────────────────────────────────────
+export {
+  users,
+  orders,
+  // Add any other tables here as you use them (e.g. customers, products, sessions...)
+} from "@/src/db/schema";
