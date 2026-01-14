@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     await db
       .update(users)
       .set({
-        shopify_shop: null,
-        shopify_access_token: null,
+        shopifyShop: null,             // ← Fixed: camelCase matching schema
+        shopifyAccessToken: null,      // ← Fixed: camelCase matching schema
       })
       .where(eq(users.shopifyShop, shopDomain));
 
