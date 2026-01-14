@@ -3,21 +3,26 @@ import { getCurrentUser } from '@/lib/auth';
 import { run } from '@/lib/db';
 import crypto from 'crypto';
 
-function verifyHMAC(params: URLSearchParams) {
+function verifyHMAC(params: URLSearchParams): boolean {
   const hmac = params.get('hmac');
   if (!hmac) {
     console.log('[SHOPIFY-OAUTH] HMAC missing');
     return false;
   }
-  const message = Array.from(params.entries())
-    .filter(([k]) => !['hmac', 'signature'].includes(k))
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([k, v]) => `${k}=${v}`)
-    .join('&');
+
+  // Modern/correct way: use the full query string excluding hmac param
+  params.delete('hmac');
+  const message = params.toString(); // preserves original order & encoding
+
+  const digest = crypto
+    .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
+    .update(message)
+    .digest('hex'); // hex for OAuth callback
+
   console.log('[SHOPIFY-OAUTH] HMAC message:', message);
-  const digest = crypto.createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!).update(message).digest('hex');
   console.log('[SHOPIFY-OAUTH] Computed digest:', digest);
   console.log('[SHOPIFY-OAUTH] Shopify provided hmac:', hmac);
+
   const isValid = crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(hmac));
   console.log('[SHOPIFY-OAUTH] HMAC valid:', isValid);
   return isValid;
@@ -27,7 +32,6 @@ export async function GET(request: NextRequest) {
   console.log('[SHOPIFY-OAUTH] Callback endpoint hit at', new Date().toISOString());
 
   const params = request.nextUrl.searchParams;
-
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
 
   if (!verifyHMAC(params)) {
@@ -96,6 +100,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/dashboard?error=db_update_failed`);
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // NEW: Register the orders/create webhook automatically
+  // ────────────────────────────────────────────────────────────────
+  console.log('[SHOPIFY-OAUTH] Registering webhook for orders/create...');
+
+  const webhookAddress = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`;
+
+  const webhookResp = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': access_token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      webhook: {
+        topic: 'orders/create',
+        address: webhookAddress,
+        format: 'json',
+      },
+    }),
+  });
+
+  if (!webhookResp.ok) {
+    const errText = await webhookResp.text();
+    console.error(
+      '[SHOPIFY-OAUTH] Webhook registration FAILED:',
+      webhookResp.status,
+      errText
+    );
+    // Note: We still proceed with redirect — failure here shouldn't block install
+  } else {
+    console.log('[SHOPIFY-OAUTH] Webhook registered SUCCESSFULLY');
+  }
+
   console.log('[SHOPIFY-OAUTH] Redirecting to dashboard with success param');
   return NextResponse.redirect(`${baseUrl}/dashboard?shopify_connected=true`);
-} 
+}
