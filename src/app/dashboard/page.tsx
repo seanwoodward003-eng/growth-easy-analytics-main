@@ -98,7 +98,6 @@ export default function Dashboard() {
       
       alert('Shopify webhook registration result:\n' + JSON.stringify(data, null, 2));
       
-      // Optional: hide button after success
       if (data?.success || data?.registered?.length > 0 || data?.message?.toLowerCase().includes('success')) {
         setWebhookRegistered(true);
       }
@@ -134,7 +133,7 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* NEW: Debug panel */}
+      {/* NEW: Debug panel - remove later */}
       <div className="max-w-4xl mx-auto mb-8 p-6 bg-gray-900/50 rounded-xl border border-cyan-500/30">
         <h2 className="text-xl text-cyan-300 mb-4">Debug Info (remove later)</h2>
         {userLoading ? (
