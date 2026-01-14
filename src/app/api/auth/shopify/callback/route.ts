@@ -10,14 +10,14 @@ function verifyHMAC(params: URLSearchParams): boolean {
     return false;
   }
 
-  // Modern/correct way: use the full query string excluding hmac param
+  // Modern/correct way for OAuth callback HMAC verification
   params.delete('hmac');
-  const message = params.toString(); // preserves original order & encoding
+  const message = params.toString();
 
   const digest = crypto
     .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
     .update(message)
-    .digest('hex'); // hex for OAuth callback
+    .digest('hex');
 
   console.log('[SHOPIFY-OAUTH] HMAC message:', message);
   console.log('[SHOPIFY-OAUTH] Computed digest:', digest);
@@ -101,37 +101,50 @@ export async function GET(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // NEW: Register the orders/create webhook automatically
+  // WEBHOOK REGISTRATION WITH HEAVY DEBUG LOGGING
   // ────────────────────────────────────────────────────────────────
+  console.log('[DEBUG-REG] Reached webhook registration block');
+  console.log('[DEBUG-REG] Current access_token length:', access_token.length);
+  console.log('[DEBUG-REG] Shop domain:', shop);
+  console.log('[DEBUG-REG] NEXT_PUBLIC_APP_URL value:', process.env.NEXT_PUBLIC_APP_URL || 'NOT SET!!!');
+  console.log('[DEBUG-REG] Full webhook address to be sent:', `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`);
+
   console.log('[SHOPIFY-OAUTH] Registering webhook for orders/create...');
 
   const webhookAddress = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`;
 
-  const webhookResp = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
-    method: 'POST',
-    headers: {
-      'X-Shopify-Access-Token': access_token,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      webhook: {
-        topic: 'orders/create',
-        address: webhookAddress,
-        format: 'json',
+  try {
+    const webhookResp = await fetch(`https://${shop}/admin/api/2026-01/webhooks.json`, {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': access_token,
+        'Content-Type': 'application/json',
       },
-    }),
-  });
+      body: JSON.stringify({
+        webhook: {
+          topic: 'orders/create',
+          address: webhookAddress,
+          format: 'json',
+        },
+      }),
+    });
 
-  if (!webhookResp.ok) {
-    const errText = await webhookResp.text();
-    console.error(
-      '[SHOPIFY-OAUTH] Webhook registration FAILED:',
-      webhookResp.status,
-      errText
-    );
-    // Note: We still proceed with redirect — failure here shouldn't block install
-  } else {
-    console.log('[SHOPIFY-OAUTH] Webhook registered SUCCESSFULLY');
+    console.log('[DEBUG-REG] Webhook API response status:', webhookResp.status);
+    console.log('[DEBUG-REG] Response headers:', Object.fromEntries(webhookResp.headers));
+
+    if (!webhookResp.ok) {
+      const errText = await webhookResp.text();
+      console.error('[SHOPIFY-OAUTH] Webhook registration FAILED:', webhookResp.status, errText);
+      console.error('[DEBUG-REG] Full Shopify error response body:', errText);
+    } else {
+      const respData = await webhookResp.json();
+      console.log('[SHOPIFY-OAUTH] Webhook registered SUCCESSFULLY');
+      console.log('[DEBUG-REG] Created webhook ID:', respData.webhook?.id);
+      console.log('[DEBUG-REG] Full registration response:', JSON.stringify(respData, null, 2));
+    }
+  } catch (regError) {
+    console.error('[DEBUG-REG] Webhook registration THREW EXCEPTION:', regError instanceof Error ? regError.message : String(regError));
+    console.error('[DEBUG-REG] Error stack:', regError);
   }
 
   console.log('[SHOPIFY-OAUTH] Redirecting to dashboard with success param');
