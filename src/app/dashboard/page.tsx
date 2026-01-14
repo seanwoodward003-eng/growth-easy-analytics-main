@@ -113,6 +113,16 @@ export default function Dashboard() {
               <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
                 Connect HubSpot
               </button>
+<button
+  onClick={async () => {
+    const res = await fetch('/api/register-webhook', { method: 'POST' });
+    const data = await res.json();
+    console.log('Webhook registration result:', data);
+    alert('Result: ' + JSON.stringify(data));
+  }}
+>
+  Register Webhook (one-time)
+</button>
             )}
           </div>
         </div>
