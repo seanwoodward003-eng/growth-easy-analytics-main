@@ -18,12 +18,14 @@ export default function Dashboard() {
     refresh 
   } = useMetrics();
 
-  // Debug logs on every render
+  // Debug logs
   console.log('Dashboard render - shopifyConnected:', shopifyConnected, 'isLoading:', isLoading);
 
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false);
+  const [webhookRegistered, setWebhookRegistered] = useState(false); // optional – hide after success
 
   const biggestOpportunity = metrics.churn?.rate > 7 
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
@@ -36,14 +38,14 @@ export default function Dashboard() {
     console.log('useEffect - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected) {
-      console.log('Strong refresh after connect');
-      refresh();                    // Immediate
-      setTimeout(() => refresh(), 500);   // 0.5s
-      setTimeout(() => refresh(), 1500);  // 1.5s (forces cache bust)
+      console.log('Strong refresh after Shopify connect');
+      refresh();
+      setTimeout(() => refresh(), 500);
+      setTimeout(() => refresh(), 1500);
       window.history.replaceState({}, '', '/dashboard');
       alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh, shopifyConnected, isLoading]); // Extra dependency
+  }, [searchParams, refresh, shopifyConnected]);
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -55,16 +57,45 @@ export default function Dashboard() {
     window.location.href = `/api/auth/shopify?shop=${encodeURIComponent(shopDomain.trim().toLowerCase())}`;
   };
 
+  const handleRegisterWebhook = async () => {
+    setIsRegisteringWebhook(true);
+    try {
+      const res = await fetch('/api/register-webhook', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('Shopify webhook registration result:', data);
+      
+      alert('Shopify webhook registration result:\n' + JSON.stringify(data, null, 2));
+      
+      // Optional: hide button after success (depends on what your API returns)
+      if (data?.success || data?.registered?.length > 0 || data?.message?.toLowerCase().includes('success')) {
+        setWebhookRegistered(true);
+      }
+    } catch (err) {
+      console.error('Failed to register Shopify webhook:', err);
+      alert('Failed to register Shopify webhook:\n' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsRegisteringWebhook(false);
+    }
+  };
+
   return (
     <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24">
       <h1 className="text-center text-6xl md:text-8xl font-black mb-12 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
         Dashboard
       </h1>
 
-      {/* Connect Banner - forced re-render with key */}
+      {/* Connect Banner */}
       {anyConnectionMissing && (
         <div 
-          key={`banner-${shopifyConnected}-${Date.now()}`} // Force re-render on connect change + time
+          key={`banner-${shopifyConnected}-${ga4Connected}-${hubspotConnected}-${Date.now()}`}
           className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md"
         >
           <p className="text-3xl text-cyan-300 mb-6">
@@ -72,7 +103,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify - disappears when connected */}
+            {/* Shopify */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
@@ -84,18 +115,18 @@ export default function Dashboard() {
                     onChange={(e) => setShopDomain(e.target.value.trim())}
                     onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
                     disabled={isConnecting}
-                    className="px-8 py-5 bg-white/10 backdrop-blur border border-cyan-500/50 rounded-xl text-white placeholder-cyan-300 text-xl focus:outline-none focus:border-cyan-300"
+                    className="px-8 py-5 bg-white/10 backdrop-blur border border-cyan-500/50 rounded-xl text-white placeholder-cyan-300 text-xl focus:outline-none focus:border-cyan-300 w-full max-w-md"
                   />
                   <button
                     onClick={handleShopifyConnect}
                     disabled={isConnecting || !shopDomain}
-                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50"
+                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50 whitespace-nowrap"
                   >
                     {isConnecting ? 'Connecting...' : 'Connect Shopify'}
                   </button>
                 </div>
-                {error && <p className="text-red-400 text-lg">{error}</p>}
-                <p className="text-cyan-200 text-sm max-w-md">
+                {error && <p className="text-red-400 text-lg mt-3">{error}</p>}
+                <p className="text-cyan-200 text-sm max-w-md mt-2">
                   Found in Settings → Domains in your Shopify admin
                 </p>
               </div>
@@ -103,36 +134,53 @@ export default function Dashboard() {
 
             {/* GA4 */}
             {!ga4Connected && (
-              <button onClick={() => window.location.href = '/api/auth/ga4'} className="cyber-btn text-2xl px-10 py-5">
+              <button 
+                onClick={() => window.location.href = '/api/auth/ga4'} 
+                className="cyber-btn text-2xl px-10 py-5"
+              >
                 Connect GA4
               </button>
             )}
 
             {/* HubSpot */}
             {!hubspotConnected && (
-              <button onClick={() => window.location.href = '/api/auth/hubspot'} className="cyber-btn text-2xl px-10 py-5">
+              <button 
+                onClick={() => window.location.href = '/api/auth/hubspot'} 
+                className="cyber-btn text-2xl px-10 py-5"
+              >
                 Connect HubSpot
               </button>
-<button
-  onClick={async () => {
-    const res = await fetch('/api/register-webhook', { method: 'POST' });
-    const data = await res.json();
-    console.log('Webhook registration result:', data);
-    alert('Result: ' + JSON.stringify(data));
-  }}
->
-  Register Webhook (one-time)
-</button>
+            )}
+
+            {/* Shopify Webhook registration – only show when Shopify is connected */}
+            {shopifyConnected && !webhookRegistered && (
+              <button
+                onClick={handleRegisterWebhook}
+                disabled={isRegisteringWebhook}
+                className="cyber-btn text-2xl px-10 py-5 disabled:opacity-60"
+              >
+                {isRegisteringWebhook 
+                  ? 'Registering Webhooks...' 
+                  : 'Register Shopify Webhooks (one-time)'}
+              </button>
+            )}
+
+            {shopifyConnected && webhookRegistered && (
+              <div className="text-green-400 text-xl font-medium flex items-center gap-2">
+                <span>✓ Shopify webhooks registered</span>
+              </div>
             )}
           </div>
         </div>
       )}
 
       {/* Biggest Opportunity Card */}
-      <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
-        <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
-        <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
-      </div>
+      {!isLoading && (
+        <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
+          <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
+          <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
+        </div>
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
