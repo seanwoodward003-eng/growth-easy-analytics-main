@@ -1,29 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { orders, users } from '@/src/db/schema';
-import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
+// ... your other imports
 
-export const runtime = 'nodejs';
+export const runtime = 'nodejs';  // Good, keep if needed
 
 function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean {
   if (!hmacHeader) {
-    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256 header');
+    console.error('[WEBHOOK] Missing X-Shopify-Hmac-Sha256');
     return false;
   }
 
   const calculated = crypto
     .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
-    .update(rawBody)
+    .update(rawBody)  // ← raw string is fine (utf-8 default)
     .digest('base64');
 
-  const isValid = crypto.timingSafeEqual(Buffer.from(calculated), Buffer.from(hmacHeader));
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(calculated),
+    Buffer.from(hmacHeader)
+  );
+
   if (!isValid) console.error('[WEBHOOK] HMAC mismatch');
   return isValid;
 }
 
 export async function POST(request: NextRequest) {
+  // Get raw body FIRST — this is key!
   const rawBody = await request.text();
+
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
 
   if (!verifyWebhookHMAC(rawBody, hmac)) {
@@ -32,52 +36,31 @@ export async function POST(request: NextRequest) {
 
   let payload;
   try {
-    payload = JSON.parse(rawBody);
+    payload = JSON.parse(rawBody);  // Now safe to parse
   } catch (e) {
-    console.error('[WEBHOOK] JSON parse error:', e instanceof Error ? e.message : String(e));
+    console.error('[WEBHOOK] JSON parse error:', e);
     return NextResponse.json({ received: true });
   }
 
-  const order = payload;
-
-  if (!order?.id || !order.shop_domain || !order.total_price_set?.shop_money?.amount) {
-    console.warn('[WEBHOOK] Invalid order payload');
+  // Use reliable header for shop domain (recommended!)
+  const shopDomain = request.headers.get('X-Shopify-Shop-Domain');
+  if (!shopDomain) {
+    console.warn('[WEBHOOK] Missing X-Shopify-Shop-Domain header');
     return NextResponse.json({ received: true });
   }
 
+  // Now query user with shopDomain (instead of payload.shop_domain)
   const user = await db.query.users.findFirst({
-    where: eq(users.shopifyShop, order.shop_domain),
+    where: eq(users.shopifyShop, shopDomain),
     columns: { id: true },
   });
 
   if (!user) {
-    console.warn('[WEBHOOK] No user for shop_domain:', order.shop_domain);
+    console.warn('[WEBHOOK] No user for shop:', shopDomain);
     return NextResponse.json({ received: true });
   }
 
-  const userId = user.id;
-
-  const orderData = {
-    id: Number(order.id),
-    userId: Number(userId),
-    totalPrice: Number(order.total_price_set.shop_money.amount),
-    createdAt: order.created_at,
-    financialStatus: order.financial_status,
-    customerId: order.customer?.id ? Number(order.customer.id) : null,
-    sourceName: order.source_name || null,
-    shopDomain: order.shop_domain || order.domain || null,
-  };
-
-  try {
-    await db
-      .insert(orders)
-      .values(orderData)
-      .onConflictDoNothing();
-
-    console.log('[WEBHOOK] Order inserted:', order.id, 'user:', userId);
-  } catch (err) {
-    console.error('[WEBHOOK] Insert failed:', err instanceof Error ? err.message : String(err));
-  }
+  // ... rest of your order processing logic (payload is now safe)
 
   return NextResponse.json({ success: true });
 }
