@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 
+// Define the expected shape of each order row
+type OrderRow = {
+  total_price: number | string;
+  created_at: string;
+  customer_id: string | number | null;
+  source_name: string | null;
+  financial_status: string;
+};
+
 export async function GET() {
   console.log('[METRICS-API] ENDPOINT STARTED at', new Date().toISOString());
 
@@ -30,15 +39,9 @@ export async function GET() {
   // DEBUG: Before orders query
   console.log('[METRICS-API] Preparing to query orders table for user:', userId);
 
-  let orders = [];
+  let orders: OrderRow[] = [];
   try {
-    orders = await getRows<{
-      total_price: number | string;
-      created_at: string;
-      customer_id: string | number | null;
-      source_name: string | null;
-      financial_status: string;
-    }>(
+    orders = await getRows<OrderRow>(
       `SELECT total_price, created_at, customer_id, source_name, financial_status
        FROM orders
        WHERE user_id = ?
