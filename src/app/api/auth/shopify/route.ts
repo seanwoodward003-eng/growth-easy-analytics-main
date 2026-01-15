@@ -1,11 +1,10 @@
-// app/api/auth/shopify/route.ts
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
-    return Response.redirect('/login'); // Change to your login route if needed
+    return Response.redirect('/login');
   }
 
   const shop = request.nextUrl.searchParams.get('shop');
@@ -24,12 +23,9 @@ export async function GET(request: NextRequest) {
 
   const authUrl = new URL(`https://${shop}/admin/oauth/authorize`);
   authUrl.searchParams.append('client_id', process.env.SHOPIFY_API_KEY!);
-  authUrl.searchParams.append('scope', 'read_orders,read_products,read_customers,read_analytics,read_reports'); // Add your required scopes
+  authUrl.searchParams.append('scope', 'read_orders read_products read_customers read_analytics read_all_orders read_reports'); // ← UPDATED HERE: all 6 scopes
   authUrl.searchParams.append('redirect_uri', redirectUri);
   authUrl.searchParams.append('state', state);
-
-  // Optional: for online tokens (per-user access)
-  // authUrl.searchParams.append('grant_options[]', 'per-user');
 
   return Response.redirect(authUrl);
 }
