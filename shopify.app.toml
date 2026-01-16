@@ -1,0 +1,31 @@
+name = "Growth Easy AI"
+client_id = "your_shopify_api_key_here"  # ← from Shopify dashboard > your app > API credentials > API key
+
+application_url = "https://www.growtheasy-ai.com"
+
+redirect_urls = [
+  "https://www.growtheasy-ai.com/api/auth/shopify/callback"
+]
+
+[webhooks]
+api_version = "2026-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "orders/create" ]  # or "orders/paid" if you prefer
+  uri = "/api/webhooks/shopify/orders"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/api/webhooks/shopify/app-uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "customers/data_request" ]
+  uri = "/api/webhooks/shopify/customers-data-request"
+
+  [[webhooks.subscriptions]]
+  topics = [ "customers/redact" ]
+  uri = "/api/webhooks/shopify/customers-redact"
+
+  [[webhooks.subscriptions]]
+  topics = [ "shop/redact" ]
+  uri = "/api/webhooks/shopify/shop-redact"
