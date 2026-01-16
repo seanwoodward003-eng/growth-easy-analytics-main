@@ -25,16 +25,16 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false);
-  const [webhookRegistered, setWebhookRegistered] = useState(false); // optional – hide after success
+  const [webhookRegistered, setWebhookRegistered] = useState(false);
 
-  // NEW: Client-side user data fetch for debug + verification
+  // Client-side user data fetch for debug + verification
   const [currentUser, setCurrentUser] = useState<{ id?: number; shopifyShop?: string | null; shopifyAccessToken?: string | null } | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me'); // simple endpoint returning current user
+        const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
           setCurrentUser(data.user);
@@ -109,7 +109,6 @@ export default function Dashboard() {
     }
   };
 
-  // NEW: Reset button handler (DEV only)
   const handleResetShopify = async () => {
     if (!confirm('Reset Shopify connection? This clears tokens for your account only.')) return;
     
@@ -133,9 +132,9 @@ export default function Dashboard() {
         Dashboard
       </h1>
 
-      {/* NEW: Debug panel - remove later */}
+      {/* Debug panel */}
       <div className="max-w-4xl mx-auto mb-8 p-6 bg-gray-900/50 rounded-xl border border-cyan-500/30">
-        <h2 className="text-xl text-cyan-300 mb-4">Debug Info (remove later)</h2>
+        <h2 className="text-xl text-cyan-300 mb-4">Debug Info</h2>
         {userLoading ? (
           <p>Loading user data...</p>
         ) : (
@@ -146,17 +145,15 @@ export default function Dashboard() {
             <p>From hook - shopifyConnected: {shopifyConnected ? 'Yes' : 'No'}</p>
           </>
         )}
-        {process.env.NODE_ENV === 'development' && (
-          <button
-            onClick={handleResetShopify}
-            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-          >
-            [DEV] Reset Shopify Connection
-          </button>
-        )}
+        <button
+          onClick={handleResetShopify}
+          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Reset Shopify Connection
+        </button>
       </div>
 
-      {/* Connect Banner */}
+      {/* Connect Banner - only shows if something is missing */}
       {anyConnectionMissing && (
         <div 
           key={`banner-${shopifyConnected}-${ga4Connected}-${hubspotConnected}-${Date.now()}`}
@@ -167,7 +164,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 mt-10">
 
-            {/* Shopify */}
+            {/* Shopify - only show input when NOT connected */}
             {!shopifyConnected && (
               <div className="flex flex-col items-center gap-6">
                 <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
@@ -216,7 +213,7 @@ export default function Dashboard() {
               </button>
             )}
 
-            {/* Shopify Webhook registration – only show when Shopify is connected */}
+            {/* Webhook registration */}
             {shopifyConnected && !webhookRegistered && (
               <button
                 onClick={handleRegisterWebhook}
