@@ -12,7 +12,6 @@ function verifyHMAC(params: URLSearchParams): boolean {
 
   params.delete('hmac');
 
-  // Convert to object and sort keys alphabetically (Shopify requirement)
   const paramObj: Record<string, string> = {};
   params.forEach((value, key) => {
     paramObj[key] = value;
@@ -112,14 +111,12 @@ export async function GET(request: NextRequest) {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // WEBHOOK REGISTRATION WITH ALL ORIGINAL DEBUG LOGGING
-  // Using non-protected topic 'orders/paid'
+  // WEBHOOK REGISTRATION – ALL ORIGINAL DEBUG + MANDATORY COMPLIANCE
   // ────────────────────────────────────────────────────────────────
   console.log('[DEBUG-REG] Reached webhook registration block');
   console.log('[DEBUG-REG] Current access_token length:', access_token.length);
   console.log('[DEBUG-REG] Shop domain:', shop);
   console.log('[DEBUG-REG] NEXT_PUBLIC_APP_URL value:', process.env.NEXT_PUBLIC_APP_URL || 'NOT SET!!!');
-  console.log('[DEBUG-REG] Full webhook address to be sent:', `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/shopify/orders`);
 
   const apiVersion = '2026-01';
   const headers = {
@@ -131,7 +128,6 @@ export async function GET(request: NextRequest) {
     const address = `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
     console.log(`[DEBUG-REG] Registering ${topic} at ${address}`);
 
-    // Check if already exists
     try {
       const checkRes = await fetch(`https://${shop}/admin/api/${apiVersion}/webhooks.json`, { headers });
       console.log('[DEBUG-REG] Check response status:', checkRes.status);
@@ -144,14 +140,13 @@ export async function GET(request: NextRequest) {
       const exists = webhooks?.some((w: any) => w.topic === topic && w.address === address);
 
       if (exists) {
-        console.log(`[DEBUG-REG] ${topic} already exists — skipping creation`);
+        console.log(`[DEBUG-REG] ${topic} already exists — skipping`);
         return true;
       }
     } catch (checkErr) {
       console.error('[DEBUG-REG] Existence check threw:', checkErr);
     }
 
-    // Create
     try {
       const resp = await fetch(`https://${shop}/admin/api/${apiVersion}/webhooks.json`, {
         method: 'POST',
@@ -170,26 +165,27 @@ export async function GET(request: NextRequest) {
 
       if (!resp.ok) {
         const errText = await resp.text();
-        console.error('[SHOPIFY-OAUTH] Webhook registration FAILED:', resp.status, errText);
+        console.error(`[SHOPIFY-OAUTH] Webhook registration FAILED for ${topic}: ${resp.status} - ${errText}`);
         console.error('[DEBUG-REG] Full Shopify error response body:', errText);
         return false;
       }
 
-      const respData = await resp.json();
-      console.log('[SHOPIFY-OAUTH] Webhook registered SUCCESSFULLY');
-      console.log('[DEBUG-REG] Created webhook ID:', respData.webhook?.id);
-      console.log('[DEBUG-REG] Full registration response:', JSON.stringify(respData, null, 2));
+      const data = await resp.json();
+      console.log(`[SHOPIFY-OAUTH] ${topic} webhook registered SUCCESSFULLY - ID: ${data.webhook?.id}`);
       return true;
-    } catch (regError) {
-      console.error('[DEBUG-REG] Webhook registration THREW EXCEPTION:', regError instanceof Error ? regError.message : String(regError));
-      console.error('[DEBUG-REG] Error stack:', regError);
+    } catch (err) {
+      console.error(`[DEBUG-REG] Registration exception for ${topic}:`, err);
       return false;
     }
   }
 
   console.log('[WEBHOOK-REG] Starting registrations...');
-  await registerWebhook('orders/paid', '/api/webhooks/shopify/orders');        // Non-protected topic
+  await registerWebhook('orders/create', '/api/webhooks/shopify/orders');
   await registerWebhook('app/uninstalled', '/api/webhooks/shopify/app-uninstalled');
+  // Mandatory compliance webhooks (fixes the 2 failed checks)
+  await registerWebhook('customers/data_request', '/api/webhooks/shopify/customers-data-request');
+  await registerWebhook('customers/redact', '/api/webhooks/shopify/customers-redact');
+  await registerWebhook('shop/redact', '/api/webhooks/shopify/shop-redact');
 
   console.log('[SHOPIFY-OAUTH] Redirecting to dashboard with success param');
   return NextResponse.redirect(`${baseUrl}/dashboard?shopify_connected=true`);
