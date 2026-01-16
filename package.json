@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@shopify/cli": "^3.63.0",
-    "@shopify/app": "^3.63.0",
+    "@shopify/app-cli": "^3.63.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20",
