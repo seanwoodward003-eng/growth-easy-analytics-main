@@ -10,7 +10,9 @@
     "db:push": "drizzle-kit push:turso",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "tsx scripts/migrate.ts",
-    "postdeploy": "tsx scripts/migrate.ts"
+    "postdeploy": "tsx scripts/migrate.ts",
+    "shopify:dev": "npx shopify app dev",
+    "shopify:deploy": "npx shopify app deploy"
   },
   "dependencies": {
     "@ai-sdk/react": "^0.0.41",
@@ -32,6 +34,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@shopify/cli": "^3.63.0",
+    "@shopify/app": "^3.63.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20",
