@@ -12,26 +12,47 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     .update(rawBody, 'utf8')
     .digest('base64');
 
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(calculated),
-    Buffer.from(hmacHeader)
-  );
-
-  if (!isValid) {
-    console.error('[SHOP-REDACT] HMAC mismatch');
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(calculated),
+      Buffer.from(hmacHeader)
+    );
+  } catch {
+    console.error('[SHOP-REDACT] HMAC comparison failed (timing-safe)');
+    return false;
   }
-
-  return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await request.text();
+  } catch (err) {
+    console.error('[SHOP-REDACT] Failed to read body', err);
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
 
   if (!verifyWebhookHMAC(rawBody, hmac)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  console.log('[SHOP-REDACT] Received and verified');
-  return NextResponse.json({ received: true });
+  // ── Process payload ────────────────────────────────────────
+  try {
+    const payload = JSON.parse(rawBody);
+
+    console.log('[SHOP-REDACT] VERIFIED & RECEIVED', {
+      shop_domain: payload.domain,
+      shop_id: payload.shop_id,
+      occurred_at: payload.occurred_at,
+    });
+
+    // Future: delete ALL data related to this shop
+    // await deleteShopData(payload.shop_id);
+  } catch (parseErr) {
+    console.error('[SHOP-REDACT] Payload parse failed:', parseErr);
+  }
+
+  return NextResponse.json({ received: true }, { status: 200 });
 }
