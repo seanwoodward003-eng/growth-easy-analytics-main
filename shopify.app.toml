@@ -1,6 +1,5 @@
 name = "Growth Easy AI"
-client_id = "your_shopify_api_key_here"  # ← from Shopify dashboard > your app > API credentials > API key
-
+client_id = "3f2fd306f2c966efd76f3c1d478e3875"
 application_url = "https://www.growtheasy-ai.com"
 
 redirect_urls = [
