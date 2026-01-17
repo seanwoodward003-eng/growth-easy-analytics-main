@@ -12,51 +12,46 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     .update(rawBody, 'utf8')
     .digest('base64');
 
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(calculated),
-      Buffer.from(hmacHeader)
-    );
-  } catch {
-    console.error('[CUSTOMERS-DATA-REQUEST] HMAC comparison failed (timing-safe)');
-    return false;
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(calculated),
+    Buffer.from(hmacHeader)
+  );
+
+  if (!isValid) {
+    console.error('[CUSTOMERS-DATA-REQUEST] HMAC mismatch');
   }
+
+  return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  let rawBody: string;
-  try {
-    rawBody = await request.text();
-  } catch (err) {
-    console.error('[CUSTOMERS-DATA-REQUEST] Failed to read body', err);
-    return NextResponse.json({ received: true }, { status: 200 });
-  }
+  console.log('[CUSTOMERS-DATA-REQUEST] Incoming POST request');
+  console.log('[DEBUG] Headers:', Object.fromEntries(request.headers));
+
+  const rawBody = await request.text();
+  console.log('[DEBUG] Raw body length:', rawBody.length);
+  console.log('[DEBUG] Raw body (first 500 chars):', rawBody.substring(0, 500));
 
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
+  console.log('[DEBUG] HMAC header present:', !!hmac);
 
   if (!verifyWebhookHMAC(rawBody, hmac)) {
+    console.error('[CUSTOMERS-DATA-REQUEST] HMAC verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  // ── Process payload ────────────────────────────────────────
+  console.log('[CUSTOMERS-DATA-REQUEST] HMAC verified successfully');
+
+  let payload;
   try {
-    const payload = JSON.parse(rawBody);
-
-    console.log('[CUSTOMERS-DATA-REQUEST] VERIFIED & RECEIVED', {
-      shop_domain: payload.domain,
-      shop_id: payload.shop_id,
-      customer: payload.customer?.id,
-      customer_email: payload.customer?.email,
-      data_request_id: payload.data_request?.id,
-      requested_at: payload.data_request?.requested_at,
-    });
-
-    // Future: collect data and send to merchant (very rare request)
-    // await sendDataRequestEmail(payload);
-  } catch (parseErr) {
-    console.error('[CUSTOMERS-DATA-REQUEST] Payload parse failed:', parseErr);
+    payload = JSON.parse(rawBody);
+    console.log('[DEBUG] Payload parsed:', JSON.stringify(payload, null, 2));
+  } catch (e) {
+    console.error('[CUSTOMERS-DATA-REQUEST] JSON parse error:', e);
   }
 
-  // Always return 200 quickly - Shopify requires fast response
-  return NextResponse.json({ received: true }, { status: 200 });
+  console.log('[CUSTOMERS-DATA-REQUEST] Webhook received and verified');
+  console.log('[DEBUG] Returning 200 OK');
+
+  return NextResponse.json({ received: true });
 }
