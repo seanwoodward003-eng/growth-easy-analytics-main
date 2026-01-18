@@ -74,6 +74,9 @@ export default function PrivacyPolicy() {
             For privacy questions: privacy@growtheasy.ai<br />
             GrowthEasy AI<br />
             United Kingdom
+            51 portal road
+            Winchester 
+            SO23 0PU
           </p>
         </section>
       </div>
