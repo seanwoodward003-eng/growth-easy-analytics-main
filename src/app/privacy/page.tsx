@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
       </h1>
 
       <div className="max-w-5xl mx-auto space-y-10 text-lg md:text-xl leading-relaxed text-cyan-100">
-        <p className="text-sm text-cyan-400 text-center mb-8">Last updated: December 2025</p>
+        <p className="text-sm text-cyan-400 text-center mb-8">Last updated: 18 January 2026</p>
 
         <section>
           <h2 className="text-4xl font-bold text-cyan-400 glow-medium mb-6">1. Introduction</h2>
@@ -55,12 +55,15 @@ export default function PrivacyPolicy() {
           <p>
             All data is encrypted at rest and in transit. Access tokens are stored securely and never logged. We use industry-standard providers (Render, Vercel, Stripe) with GDPR-compliant infrastructure. Data is retained only as long as your account is active. Upon deletion, all data is permanently removed within 30 days.
           </p>
+
           <p className="mt-6">
-            We use encryption, access controls, rate limiting, and regular security testing to protect your data.
+            We use encryption, access controls, rate limiting, and regular testing to secure data.
           </p>
+
           <p className="mt-6">
             <strong>In the unlikely event of a data breach, we will notify affected users and the ICO as required by law.</strong>
           </p>
+
           <p className="mt-6">
             We use US-based processors (Resend, Stripe, OpenAI) with Standard Contractual Clauses (SCCs) or UK International Data Transfer Agreement (IDTA) for international transfers.
           </p>
@@ -69,7 +72,7 @@ export default function PrivacyPolicy() {
         <section>
           <h2 className="text-4xl font-bold text-cyan-400 glow-medium mb-6">5. Your Rights (GDPR)</h2>
           <p>
-            You have the right to:
+            You have the right to access, rectify, erase, object to, or port your data. Email info@growtheasy-ai.com for any request — we respond within 1 month.
           </p>
           <ul className="list-disc pl-8 space-y-4 mt-4">
             <li>Access your personal data</li>
@@ -79,25 +82,27 @@ export default function PrivacyPolicy() {
             <li>Data portability</li>
           </ul>
           <p className="mt-6">
-            Contact us at privacy@growtheasy-ai.com to exercise these rights.
+            Contact us at info@growtheasy-ai.com (or privacy@growtheasy-ai.com) to exercise these rights.
           </p>
         </section>
 
         <section>
           <h2 className="text-4xl font-bold text-cyan-400 glow-medium mb-6">6. Contact</h2>
           <p>
-            For privacy questions: privacy@growtheasy-ai.com<br />
+            For privacy questions or data requests:<br />
+            info@growtheasy-ai.com or privacy@growtheasy-ai.com<br />
             GrowthEasy AI<br />
             51 Portal Road<br />
             Winchester<br />
-            SO23 0PU
+            SO23 0PU<br />
+            United Kingdom
           </p>
         </section>
       </div>
 
       <div className="text-center mt-20">
         <p className="text-2xl text-cyan-400 glow-medium">
-          Beta v0.1 © 2025 GrowthEasy AI
+          Beta v0.1 © 2026 GrowthEasy AI
         </p>
       </div>
     </div>
