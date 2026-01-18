@@ -37,7 +37,7 @@ async function handleSignup(json: any) {
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
 
-  // Send verification email — NEW HIGH-CONVERTING DESIGN
+  // Send verification email
   try {
     await resend.emails.send({
       from: 'GrowthEasy AI <verify@growtheasy.ai>',
@@ -75,18 +75,14 @@ async function handleSignup(json: any) {
     });
   } catch (emailError) {
     console.error('Failed to send verification email:', emailError);
-    // Don't fail signup if email fails
   }
 
-  const { access, refresh } = generateTokens(user.id, email);
-  const csrf = randomBytes(32).toString('hex');
-
+  // RESPONSE — no cookies, no instant access
   const response = NextResponse.json({
     success: true,
-    message: 'Check your email! Verify to activate your 7-day free trial.',
+    message: 'Verification email sent! Check your inbox to activate your 7-day free trial.',
   });
 
-  await setAuthCookies(access, refresh, csrf);
   return response;
 }
 
