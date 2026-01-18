@@ -8,6 +8,7 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false); // New marketing opt-in
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -58,7 +59,8 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: email.toLowerCase().trim(),
-          ...(mode === 'signup' && { consent: true })
+          consent: true, // Existing GDPR consent
+          marketing_consent: marketingConsent // New marketing opt-in
         }),
       });
 
@@ -148,12 +150,33 @@ export default function LandingPage() {
             </button>
           </form>
 
+          {/* Marketing Consent Checkbox (only on signup) */}
+          {mode === 'signup' && (
+            <div className="mt-6 text-left max-w-2xl mx-auto text-cyan-300 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="marketing_consent"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="w-5 h-5 accent-cyan-400"
+                />
+                <span>
+                  I agree to receive marketing emails from GrowthEasy AI (tips, updates, offers — unsubscribe anytime).
+                  See our <Link href="/privacy" className="underline hover:text-cyan-100">Privacy Policy</Link>.
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Toggle Link */}
           <button
             type="button"
             onClick={() => {
               setMode(mode === 'signup' ? 'signin' : 'signup');
               setMessage('');
               setEmail('');
+              setMarketingConsent(false); // Reset consent
             }}
             className="mt-6 md:mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
           >
