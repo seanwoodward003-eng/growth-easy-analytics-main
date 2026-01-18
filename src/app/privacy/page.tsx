@@ -13,6 +13,9 @@ export default function PrivacyPolicy() {
           <p>
             GrowthEasy AI ("we", "us", "our") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you use our platform, including when you connect your Shopify, Google Analytics 4, or HubSpot accounts. We comply with the UK GDPR and EU GDPR where applicable.
           </p>
+          <p className="mt-6">
+            This service is for business use only – not for consumers under 18 or personal use. The Consumer Rights Act 2015 does not apply.
+          </p>
         </section>
 
         <section>
@@ -42,12 +45,21 @@ export default function PrivacyPolicy() {
             <li>Improve our product and fix bugs</li>
             <li>Send occasional service updates (you can opt out)</li>
           </ul>
+          <p className="mt-6">
+            We process your data under legitimate interest for service delivery (scans, insights, weekly emails) and relevant marketing (product updates). This is necessary and proportionate, with low privacy impact. You can object anytime by emailing privacy@growtheasy-ai.com.
+          </p>
         </section>
 
         <section>
           <h2 className="text-4xl font-bold text-cyan-400 glow-medium mb-6">4. Data Storage & Security</h2>
           <p>
             All data is encrypted at rest and in transit. Access tokens are stored securely and never logged. We use industry-standard providers (Render, Vercel, Stripe) with GDPR-compliant infrastructure. Data is retained only as long as your account is active. Upon deletion, all data is permanently removed within 30 days.
+          </p>
+          <p className="mt-6">
+            We use encryption, access controls, rate limiting, and regular testing to secure data. In the unlikely event of a data breach, we will notify affected users and the ICO as required by law.
+          </p>
+          <p className="mt-6">
+            We use US-based processors (Resend, Stripe, OpenAI) with Standard Contractual Clauses (SCCs) or UK International Data Transfer Agreement (IDTA) for international transfers.
           </p>
         </section>
 
@@ -64,18 +76,17 @@ export default function PrivacyPolicy() {
             <li>Data portability</li>
           </ul>
           <p className="mt-6">
-            Contact us at privacy@growtheasy.ai to exercise these rights.
+            Contact us at privacy@growtheasy-ai.com to exercise these rights.
           </p>
         </section>
 
         <section>
           <h2 className="text-4xl font-bold text-cyan-400 glow-medium mb-6">6. Contact</h2>
           <p>
-            For privacy questions: privacy@growtheasy.ai<br />
+            For privacy questions: privacy@growtheasy-ai.com<br />
             GrowthEasy AI<br />
-            United Kingdom
-            51 portal road
-            Winchester 
+            51 Portal Road<br />
+            Winchester<br />
             SO23 0PU
           </p>
         </section>
