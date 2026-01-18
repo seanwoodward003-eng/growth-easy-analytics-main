@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
             <li>Usage data (which pages you visit, features used) for product improvement</li>
           </ul>
           <p className="mt-6">
-            We do **not** collect payment details — all billing is handled securely by Stripe.
+            We do <strong>not</strong> collect payment details — all billing is handled securely by Stripe.
           </p>
         </section>
 
@@ -56,7 +56,10 @@ export default function PrivacyPolicy() {
             All data is encrypted at rest and in transit. Access tokens are stored securely and never logged. We use industry-standard providers (Render, Vercel, Stripe) with GDPR-compliant infrastructure. Data is retained only as long as your account is active. Upon deletion, all data is permanently removed within 30 days.
           </p>
           <p className="mt-6">
-            We use encryption, access controls, rate limiting, and regular testing to secure data. In the unlikely event of a data breach, we will notify affected users and the ICO as required by law.
+            We use encryption, access controls, rate limiting, and regular security testing to protect your data.
+          </p>
+          <p className="mt-6">
+            <strong>In the unlikely event of a data breach, we will notify affected users and the ICO as required by law.</strong>
           </p>
           <p className="mt-6">
             We use US-based processors (Resend, Stripe, OpenAI) with Standard Contractual Clauses (SCCs) or UK International Data Transfer Agreement (IDTA) for international transfers.
