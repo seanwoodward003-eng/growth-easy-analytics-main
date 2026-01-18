@@ -15,6 +15,20 @@ export default function About() {
         </p>
       </div>
 
+      {/* Contact Email Section */}
+      <div className="text-center mt-20">
+        <p className="text-2xl text-cyan-400 glow-medium">
+          Got questions, feedback, or need help?  
+          Reach out anytime:
+        </p>
+        <a
+          href="mailto:info@growtheasy-ai.com"
+          className="mt-6 inline-block text-3xl md:text-4xl font-bold text-[#00ffff] hover:text-cyan-300 transition underline underline-offset-8"
+        >
+          info@growtheasy-ai.com
+        </a>
+      </div>
+
       <div className="text-center mt-20">
         <p className="text-2xl text-cyan-400 glow-medium">
           Beta v0.1 © 2025 GrowthEasy AI
