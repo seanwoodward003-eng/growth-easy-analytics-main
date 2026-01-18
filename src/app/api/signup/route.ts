@@ -9,6 +9,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function handleSignup(json: any) {
   const email = (json.email || '').toLowerCase().trim();
   const consent = json.consent;
+  const marketing_consent = json.marketing_consent; // New from form
 
   if (!email || !/@.+\..+/.test(email) || !consent) {
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
@@ -30,8 +31,8 @@ async function handleSignup(json: any) {
   tokenExpires.setHours(tokenExpires.getHours() + 24);
 
   await run(
-    'INSERT INTO users (email, gdpr_consented, trial_end, subscription_status, verification_token, verification_token_expires) VALUES (?, ?, ?, ?, ?, ?)',
-    [email, 1, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString()]
+    'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_end, subscription_status, verification_token, verification_token_expires) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [email, 1, marketing_consent ? 1 : 0, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString()]
   );
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
