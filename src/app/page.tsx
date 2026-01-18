@@ -8,7 +8,7 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [marketingConsent, setMarketingConsent] = useState(false); // New marketing opt-in
+  const [marketingConsent, setMarketingConsent] = useState(false); // New: marketing opt-in
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -60,7 +60,7 @@ export default function LandingPage() {
         body: JSON.stringify({ 
           email: email.toLowerCase().trim(),
           consent: true, // Existing GDPR consent
-          marketing_consent: marketingConsent // New marketing opt-in
+          marketing_consent: marketingConsent // New: opt-in for marketing
         }),
       });
 
@@ -176,7 +176,7 @@ export default function LandingPage() {
               setMode(mode === 'signup' ? 'signin' : 'signup');
               setMessage('');
               setEmail('');
-              setMarketingConsent(false); // Reset consent
+              setMarketingConsent(false); // Reset consent when toggling
             }}
             className="mt-6 md:mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
           >
