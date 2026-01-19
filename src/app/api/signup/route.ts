@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTokens, setAuthCookies } from '@/lib/auth';
 import { getRow, run } from '@/lib/db';
 import { randomBytes } from 'crypto';
 import { Resend } from 'resend';
@@ -9,23 +8,20 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function handleSignup(json: any) {
   const email = (json.email || '').toLowerCase().trim();
   const consent = json.consent;
-  const marketing_consent = json.marketing_consent; // New from form
+  const marketing_consent = json.marketing_consent;
 
   if (!email || !/@.+\..+/.test(email) || !consent) {
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
   }
 
-  // Prevent duplicate emails
   const existing = await getRow('SELECT id FROM users WHERE email = ?', [email]);
   if (existing) {
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
-  // 7-day free trial
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 7);
 
-  // 24-hour verification token
   const verificationToken = randomBytes(32).toString('hex');
   const tokenExpires = new Date();
   tokenExpires.setHours(tokenExpires.getHours() + 24);
@@ -38,11 +34,9 @@ async function handleSignup(json: any) {
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
 
-  // Send verification email
   try {
     await resend.emails.send({
       from: 'GrowthEasy AI <noreply@resend.dev>',
-
       to: email,
       subject: 'Verify your email – Start your 7-day free trial',
       html: `
@@ -79,13 +73,10 @@ async function handleSignup(json: any) {
     console.error('Failed to send verification email:', emailError);
   }
 
-  // RESPONSE — no cookies, no instant access
-  const response = NextResponse.json({
+  return NextResponse.json({
     success: true,
     message: 'Verification email sent! Check your inbox to activate your 7-day free trial.',
   });
-
-  return response;
 }
 
 export async function POST(request: NextRequest) {
