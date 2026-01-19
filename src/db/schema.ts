@@ -14,6 +14,10 @@ export const users = sqliteTable("users", {
   hubspotRefreshToken: text("hubspot_refresh_token"),
   hubspotAccessToken: text("hubspot_access_token"),
   gdprConsented: integer("gdpr_consented").default(0),
+  
+  // Added for marketing consent (needed before cookie setting after verification)
+  marketingConsented: integer("marketing_consented").default(0),
+  
   ga4LastRefreshed: text("ga4_last_refreshed"),
   createdAt: text("created_at").default("(datetime('now'))"),
   trialEnd: text("trial_end"),
