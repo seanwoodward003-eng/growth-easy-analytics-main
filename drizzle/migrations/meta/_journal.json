@@ -1,4 +1,13 @@
 {
-  "version": 1,
-  "entries": []
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1737316800000,
+      "tag": "0001_add_marketing_consented",
+      "breakpoints": true
+    }
+  ]
 }
