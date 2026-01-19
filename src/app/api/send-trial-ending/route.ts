@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: 'GrowthEasy AI <no-reply@growtheasy.ai>',
+      from: 'GrowthEasy AI <noreply@resend.dev>',
       to: user.email,
       subject: '1 Day Left — Don\'t Lose Your GrowthEasy AI Access',
       html: `
