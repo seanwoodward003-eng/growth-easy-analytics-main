@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx drizzle-kit push:turso && next build",
+    "build": "npx drizzle-kit push && next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "drizzle-kit push:turso",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "shopify:dev": "npx shopify app dev",
     "shopify:deploy": "npx shopify app deploy"
