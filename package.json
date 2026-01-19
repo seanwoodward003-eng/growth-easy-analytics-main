@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "drizzle-kit push:turso",
+    "db:generate": "drizzle-kit generate",           // ← Added: highly recommended
     "db:studio": "drizzle-kit studio",
     "db:migrate": "tsx scripts/migrate.ts",
     "postdeploy": "tsx scripts/migrate.ts",
@@ -18,7 +19,7 @@
     "@ai-sdk/react": "^0.0.41",
     "@libsql/client": "^0.10.0",
     "ai": "^3.4.5",
-    "drizzle-orm": "^0.33.0",
+    "drizzle-orm": "^1.0.0-beta.11",                 // ← Updated to latest beta
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.463.0",
     "luxon": "^3.5.0",
@@ -41,7 +42,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
-    "drizzle-kit": "^0.24.2",
+    "drizzle-kit": "^1.0.0-beta.11",                 // ← Updated to latest beta
     "postcss": "^8",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.19.2",
