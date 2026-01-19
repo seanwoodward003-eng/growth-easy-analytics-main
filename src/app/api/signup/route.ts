@@ -41,7 +41,8 @@ async function handleSignup(json: any) {
   // Send verification email
   try {
     await resend.emails.send({
-      from: 'GrowthEasy AI <verify@growtheasy.ai>',
+      from: 'GrowthEasy AI <noreply@resend.dev>',
+
       to: email,
       subject: 'Verify your email – Start your 7-day free trial',
       html: `
