@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const user = await getRow<{ email: string }>('SELECT email FROM users WHERE id = ?', [parseInt(userId)]);
     if (user) {
       await resend.emails.send({
-        from: 'GrowthEasy AI <no-reply@growtheasy.ai>',
+        from: 'GrowthEasy AI <noreply@resend.dev>',
         to: user.email,
         subject: 'Welcome to GrowthEasy AI — Access Activated!',
         html: `... your welcome HTML ...`, // paste the full welcome HTML from earlier
