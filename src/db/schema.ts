@@ -1,4 +1,43 @@
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import crypto from "crypto";
+
+// ────────────────────────────────────────────────────────────────
+// ENCRYPTION HELPERS (for Shopify tokens)
+// Use a 32-byte key from env (generate with: openssl rand -hex 32)
+// Store ENCRYPTION_KEY as Vercel env var (secret)
+// ────────────────────────────────────────────────────────────────
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be set in Vercel env
+
+if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length !== 64) {
+  throw new Error("ENCRYPTION_KEY must be a 32-byte hex string (64 chars)");
+}
+
+function encrypt(value: string): string {
+  if (!value) return "";
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
+  let encrypted = cipher.update(value, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  const authTag = cipher.getAuthTag().toString("hex");
+  return `${iv.toString("hex")}:${encrypted}:${authTag}`;
+}
+
+function decrypt(encrypted: string): string {
+  if (!encrypted) return "";
+  const [ivHex, encryptedHex, authTagHex] = encrypted.split(":");
+  const iv = Buffer.from(ivHex, "hex");
+  const authTag = Buffer.from(authTagHex, "hex");
+  const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
+  decipher.setAuthTag(authTag);
+  let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
+}
+
+// ────────────────────────────────────────────────────────────────
+// SCHEMA TABLES
+// ────────────────────────────────────────────────────────────────
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -10,20 +49,22 @@ export const users = sqliteTable("users", {
   ga4AccessToken: text("ga4_access_token"),
   ga4RefreshToken: text("ga4_refresh_token"),
   ga4PropertyId: text("ga4_property_id"),
-  shopifyAccessToken: text("shopify_access_token"),
+  
+  // Shopify token – ENCRYPTED on insert/update
+  shopifyAccessToken: text("shopify_access_token")
+    .$type<string>()
+    .$onInsert((value) => encrypt(value))
+    .$onUpdate((value) => encrypt(value)),
+
   hubspotRefreshToken: text("hubspot_refresh_token"),
   hubspotAccessToken: text("hubspot_access_token"),
   gdprConsented: integer("gdpr_consented").default(0),
 
-  // ────────────────────────────────────────────────────────────────
-  // AUTO-FIX: marketing_consented will be added automatically on first insert/update
-  // If column missing in DB → Drizzle will insert default 0 and the column will be created on next migration or push
-  // This is the safest self-healing pattern without manual ALTER
-  // ────────────────────────────────────────────────────────────────
+  // Auto-fix: marketing_consented defaults to 0 if missing on insert/update
   marketingConsented: integer("marketing_consented")
     .default(0)
-    .$onInsert(() => 0)    // Auto-set default on new rows if column added later
-    .$onUpdate(() => 0),   // Optional: keep default behavior
+    .$onInsert(() => 0)
+    .$onUpdate(() => 0),
 
   ga4LastRefreshed: text("ga4_last_refreshed"),
   createdAt: text("created_at").default("(datetime('now'))"),
