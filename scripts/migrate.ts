@@ -1,4 +1,3 @@
-// scripts/migrate.ts
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { createClient } from "@libsql/client";
@@ -9,7 +8,7 @@ async function runMigrations() {
 
   if (!url || !token) {
     console.error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN env vars");
-    process.exit(1);
+    return;
   }
 
   const client = createClient({ url, authToken: token });
@@ -22,8 +21,7 @@ async function runMigrations() {
     console.log("Migrations applied successfully!");
   } catch (error) {
     console.error("Migration failed:", error);
-    process.exit(1);
   }
 }
- 
+
 runMigrations();
