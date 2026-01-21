@@ -11,30 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
 
-  // RATE LIMIT: 8 requests per minute per user (DB-based, same style as /api/sync)
-  const userId = request.headers.get('x-user-id') || 'anonymous'; // Replace with real user ID from session/auth when ready
-
-  const recentChats = await getRow<{ count: number }>(
-    `SELECT COUNT(*) as count FROM rate_limits 
-     WHERE user_id = ? AND endpoint = 'chat' 
-     AND timestamp > datetime('now', '-1 minute')`,
-    [userId]
-  );
-
-  const chatCount = recentChats?.count ?? 0;
-
-  if (chatCount >= 8) {
-    return NextResponse.json(
-      { error: 'Chat limit reached. Try again in 1 minute.' },
-      { status: 429 }
-    );
-  }
-
-  // Log this chat attempt
-  await run(
-    'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
-    [userId]
-  );
+  // NO requireAuth() — chat is open (dashboard page protects access)
 
   // Parse body
   let body;
