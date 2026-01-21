@@ -17,14 +17,14 @@ if (ENCRYPTION_KEY.length !== 64) {
   throw new Error("ENCRYPTION_KEY must be a 32-byte hex string (64 chars)");
 }
 
-// TS now knows ENCRYPTION_KEY is string after this block
-// We can safely use ! or direct access
-
 function encrypt(value: string): string {
   if (!value) return "";
   const iv = crypto.randomBytes(16);
-  // Safe: ENCRYPTION_KEY is guaranteed string here
-  const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
+  const cipher = crypto.createCipheriv(
+    "aes-256-gcm",
+    Buffer.from(ENCRYPTION_KEY!, "hex"), // ! = safe after guard
+    iv
+  );
   let encrypted = cipher.update(value, "utf8", "hex");
   encrypted += cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
@@ -39,8 +39,11 @@ function decrypt(encrypted: string): string {
   }
   const iv = Buffer.from(ivHex, "hex");
   const authTag = Buffer.from(authTagHex, "hex");
-  // Safe: ENCRYPTION_KEY is string
-  const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    Buffer.from(ENCRYPTION_KEY!, "hex"), // ! = safe after guard
+    iv
+  );
   decipher.setAuthTag(authTag);
   let decrypted = decipher.update(encryptedHex, "hex", "utf8");
   decrypted += decipher.final("utf8");
