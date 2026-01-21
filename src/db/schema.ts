@@ -22,7 +22,7 @@ function encrypt(value: string): string {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(
     "aes-256-gcm",
-    Buffer.from(ENCRYPTION_KEY!, "hex"), // ! = safe after guard
+    Buffer.from(ENCRYPTION_KEY!, "hex"),
     iv
   );
   let encrypted = cipher.update(value, "utf8", "hex");
@@ -41,7 +41,7 @@ function decrypt(encrypted: string): string {
   const authTag = Buffer.from(authTagHex, "hex");
   const decipher = crypto.createDecipheriv(
     "aes-256-gcm",
-    Buffer.from(ENCRYPTION_KEY!, "hex"), // ! = safe after guard
+    Buffer.from(ENCRYPTION_KEY!, "hex"),
     iv
   );
   decipher.setAuthTag(authTag);
@@ -65,21 +65,15 @@ export const users = sqliteTable("users", {
   ga4RefreshToken: text("ga4_refresh_token"),
   ga4PropertyId: text("ga4_property_id"),
   
-  // Shopify token – ENCRYPTED on insert/update
-  shopifyAccessToken: text("shopify_access_token")
-    .$type<string>()
-    .$onInsert((value) => encrypt(value))
-    .$onUpdate((value) => encrypt(value)),
+  // Shopify token – ENCRYPT manually in your insert/update code
+  shopifyAccessToken: text("shopify_access_token"),
 
   hubspotRefreshToken: text("hubspot_refresh_token"),
   hubspotAccessToken: text("hubspot_access_token"),
   gdprConsented: integer("gdpr_consented").default(0),
 
-  // Auto-fix: marketing_consented defaults to 0 if missing on insert/update
   marketingConsented: integer("marketing_consented")
-    .default(0)
-    .$onInsert(() => 0)
-    .$onUpdate(() => 0),
+    .default(0),
 
   ga4LastRefreshed: text("ga4_last_refreshed"),
   createdAt: text("created_at").default("(datetime('now'))"),
