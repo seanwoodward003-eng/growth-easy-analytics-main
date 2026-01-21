@@ -7,9 +7,13 @@ import crypto from "crypto";
 // Store ENCRYPTION_KEY as Vercel env var (secret)
 // ────────────────────────────────────────────────────────────────
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be set in Vercel env
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
-if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length !== 64) {
+if (!ENCRYPTION_KEY) {
+  throw new Error("ENCRYPTION_KEY environment variable is not set");
+}
+
+if (ENCRYPTION_KEY.length !== 64) {
   throw new Error("ENCRYPTION_KEY must be a 32-byte hex string (64 chars)");
 }
 
@@ -26,6 +30,9 @@ function encrypt(value: string): string {
 function decrypt(encrypted: string): string {
   if (!encrypted) return "";
   const [ivHex, encryptedHex, authTagHex] = encrypted.split(":");
+  if (!ivHex || !encryptedHex || !authTagHex) {
+    throw new Error("Invalid encrypted data format");
+  }
   const iv = Buffer.from(ivHex, "hex");
   const authTag = Buffer.from(authTagHex, "hex");
   const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
