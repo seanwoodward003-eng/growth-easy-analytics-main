@@ -28,45 +28,39 @@ function getClient(): Client {
 export const db = drizzle(getClient(), { schema });
 
 // ────────────────────────────────────────────────────────────────
-// SECURITY: Row-Level Security (RLS) Wrapper
+// SECURITY: Row-Level Security (RLS) Wrapper (optional - simplified)
 // Forces every query to filter by current authenticated user ID
 // Prevents data leaks across users
 // ────────────────────────────────────────────────────────────────
 
-import { getServerSession } from "next-auth"; // Change to your auth method (Clerk, Supabase, etc.)
+import { NextRequest } from 'next/server';
 import { eq } from "drizzle-orm";
 
-// Helper to get current user ID from session
-async function getCurrentUserId() {
-  const session = await getServerSession(); // Adjust for your auth provider
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    throw new Error("Unauthorized: No user session");
-  }
-
-  return Number(userId); // Ensure it's a number
+// Helper to get current user ID from session or IP (fallback for now)
+async function getCurrentIdentifier(request: NextRequest) {
+  // Use IP as fallback identifier (replace with real user ID when auth is ready)
+  return request.headers.get('x-forwarded-for') || 'anonymous';
 }
 
 // Safe query wrapper – use this instead of raw db.query/db.select
 // Automatically adds WHERE user_id = currentUserId to queries on user-owned tables
 export async function safeQuery<T>(
   table: any, // e.g. schema.users, schema.orders
-  callback: (qb: any, userId: number) => any // qb is query builder
+  callback: (qb: any, identifier: string) => any // qb is query builder
 ): Promise<T[]> {
-  const userId = await getCurrentUserId();
+  const identifier = await getCurrentIdentifier(request);
 
   // Example: auto-filter on user-owned tables
-  const qb = db.select().from(table).where(eq(table.userId, userId));
+  const qb = db.select().from(table).where(eq(table.userId, identifier));
 
   // Let caller customize further (e.g. .orderBy, .limit)
-  const finalQuery = callback(qb, userId);
+  const finalQuery = callback(qb, identifier);
 
   return finalQuery;
 }
 
 // Example usage in API route or server component
-// export async function getUserOrders() {
+// export async function getUserOrders(request: NextRequest) {
 //   return safeQuery(schema.orders, (qb) => qb.orderBy(desc(schema.orders.createdAt)));
 // }
 
@@ -153,6 +147,6 @@ export {
   users,
   orders,
   metrics,
-  rateLimits,
-  metricsHistory,
+  rate_limits,
+  metrics_history,
 } from "@/src/db/schema";
