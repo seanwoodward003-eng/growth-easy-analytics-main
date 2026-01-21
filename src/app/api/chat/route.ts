@@ -13,8 +13,30 @@ export async function POST(request: NextRequest) {
 
   // NO requireAuth() — chat is open (dashboard page protects access)
 
-  // Rate limit (optional — needs userId from cookies/session)
-  // Skip for now or add later if abuse occurs
+  // RATE LIMIT: 8 requests per minute per user (using DB table like your sync route)
+  const userId = request.headers.get('x-user-id') || 'anonymous'; // Use session/user ID if auth added later
+
+  const recentChats = await getRow<{ count: number }>(
+    `SELECT COUNT(*) as count FROM rate_limits 
+     WHERE user_id = ? AND endpoint = 'chat' 
+     AND timestamp > datetime('now', '-1 minute')`,
+    [userId]
+  );
+
+  const chatCount = recentChats?.count ?? 0;
+
+  if (chatCount >= 8) {
+    return NextResponse.json(
+      { error: 'Chat limit reached. Try again in 1 minute.' },
+      { status: 429 }
+    );
+  }
+
+  // Log this chat attempt
+  await run(
+    'INSERT INTO rate_limits (user_id, endpoint) VALUES (?, "chat")',
+    [userId]
+  );
 
   // Parse body
   let body;
