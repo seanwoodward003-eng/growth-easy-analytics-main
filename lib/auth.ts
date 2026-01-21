@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { getRow } from './db';
-import { decrypt } from '@/src/db/schema';  // ← adjust path if decrypt is in a different file
+import { decrypt } from '@/lib/encryption';  // ← correct path now
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
@@ -149,7 +149,7 @@ export async function requireAuth() {
       console.log('[AUTH] requireAuth → shopify_access_token decrypted successfully');
     } catch (err) {
       console.error('[AUTH] requireAuth → decryption failed for shopify_access_token:', err);
-      decryptedShopifyToken = null; // or throw new Error('Token decryption failed') if you prefer
+      decryptedShopifyToken = null;
     }
   }
 
