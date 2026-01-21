@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { getRow } from './db';
+import { decrypt } from '@/src/db/schema';  // ← adjust path if decrypt is in a different file
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
@@ -140,11 +141,23 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
+  // Decrypt Shopify access token if present
+  let decryptedShopifyToken: string | null = null;
+  if (row.shopify_access_token) {
+    try {
+      decryptedShopifyToken = decrypt(row.shopify_access_token);
+      console.log('[AUTH] requireAuth → shopify_access_token decrypted successfully');
+    } catch (err) {
+      console.error('[AUTH] requireAuth → decryption failed for shopify_access_token:', err);
+      decryptedShopifyToken = null; // or throw new Error('Token decryption failed') if you prefer
+    }
+  }
+
   return {
     user: {
       ...user,
       shopify_shop: row.shopify_shop,
-      shopify_access_token: row.shopify_access_token,
+      shopify_access_token: decryptedShopifyToken,
       ga4_connected: row.ga4_connected,
       hubspot_connected: row.hubspot_connected,
     },
