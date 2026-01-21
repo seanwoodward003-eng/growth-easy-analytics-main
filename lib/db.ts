@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import * as schema from "@/src/db/schema"; // adjust path if needed
+import * as schema from "@/src/db/schema";
 
 // Lazy-loaded client
 let client: Client | null = null;
@@ -28,41 +28,39 @@ function getClient(): Client {
 export const db = drizzle(getClient(), { schema });
 
 // ────────────────────────────────────────────────────────────────
-// SECURITY: Row-Level Security (RLS) Wrapper (optional - simplified)
+// SECURITY: Row-Level Security (RLS) Wrapper
 // Forces every query to filter by current authenticated user ID
 // Prevents data leaks across users
 // ────────────────────────────────────────────────────────────────
 
-import { NextRequest } from 'next/server';
 import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth"; // ← using your own auth
 
-// Helper to get current user ID from session or IP (fallback for now)
-async function getCurrentIdentifier(request: NextRequest) {
-  // Use IP as fallback identifier (replace with real user ID when auth is ready)
-  return request.headers.get('x-forwarded-for') || 'anonymous';
+// Helper to get current user ID from session
+async function getCurrentUserId() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    throw new Error("Unauthorized: No user session");
+  }
+
+  return user.id; // already a number
 }
 
 // Safe query wrapper – use this instead of raw db.query/db.select
 // Automatically adds WHERE user_id = currentUserId to queries on user-owned tables
 export async function safeQuery<T>(
-  table: any, // e.g. schema.users, schema.orders
-  callback: (qb: any, identifier: string) => any // qb is query builder
+  table: any,
+  callback: (qb: any, userId: number) => any
 ): Promise<T[]> {
-  const identifier = await getCurrentIdentifier(request);
+  const userId = await getCurrentUserId();
 
-  // Example: auto-filter on user-owned tables
-  const qb = db.select().from(table).where(eq(table.userId, identifier));
+  const qb = db.select().from(table).where(eq(table.userId, userId));
 
-  // Let caller customize further (e.g. .orderBy, .limit)
-  const finalQuery = callback(qb, identifier);
+  const finalQuery = callback(qb, userId);
 
   return finalQuery;
 }
-
-// Example usage in API route or server component
-// export async function getUserOrders(request: NextRequest) {
-//   return safeQuery(schema.orders, (qb) => qb.orderBy(desc(schema.orders.createdAt)));
-// }
 
 // ────────────────────────────────────────────────────────────────
 // Keep your existing raw helpers (for backward compatibility)
@@ -89,7 +87,7 @@ async function baseRun(sql: string, args: any[] = []) {
   await baseQuery(sql, args);
 }
 
-// Auto-init missing columns (your existing self-healing)
+// Auto-init missing columns
 let initialized = false;
 
 async function initMissingColumns() {
@@ -142,11 +140,11 @@ export async function batch(statements: { sql: string; args: any[] }[]) {
   await getClient().batch(statements, "write");
 }
 
-// Re-export schema tables
+// Re-export schema tables (corrected – only real exports)
 export {
   users,
   orders,
   metrics,
-  rate_limits,
-  metrics_history,
+  rateLimits,
+  metricsHistory,
 } from "@/src/db/schema";
