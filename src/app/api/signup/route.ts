@@ -6,57 +6,66 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function handleSignup(json: any) {
-  console.log('[SIGNUP] Request received. Body:', json);
+  console.log('[SIGNUP] Full request body received:', json);
 
   const email = (json.email || '').toLowerCase().trim();
   const consent = json.consent;
   const marketing_consent = json.marketing_consent;
 
-  console.log('[SIGNUP] Parsed input:', { email, consent, marketing_consent });
+  console.log('[SIGNUP] Parsed fields:', { email, consent, marketing_consent });
 
   if (!email || !/@.+\..+/.test(email) || !consent) {
-    console.log('[SIGNUP] Validation failed: invalid email or missing consent');
+    console.log('[SIGNUP] Validation failed - invalid input');
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
   }
 
-  // Check for duplicate email
-  const existing = await getRow('SELECT id FROM users WHERE email = ?', [email]);
-  if (existing) {
-    console.log('[SIGNUP] Duplicate email found:', email);
+  // Check for duplicate in main users table
+  const existingUser = await getRow('SELECT id FROM users WHERE email = ?', [email]);
+  if (existingUser) {
+    console.log('[SIGNUP] Email already verified in users table:', email);
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
-  // 7-day trial
+  // Check for pending verification
+  const pendingUser = await getRow('SELECT id FROM pending_users WHERE email = ?', [email]);
+  if (pendingUser) {
+    console.log('[SIGNUP] Email already pending verification:', email);
+    return NextResponse.json({ error: 'Verification email already sent. Check your inbox or request a new one.' }, { status: 400 });
+  }
+
+  console.log('[SIGNUP] No duplicate or pending - proceeding with account creation');
+
+  // 7-day free trial calculation
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 7);
-  console.log('[SIGNUP] Trial end calculated:', trialEnd.toISOString());
+  console.log('[SIGNUP] Trial end date calculated:', trialEnd.toISOString());
 
-  // Generate verification token
+  // Generate one-time verification token
   const verificationToken = randomBytes(32).toString('hex');
   const tokenExpires = new Date();
   tokenExpires.setHours(tokenExpires.getHours() + 24);
-  console.log('[SIGNUP] Token generated. Expires:', tokenExpires.toISOString());
+  console.log('[SIGNUP] Verification token generated. Expires at:', tokenExpires.toISOString());
 
-  // Insert user (pending verification)
+  // Insert into pending_users table (unverified)
   try {
-    console.log('[SIGNUP] Inserting new user into DB...');
+    console.log('[SIGNUP] Inserting pending user into DB...');
     await run(
-      'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_end, subscription_status, verification_token, verification_token_expires, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [email, 1, marketing_consent ? 1 : 0, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString(), 0]
+      'INSERT INTO pending_users (email, gdpr_consented, marketing_consented, verification_token, verification_token_expires) VALUES (?, ?, ?, ?, ?)',
+      [email, consent ? 1 : 0, marketing_consent ? 1 : 0, verificationToken, tokenExpires.toISOString()]
     );
-    console.log('[SIGNUP] User inserted successfully');
+    console.log('[SIGNUP] Pending user successfully inserted');
   } catch (dbError) {
     console.error('[SIGNUP] DB insert failed:', dbError);
-    return NextResponse.json({ error: 'Failed to create account - database error' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create pending account - database error' }, { status: 500 });
   }
 
-  const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
-  if (!user) {
-    console.error('[SIGNUP] User not found after insert');
-    return NextResponse.json({ error: 'Failed to create account - user not found' }, { status: 500 });
+  // Fetch the pending user ID for logging
+  const pendingRecord = await getRow<{ id: number }>('SELECT id FROM pending_users WHERE email = ?', [email]);
+  if (!pendingRecord) {
+    console.error('[SIGNUP] Pending user not found after insert');
+    return NextResponse.json({ error: 'Failed to create pending account' }, { status: 500 });
   }
-
-  console.log('[SIGNUP] User ID created:', user.id);
+  console.log('[SIGNUP] Pending user ID:', pendingRecord.id);
 
   // Send verification email
   try {
@@ -95,11 +104,13 @@ async function handleSignup(json: any) {
         </html>
       `,
     });
-    console.log('[SIGNUP] Verification email sent successfully to:', email);
+    console.log('[SIGNUP] Verification email successfully queued/sent to:', email);
   } catch (emailError) {
-    console.error('[SIGNUP] Failed to send verification email:', emailError);
-    return NextResponse.json({ error: 'Failed to send verification email - try again' }, { status: 500 });
+    console.error('[SIGNUP] Failed to queue/send verification email:', emailError);
+    return NextResponse.json({ error: 'Failed to send verification email - please try again' }, { status: 500 });
   }
+
+  console.log('[SIGNUP] Success - verification email queued');
 
   return NextResponse.json({
     success: true,
@@ -109,11 +120,12 @@ async function handleSignup(json: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const json = await request.json();
-    return handleSignup(json);
+    const body = await request.json();
+    console.log('[SIGNUP POST] Raw body parsed successfully');
+    return handleSignup(body);
   } catch (parseError) {
-    console.error('[SIGNUP] JSON parse error:', parseError);
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    console.error('[SIGNUP POST] Failed to parse request body:', parseError);
+    return NextResponse.json({ error: 'Invalid request body - please check your input' }, { status: 400 });
   }
 }
 
