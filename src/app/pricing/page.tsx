@@ -30,8 +30,8 @@ export default function Pricing() {
   const earlyBirdSold = 0;
   const totalLifetimeSold = 0;
 
-  const EARLY_CAP = 200;
-  const TOTAL_CAP = 500;
+  const EARLY_CAP = 75;
+  const TOTAL_CAP = 150;
 
   const earlyLeft = EARLY_CAP - earlyBirdSold;
   const totalLeft = TOTAL_CAP - totalLifetimeSold;
@@ -121,7 +121,7 @@ export default function Pricing() {
           <div className="metric-bubble p-12 border-4 border-purple-500/80 shadow-2xl">
             <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
             <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
-            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 500</p>
+            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 150</p>
             <button
               onClick={() => handleCheckout('standard_ltd')}
               disabled={loading === 'standard_ltd'}
@@ -166,10 +166,9 @@ export default function Pricing() {
       {/* Guarantee */}
       <div className="max-w-4xl mx-auto mt-32 text-gray-300 text-xl space-y-6">
         <p className="text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
-        <p>Lifetime plans include: current version + bug fixes forever + 12 months of all future major features free after close.</p>
+        <p>Lifetime plans include core access + ongoing minor updates forever. Major new features available as optional paid upgrades.</p>
         <p className="text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
       </div>
     </div>
   );
 }
-
