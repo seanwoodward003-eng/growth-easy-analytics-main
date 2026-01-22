@@ -6,35 +6,61 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function handleSignup(json: any) {
+  console.log('[SIGNUP] Request received. Body:', json);
+
   const email = (json.email || '').toLowerCase().trim();
   const consent = json.consent;
   const marketing_consent = json.marketing_consent;
 
+  console.log('[SIGNUP] Parsed input:', { email, consent, marketing_consent });
+
   if (!email || !/@.+\..+/.test(email) || !consent) {
+    console.log('[SIGNUP] Validation failed: invalid email or missing consent');
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
   }
 
+  // Check for duplicate email
   const existing = await getRow('SELECT id FROM users WHERE email = ?', [email]);
   if (existing) {
+    console.log('[SIGNUP] Duplicate email found:', email);
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
+  // 7-day trial
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 7);
+  console.log('[SIGNUP] Trial end calculated:', trialEnd.toISOString());
 
+  // Generate verification token
   const verificationToken = randomBytes(32).toString('hex');
   const tokenExpires = new Date();
   tokenExpires.setHours(tokenExpires.getHours() + 24);
+  console.log('[SIGNUP] Token generated. Expires:', tokenExpires.toISOString());
 
-  await run(
-    'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_end, subscription_status, verification_token, verification_token_expires, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [email, 1, marketing_consent ? 1 : 0, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString(), 0]
-  );
+  // Insert user (pending verification)
+  try {
+    console.log('[SIGNUP] Inserting new user into DB...');
+    await run(
+      'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_end, subscription_status, verification_token, verification_token_expires, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [email, 1, marketing_consent ? 1 : 0, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString(), 0]
+    );
+    console.log('[SIGNUP] User inserted successfully');
+  } catch (dbError) {
+    console.error('[SIGNUP] DB insert failed:', dbError);
+    return NextResponse.json({ error: 'Failed to create account - database error' }, { status: 500 });
+  }
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
-  if (!user) return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+  if (!user) {
+    console.error('[SIGNUP] User not found after insert');
+    return NextResponse.json({ error: 'Failed to create account - user not found' }, { status: 500 });
+  }
 
+  console.log('[SIGNUP] User ID created:', user.id);
+
+  // Send verification email
   try {
+    console.log('[SIGNUP] Attempting to send verification email to:', email);
     await resend.emails.send({
       from: 'GrowthEasy AI <noreply@resend.dev>',
       to: email,
@@ -47,7 +73,7 @@ async function handleSignup(json: any) {
                 GROWTHEASY AI
               </h1>
               <p style="font-size: 20px; line-height: 1.6; text-align: center;">
-                You're one click away from your <strong>7-day free trial</strong>.
+                You're one click away from your <strong>7-day free trial</strong> of real-time growth intelligence.
               </p>
               <div style="text-align: center; margin: 50px 0;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/verify?token=${verificationToken}"
@@ -69,8 +95,10 @@ async function handleSignup(json: any) {
         </html>
       `,
     });
+    console.log('[SIGNUP] Verification email sent successfully to:', email);
   } catch (emailError) {
-    console.error('Failed to send verification email:', emailError);
+    console.error('[SIGNUP] Failed to send verification email:', emailError);
+    return NextResponse.json({ error: 'Failed to send verification email - try again' }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -80,7 +108,13 @@ async function handleSignup(json: any) {
 }
 
 export async function POST(request: NextRequest) {
-  return handleSignup(await request.json());
+  try {
+    const json = await request.json();
+    return handleSignup(json);
+  } catch (parseError) {
+    console.error('[SIGNUP] JSON parse error:', parseError);
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 }
 
 export async function OPTIONS() {
