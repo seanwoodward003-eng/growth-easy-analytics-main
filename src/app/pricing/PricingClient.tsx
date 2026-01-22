@@ -34,8 +34,8 @@ export default function PricingClient({
 }: PricingClientProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const EARLY_CAP = 200;
-  const TOTAL_CAP = 500;
+  const EARLY_CAP = 75;    // ← updated
+  const TOTAL_CAP = 150;   // ← updated
 
   const earlyLeft = EARLY_CAP - earlyBirdSold;
   const totalLeft = TOTAL_CAP - totalLifetimeSold;
