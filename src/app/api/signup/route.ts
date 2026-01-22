@@ -6,7 +6,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function handleSignup(json: any) {
-  console.log('[SIGNUP] Full request body received:', json);
+  console.log('[SIGNUP] Request received. Body:', json);
 
   const email = (json.email || '').toLowerCase().trim();
   const consent = json.consent;
@@ -15,61 +15,42 @@ async function handleSignup(json: any) {
   console.log('[SIGNUP] Parsed fields:', { email, consent, marketing_consent });
 
   if (!email || !/@.+\..+/.test(email) || !consent) {
-    console.log('[SIGNUP] Validation failed - invalid input');
+    console.log('[SIGNUP] Validation failed');
     return NextResponse.json({ error: 'Valid email and consent required' }, { status: 400 });
   }
 
-  // Check for duplicate in main users table
+  // Check main users
   const existingUser = await getRow('SELECT id FROM users WHERE email = ?', [email]);
   if (existingUser) {
-    console.log('[SIGNUP] Email already verified in users table:', email);
+    console.log('[SIGNUP] Already verified in users:', email);
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
-  // Check for pending verification
-  const pendingUser = await getRow('SELECT id FROM pending_users WHERE email = ?', [email]);
-  if (pendingUser) {
-    console.log('[SIGNUP] Email already pending verification:', email);
-    return NextResponse.json({ error: 'Verification email already sent. Check your inbox or request a new one.' }, { status: 400 });
+  // Check pending
+  const pending = await getRow('SELECT id FROM pending_users WHERE email = ?', [email]);
+  if (pending) {
+    console.log('[SIGNUP] Already pending:', email);
+    return NextResponse.json({ error: 'Verification email already sent. Check your inbox.' }, { status: 400 });
   }
 
-  console.log('[SIGNUP] No duplicate or pending - proceeding with account creation');
-
-  // 7-day free trial calculation
-  const trialEnd = new Date();
-  trialEnd.setDate(trialEnd.getDate() + 7);
-  console.log('[SIGNUP] Trial end date calculated:', trialEnd.toISOString());
-
-  // Generate one-time verification token
   const verificationToken = randomBytes(32).toString('hex');
   const tokenExpires = new Date();
   tokenExpires.setHours(tokenExpires.getHours() + 24);
-  console.log('[SIGNUP] Verification token generated. Expires at:', tokenExpires.toISOString());
 
-  // Insert into pending_users table (unverified)
+  console.log('[SIGNUP] Inserting into pending_users:', email);
+
   try {
-    console.log('[SIGNUP] Inserting pending user into DB...');
     await run(
       'INSERT INTO pending_users (email, gdpr_consented, marketing_consented, verification_token, verification_token_expires) VALUES (?, ?, ?, ?, ?)',
       [email, consent ? 1 : 0, marketing_consent ? 1 : 0, verificationToken, tokenExpires.toISOString()]
     );
-    console.log('[SIGNUP] Pending user successfully inserted');
   } catch (dbError) {
     console.error('[SIGNUP] DB insert failed:', dbError);
-    return NextResponse.json({ error: 'Failed to create pending account - database error' }, { status: 500 });
+    return NextResponse.json({ error: 'Database error - try again' }, { status: 500 });
   }
 
-  // Fetch the pending user ID for logging
-  const pendingRecord = await getRow<{ id: number }>('SELECT id FROM pending_users WHERE email = ?', [email]);
-  if (!pendingRecord) {
-    console.error('[SIGNUP] Pending user not found after insert');
-    return NextResponse.json({ error: 'Failed to create pending account' }, { status: 500 });
-  }
-  console.log('[SIGNUP] Pending user ID:', pendingRecord.id);
-
-  // Send verification email
   try {
-    console.log('[SIGNUP] Attempting to send verification email to:', email);
+    console.log('[SIGNUP] Sending verification to:', email);
     await resend.emails.send({
       from: 'GrowthEasy AI <noreply@resend.dev>',
       to: email,
@@ -82,7 +63,7 @@ async function handleSignup(json: any) {
                 GROWTHEASY AI
               </h1>
               <p style="font-size: 20px; line-height: 1.6; text-align: center;">
-                You're one click away from your <strong>7-day free trial</strong> of real-time growth intelligence.
+                You're one click away from your <strong>7-day free trial</strong>.
               </p>
               <div style="text-align: center; margin: 50px 0;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/verify?token=${verificationToken}"
@@ -91,41 +72,36 @@ async function handleSignup(json: any) {
                 </a>
               </div>
               <p style="font-size: 16px; color: #a0d8ef; text-align: center;">
-                This link expires in <strong>24 hours</strong>.<br>
-                After activation, you'll get full access to the AI Growth Coach powered by Grok.
+                This link expires in <strong>24 hours</strong>.
               </p>
               <hr style="border-color: #00ffff40; margin: 50px 0;">
               <p style="text-align: center; color: #66cccc; font-size: 14px;">
-                — The GrowthEasy AI Team<br>
-                Making growth easy, one insight at a time.
+                — The GrowthEasy AI Team
               </p>
             </div>
           </body>
         </html>
       `,
     });
-    console.log('[SIGNUP] Verification email successfully queued/sent to:', email);
+    console.log('[SIGNUP] Email queued successfully');
   } catch (emailError) {
-    console.error('[SIGNUP] Failed to queue/send verification email:', emailError);
-    return NextResponse.json({ error: 'Failed to send verification email - please try again' }, { status: 500 });
+    console.error('[SIGNUP] Email send failed:', emailError);
+    return NextResponse.json({ error: 'Failed to send verification email' }, { status: 500 });
   }
-
-  console.log('[SIGNUP] Success - verification email queued');
 
   return NextResponse.json({
     success: true,
-    message: 'Verification email sent! Check your inbox to activate your 7-day free trial.',
+    message: 'Verification email sent! Check your inbox to activate your account.',
   });
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('[SIGNUP POST] Raw body parsed successfully');
     return handleSignup(body);
-  } catch (parseError) {
-    console.error('[SIGNUP POST] Failed to parse request body:', parseError);
-    return NextResponse.json({ error: 'Invalid request body - please check your input' }, { status: 400 });
+  } catch (err) {
+    console.error('[SIGNUP] POST error:', err);
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
 
