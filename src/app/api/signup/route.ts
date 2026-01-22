@@ -19,7 +19,6 @@ async function handleSignup(json: any) {
     return NextResponse.json({ error: 'Email already registered. Please log in.' }, { status: 400 });
   }
 
-  const trialStart = new Date().toISOString(); // ← Added: exact start time
   const trialEnd = new Date();
   trialEnd.setDate(trialEnd.getDate() + 7);
 
@@ -28,8 +27,8 @@ async function handleSignup(json: any) {
   tokenExpires.setHours(tokenExpires.getHours() + 24);
 
   await run(
-    'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_start, trial_end, subscription_status, verification_token, verification_token_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [email, 1, marketing_consent ? 1 : 0, trialStart, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString()]
+    'INSERT INTO users (email, gdpr_consented, marketing_consented, trial_end, subscription_status, verification_token, verification_token_expires, verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [email, 1, marketing_consent ? 1 : 0, trialEnd.toISOString(), 'trial', verificationToken, tokenExpires.toISOString(), 0]
   );
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
@@ -48,7 +47,7 @@ async function handleSignup(json: any) {
                 GROWTHEASY AI
               </h1>
               <p style="font-size: 20px; line-height: 1.6; text-align: center;">
-                You're one click away from your <strong>7-day free trial</strong> of real-time growth intelligence.
+                You're one click away from your <strong>7-day free trial</strong>.
               </p>
               <div style="text-align: center; margin: 50px 0;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/verify?token=${verificationToken}"
