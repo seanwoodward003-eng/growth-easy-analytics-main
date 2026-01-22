@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import getStripe from '@/lib/getStripe';
+import { getRow } from '@/lib/db'; // Your DB helper
 
 // Small Client Component that uses useSearchParams
 function TrialExpiredBanner() {
@@ -23,15 +24,24 @@ function TrialExpiredBanner() {
   );
 }
 
-export default function Pricing() {
+export default async function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
 
-  // TODO: Replace with real DB fetch in production
-  const earlyBirdSold = 0;
-  const totalLifetimeSold = 0;
+  // Fetch real lifetime counts from DB (server-side for SSR)
+  const lifetimeCount = await getRow<{ count: number }>(
+    'SELECT COUNT(*) as count FROM users WHERE subscription_status = "lifetime"',
+    []
+  );
+  const earlyBirdCount = await getRow<{ count: number }>(
+    'SELECT COUNT(*) as count FROM users WHERE subscription_status = "lifetime" AND plan_type = "early_bird"', // Assuming you have plan_type column
+    []
+  );
 
-  const EARLY_CAP = 200;
-  const TOTAL_CAP = 500;
+  const earlyBirdSold = earlyBirdCount?.count || 0;
+  const totalLifetimeSold = lifetimeCount?.count || 0;
+
+  const EARLY_CAP = 75;
+  const TOTAL_CAP = 150;
 
   const earlyLeft = EARLY_CAP - earlyBirdSold;
   const totalLeft = TOTAL_CAP - totalLifetimeSold;
@@ -84,7 +94,7 @@ export default function Pricing() {
       <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
       <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
 
-      {/* Urgency Counters */}
+      {/* Urgency Counters — NOW LIVE FROM DB */}
       <div className="max-w-4xl mx-auto mb-20 space-y-6">
         {showEarly && (
           <p className="text-5xl font-black text-red-400 animate-pulse">
@@ -121,7 +131,7 @@ export default function Pricing() {
           <div className="metric-bubble p-12 border-4 border-purple-500/80 shadow-2xl">
             <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
             <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
-            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 500</p>
+            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at {TOTAL_CAP}</p>
             <button
               onClick={() => handleCheckout('standard_ltd')}
               disabled={loading === 'standard_ltd'}
