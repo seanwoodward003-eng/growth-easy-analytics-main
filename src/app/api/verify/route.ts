@@ -53,4 +53,4 @@ export async function GET(request: NextRequest) {
   console.log('Verify: Success - cookies set, redirecting to dashboard');
 
   return response;
-}
+} 
