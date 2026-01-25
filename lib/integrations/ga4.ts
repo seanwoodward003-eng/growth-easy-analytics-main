@@ -17,17 +17,24 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
   try {
-    const user = await run(
+    // Get stored tokens – run returns null if no row, so type it properly
+    const userRow = await run<{
+      ga4_access_token: string | null;
+      ga4_refresh_token: string | null;
+      ga4_property_id: string | null;
+    }>(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    if (!user || !user.ga4_property_id || !user.ga4_access_token) {
+    // FIXED: Safe null/undefined check with optional chaining
+    if (!userRow || !userRow.ga4_property_id || !userRow.ga4_access_token) {
+      console.log('[GA4] Missing property ID or access token for user', userId);
       return null;
     }
 
-    let accessToken = user.ga4_access_token;
-    const propertyId = user.ga4_property_id;
+    let accessToken = userRow.ga4_access_token;
+    const propertyId = userRow.ga4_property_id;
 
     // Simple token check (expand with full refresh if needed)
     const testResp = await fetch(
@@ -46,13 +53,13 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
     );
 
     if (testResp.status === 401) {
-      console.warn('[GA4] Token expired – refresh needed');
-      // TODO: Implement full refresh using ga4_refresh_token
+      console.warn('[GA4] Token expired – refresh needed for user', userId);
+      // TODO: Implement full refresh using ga4_refresh_token if you have it
       return null;
     }
 
     if (!testResp.ok) {
-      console.error('[GA4] API error:', await testResp.text());
+      console.error('[GA4] API test failed:', await testResp.text());
       return null;
     }
 
@@ -137,8 +144,8 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 5);
 
-    // Estimated CAC (very rough – improve with real ad spend later)
-    const estimatedCac = users > 0 ? revenue / users : 0; // Placeholder
+    // Estimated CAC (very rough – improve later with real ad spend)
+    const estimatedCac = users > 0 ? revenue / users : 0;
 
     return {
       sessions,
