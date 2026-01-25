@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
+import { fetchGA4Data } from '@/lib/integrations/ga4';      // ← New import
+import { fetchHubSpotData } from '@/lib/integrations/hubspot'; // ← New import
 
 // Define the expected shape of each order row
 type OrderRow = {
@@ -211,6 +213,33 @@ export async function GET() {
   }
   console.log('[METRICS-API] AI insight:', insight);
 
+  // ────────────────────────────────────────────────────────────────
+  // NEW: Fetch & merge GA4 + HubSpot data
+  // ────────────────────────────────────────────────────────────────
+  console.log('[METRICS-API] Fetching GA4 & HubSpot data...');
+
+  const ga4Data = ga4Connected ? await fetchGA4Data(userId) : null;
+  const hubspotData = hubspotConnected ? await fetchHubSpotData(userId) : null;
+
+  // Merge GA4 data
+  const sessions = ga4Data?.sessions || 0;
+  const bounceRate = ga4Data?.bounceRate || 0;
+  const topChannelFromGA4 = ga4Data?.topChannels?.[0]?.sourceMedium || topChannel; // Prefer GA4 if available
+  const cacFromGA4 = ga4Data?.estimatedCac || 0;
+
+  // Merge HubSpot data
+  const atRiskFromHubSpot = hubspotData?.atRiskContacts || Math.round(uniqueCustomers * (churnRate / 100));
+  const openRate = hubspotData?.openRate || 0;
+  const clickRate = hubspotData?.clickRate || 0;
+
+  // Enhanced AI insight with all sources
+  let enhancedInsight = insight;
+  if (sessions > 0) enhancedInsight += ` • Sessions: ${sessions} • Bounce: ${bounceRate.toFixed(1)}%`;
+  if (cacFromGA4 > 0) enhancedInsight += ` • CAC: £${cacFromGA4.toFixed(2)}`;
+  if (atRiskFromHubSpot > 0) enhancedInsight += ` • ${atRiskFromHubSpot} at-risk contacts (HubSpot)`;
+
+  console.log('[METRICS-API] Enhanced insight:', enhancedInsight);
+
   console.log('[METRICS-API] Returning full metrics response');
   return NextResponse.json({
     revenue: {
@@ -221,20 +250,28 @@ export async function GET() {
     },
     churn: {
       rate: Number(churnRate.toFixed(1)),
-      at_risk: Math.round(uniqueCustomers * (churnRate / 100)),
+      at_risk: atRiskFromHubSpot, // ← Updated with HubSpot
     },
     performance: {
-      ratio: (ltv / 100).toFixed(1),
+      ratio: (ltv / (cacFromGA4 || 100)).toFixed(1), // ← Real CAC if available
       ltv: Number(ltv.toFixed(0)),
-      cac: 0,
+      cac: cacFromGA4, // ← Real from GA4
     },
     acquisition: {
-      top_channel: topChannel,
-      acquisition_cost: 0,
+      top_channel: topChannelFromGA4, // ← Prefer GA4
+      acquisition_cost: cacFromGA4,
     },
     retention: {
       rate: Number(retentionRate.toFixed(1)),
       repeat_purchase_rate: Number(repeatPurchaseRate.toFixed(1)),
+    },
+    traffic: {
+      sessions,
+      bounceRate: Number(bounceRate.toFixed(1)),
+    },
+    email: {
+      openRate: Number(openRate.toFixed(1)),
+      clickRate: Number(clickRate.toFixed(1)),
     },
     returning_customers_ltv: Number(returningLtv.toFixed(0)),
     ltv_breakdown: {
@@ -248,7 +285,7 @@ export async function GET() {
       data: cohortRetention,
     },
     store_health_score: healthScore,
-    ai_insight: insight,
+    ai_insight: enhancedInsight, // ← Enhanced version
     connections: {
       shopify: shopifyConnected,
       ga4: ga4Connected,
