@@ -7,12 +7,14 @@ import { AIInsights } from "@/components/AIInsights";
 
 export default function ChurnPage() {
   const { 
-  metrics, 
-  isLoading, 
-  isError, 
-  shopifyConnected, 
-  hasRealData 
-} = useMetrics();
+    metrics, 
+    isLoading, 
+    isError, 
+    shopifyConnected, 
+    ga4Connected, 
+    hubspotConnected,
+    hasRealData 
+  } = useMetrics();
   const [emailTemplate, setEmailTemplate] = useState<string | null>(null);
   const [loadingEmail, setLoadingEmail] = useState(false);
 
@@ -43,13 +45,38 @@ export default function ChurnPage() {
         Churn Rate
       </h1>
 
-     
-
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">Churn Rate</p>
         <p className="metric-value text-8xl text-red-400 mb-4">{metrics.churn.rate}%</p>
         <p className="text-5xl text-red-400 mb-4">{metrics.churn.at_risk} at risk</p>
-        <p className="text-xl text-cyan-200">High churn — send win-back emails to recover revenue</p>
+        <p className="text-xl text-cyan-200">
+          {hubspotConnected 
+            ? 'High churn — send win-back emails to recover revenue' 
+            : 'Connect HubSpot for smarter silent churn detection & win-back'}
+        </p>
+      </div>
+
+      {/* ADDED: Email Engagement Stats – open rate + click rate cards */}
+      <div className="max-w-5xl mx-auto mb-20 grid md:grid-cols-2 gap-8">
+        <div className="metric-card p-8 text-center">
+          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Email Open Rate</h3>
+          <p className="text-6xl md:text-7xl font-black text-purple-400 mb-4">
+            {metrics.email?.openRate?.toFixed(1) || 'N/A'}%
+          </p>
+          <p className="text-xl text-cyan-200">
+            {hubspotConnected ? 'Last 30 days from HubSpot' : 'Connect HubSpot to unlock'}
+          </p>
+        </div>
+
+        <div className="metric-card p-8 text-center">
+          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Click Rate</h3>
+          <p className="text-6xl md:text-7xl font-black text-purple-400 mb-4">
+            {metrics.email?.clickRate?.toFixed(1) || 'N/A'}%
+          </p>
+          <p className="text-xl text-cyan-200">
+            {hubspotConnected ? 'Last 30 days from HubSpot' : 'Connect HubSpot to unlock'}
+          </p>
+        </div>
       </div>
 
       {/* Repeat Purchase Rate */}
