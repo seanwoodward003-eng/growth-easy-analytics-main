@@ -4,15 +4,16 @@ import useMetrics from "@/hooks/useMetrics";
 import { AcquisitionChart } from "@/components/charts/AcquisitionChart";
 import { CostTrendChart } from "@/components/charts/CostTrendChart";
 
-
 export default function AcquisitionPage() {
   const { 
-  metrics, 
-  isLoading, 
-  isError, 
-  shopifyConnected, 
-  hasRealData 
-} = useMetrics();
+    metrics, 
+    isLoading, 
+    isError, 
+    shopifyConnected, 
+    ga4Connected, 
+    hubspotConnected,
+    hasRealData 
+  } = useMetrics();
 
   return (
     <div className="px-6 py-20 md:px-12 lg:px-24">
@@ -20,8 +21,30 @@ export default function AcquisitionPage() {
         Acquisition
       </h1>
 
-      
+      {/* ADDED: Traffic & Bounce Rate Cards – full width on mobile, 2-col on desktop */}
+      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 mb-20">
+        <div className="metric-card p-8 text-center">
+          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Sessions (Last 30 Days)</h3>
+          <p className="text-6xl md:text-7xl font-black text-cyan-400 mb-4">
+            {metrics.traffic?.sessions?.toLocaleString() || '0'}
+          </p>
+          <p className="text-xl text-cyan-200">
+            {ga4Connected ? 'From GA4' : 'Connect GA4 to unlock real traffic data'}
+          </p>
+        </div>
 
+        <div className="metric-card p-8 text-center">
+          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Bounce Rate</h3>
+          <p className="text-6xl md:text-7xl font-black text-red-400 mb-4">
+            {metrics.traffic?.bounceRate?.toFixed(1) || '0'}%
+          </p>
+          <p className="text-xl text-cyan-200">
+            {ga4Connected ? 'From GA4' : 'Connect GA4 to see bounce insights'}
+          </p>
+        </div>
+      </div>
+
+      {/* Your original content – unchanged */}
       <div className="max-w-4xl mx-auto text-center mb-20">
         <p className="text-5xl text-cyan-300 mb-4">Top Channel</p>
         <p className="metric-value text-8xl text-cyan-400 mb-4">{metrics.acquisition.top_channel}</p>
