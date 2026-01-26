@@ -17,24 +17,20 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
   try {
-    // Get stored tokens – run returns null if no row, so type it properly
-    const userRow = await run<{
-      ga4_access_token: string | null;
-      ga4_refresh_token: string | null;
-      ga4_property_id: string | null;
-    }>(
+    // Get stored tokens – NO generic here (your run doesn't support it)
+    const userRow = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    // FIXED: Safe null/undefined check with optional chaining
+    // Safe null/undefined check
     if (!userRow || !userRow.ga4_property_id || !userRow.ga4_access_token) {
       console.log('[GA4] Missing property ID or access token for user', userId);
       return null;
     }
 
-    let accessToken = userRow.ga4_access_token;
-    const propertyId = userRow.ga4_property_id;
+    let accessToken = userRow.ga4_access_token as string;
+    const propertyId = userRow.ga4_property_id as string;
 
     // Simple token check (expand with full refresh if needed)
     const testResp = await fetch(
