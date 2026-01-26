@@ -11,16 +11,32 @@ export interface HubSpotData {
 
 export async function fetchHubSpotData(userId: number): Promise<HubSpotData | null> {
   try {
-    const user = await run(
+    // Get stored token – run returns any | null
+    const rawResult = await run(
       'SELECT hubspot_access_token FROM users WHERE id = ?',
       [userId]
     );
 
-    if (!user || !user.hubspot_access_token) return null;
+    // Safe guard: check if result is null/undefined first
+    if (rawResult == null) {  // == null catches both null and undefined
+      console.log('[HubSpot] No user row found for ID', userId);
+      return null;
+    }
 
-    const accessToken = user.hubspot_access_token;
+    // Now TS knows rawResult is not null/undefined – cast to expected shape
+    const userRow = rawResult as {
+      hubspot_access_token: string | null;
+    };
 
-    // Get recent contacts with last activity
+    // Second check for required field
+    if (!userRow.hubspot_access_token) {
+      console.log('[HubSpot] Missing access token for user', userId);
+      return null;
+    }
+
+    const accessToken = userRow.hubspot_access_token;
+
+    // Get recent contacts (limit 100 for demo – increase later)
     const contactsResp = await fetch(
       'https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=lastmodifieddate,createdate,lifecyclestage,email',
       {
@@ -45,7 +61,7 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData | nu
     });
 
     // Mock open/click rates (real HubSpot analytics API requires more setup)
-    const openRate = 28; // Placeholder – replace with real /analytics/v3/... call
+    const openRate = 28; // Placeholder – replace with real /analytics/v3/... call later
     const clickRate = 4;
 
     // Sample 3 contacts for win-back personalization
