@@ -17,22 +17,29 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
   try {
-    // Get stored tokens – NO generic here (your run doesn't support it)
+    // Get stored tokens
     const userRow = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    // Safe null/undefined check
-    if (!userRow || !userRow.ga4_property_id || !userRow.ga4_access_token) {
+    // Safe guard: if no row or missing required fields, return null
+    if (!userRow) {
+      console.log('[GA4] No user row found for ID', userId);
+      return null;
+    }
+
+    // Now safe to access properties (TS knows userRow is not null here)
+    if (!userRow.ga4_property_id || !userRow.ga4_access_token) {
       console.log('[GA4] Missing property ID or access token for user', userId);
       return null;
     }
 
-    let accessToken = userRow.ga4_access_token as string;
+    // Type assertion only after guard (TS is happy)
+    const accessToken = userRow.ga4_access_token as string;
     const propertyId = userRow.ga4_property_id as string;
 
-    // Simple token check (expand with full refresh if needed)
+    // Simple token check
     const testResp = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -50,7 +57,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
 
     if (testResp.status === 401) {
       console.warn('[GA4] Token expired – refresh needed for user', userId);
-      // TODO: Implement full refresh using ga4_refresh_token if you have it
+      // TODO: Add full refresh logic here later if needed
       return null;
     }
 
@@ -140,7 +147,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
       .sort((a, b) => b.sessions - a.sessions)
       .slice(0, 5);
 
-    // Estimated CAC (very rough – improve later with real ad spend)
+    // Estimated CAC (rough – improve with real ad spend later)
     const estimatedCac = users > 0 ? revenue / users : 0;
 
     return {
