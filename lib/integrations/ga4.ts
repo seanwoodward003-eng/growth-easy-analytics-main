@@ -17,29 +17,35 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
   try {
-    // Get stored tokens
-    const userRow = await run(
+    // Get stored tokens – run returns any | null
+    const userRowResult = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    // Safe guard: if no row or missing required fields, return null
-    if (!userRow) {
+    // Safe null check first – TS won't complain about truthiness
+    if (!userRowResult) {
       console.log('[GA4] No user row found for ID', userId);
       return null;
     }
 
-    // Now safe to access properties (TS knows userRow is not null here)
+    // Now safe to access – cast to the expected shape after null check
+    const userRow = userRowResult as {
+      ga4_access_token: string | null;
+      ga4_refresh_token: string | null;
+      ga4_property_id: string | null;
+    };
+
+    // Second safe check for required fields
     if (!userRow.ga4_property_id || !userRow.ga4_access_token) {
       console.log('[GA4] Missing property ID or access token for user', userId);
       return null;
     }
 
-    // Type assertion only after guard (TS is happy)
-    const accessToken = userRow.ga4_access_token as string;
-    const propertyId = userRow.ga4_property_id as string;
+    const accessToken = userRow.ga4_access_token;
+    const propertyId = userRow.ga4_property_id;
 
-    // Simple token check
+    // Simple token check (expand with full refresh later if needed)
     const testResp = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -57,7 +63,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
 
     if (testResp.status === 401) {
       console.warn('[GA4] Token expired – refresh needed for user', userId);
-      // TODO: Add full refresh logic here later if needed
+      // TODO: Add refresh logic using ga4_refresh_token
       return null;
     }
 
