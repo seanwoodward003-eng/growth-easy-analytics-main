@@ -17,26 +17,26 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
   try {
-    // Get stored tokens – run returns any | null
-    const userRowResult = await run(
+    // Get stored tokens
+    const rawResult = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    // Safe null check first – TS won't complain about truthiness
-    if (!userRowResult) {
+    // TS-safe guard: check if result is null/undefined first
+    if (rawResult == null) {  // == null catches both null and undefined
       console.log('[GA4] No user row found for ID', userId);
       return null;
     }
 
-    // Now safe to access – cast to the expected shape after null check
-    const userRow = userRowResult as {
+    // Now TS knows rawResult is not null/undefined – cast to expected shape
+    const userRow = rawResult as {
       ga4_access_token: string | null;
       ga4_refresh_token: string | null;
       ga4_property_id: string | null;
     };
 
-    // Second safe check for required fields
+    // Second check for required fields
     if (!userRow.ga4_property_id || !userRow.ga4_access_token) {
       console.log('[GA4] Missing property ID or access token for user', userId);
       return null;
@@ -63,7 +63,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
 
     if (testResp.status === 401) {
       console.warn('[GA4] Token expired – refresh needed for user', userId);
-      // TODO: Add refresh logic using ga4_refresh_token
+      // TODO: Implement full refresh using ga4_refresh_token
       return null;
     }
 
