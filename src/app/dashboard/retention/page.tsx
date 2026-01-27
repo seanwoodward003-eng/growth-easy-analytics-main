@@ -6,36 +6,36 @@ import { AIInsights } from "@/components/AIInsights";
 
 export default function RetentionPage() {
   const { 
-  metrics, 
-  isLoading, 
-  isError, 
-  shopifyConnected, 
-  hasRealData 
-} = useMetrics();
+    metrics, 
+    isLoading, 
+    isError, 
+    shopifyConnected, 
+    hasRealData 
+  } = useMetrics();
 
   return (
-    <div className="px-6 py-20 md:px-12 lg:px-24">
-      <h1 className="glow-title text-center text-6xl md:text-8xl font-black mb-16 text-purple-400">
+    <div className="px-4 py-10 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+      {/* Retention heading – 50% smaller */}
+      <h1 className="glow-title text-center text-4xl md:text-5xl font-black mb-6 text-purple-400">
         Retention
       </h1>
 
-     
-
-      <div className="max-w-4xl mx-auto text-center mb-20">
-        <p className="text-5xl text-cyan-300 mb-4">Retention Rate</p>
-        <p className="metric-value text-8xl text-purple-400 mb-4">{metrics.retention.rate}%</p>
-        <p className="text-xl text-cyan-200">Retention strong — build loyalty programs to boost further</p>
+      {/* Retention Rate – compact */}
+      <div className="max-w-4xl mx-auto text-center mb-8">
+        <p className="text-4xl text-cyan-300 mb-2">Retention Rate</p>
+        <p className="text-6xl md:text-7xl font-black text-purple-400 mb-2">{metrics.retention.rate}%</p>
+        <p className="text-lg text-cyan-200">Retention strong — build loyalty programs to boost further</p>
       </div>
 
-      {/* Cohort Table */}
-      <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-5xl font-black text-cyan-400 text-center mb-12">Cohort Retention</h2>
-        <div className="metric-card p-10">
-          <p className="text-2xl text-cyan-200 text-center">
+      {/* Cohort Table – compact */}
+      <div className="max-w-5xl mx-auto mb-8">
+        <h2 className="text-4xl font-black text-cyan-400 text-center mb-4">Cohort Retention</h2>
+        <div className="metric-card p-6 md:p-8">
+          <p className="text-xl text-cyan-200 text-center mb-4">
             Month-by-month retention by customer cohort (coming soon — based on first purchase date)
           </p>
           {/* Placeholder table */}
-          <div className="mt-8 grid grid-cols-6 gap-4 text-center">
+          <div className="mt-6 grid grid-cols-6 gap-3 text-center text-sm md:text-base">
             <div className="text-cyan-300">Cohort</div>
             <div className="text-cyan-300">Month 0</div>
             <div className="text-cyan-300">Month 1</div>
@@ -52,11 +52,12 @@ export default function RetentionPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
+      {/* Retention Chart – original size kept */}
+      <div className="max-w-5xl mx-auto mb-8 metric-card p-6 md:p-8">
         <RetentionChart />
       </div>
 
-      {/* AI Insights — no page prop */}
+      {/* AI Insights – original size kept */}
       <AIInsights />
     </div>
   );
