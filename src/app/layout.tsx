@@ -39,12 +39,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           name="viewport" 
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" 
         />
-        {/* No apple-touch-icon links → iOS falls back to ? if added to home screen (unavoidable) */}
         <title>GrowthEasy AI</title>
       </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header with safe-area to prevent notch/status bar cutoff */}
+        {/* Header – logo image completely removed */}
         <header 
           className="
             fixed top-0 left-0 right-0 z-[100] 
@@ -55,7 +54,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "
         >
           <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-            
+            <Link href="/dashboard" className="flex items-center">
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-cyan-400 whitespace-nowrap">
+                GrowthEasy AI
+              </h1>
+            </Link>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -130,7 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content – cleared header + safe-area */}
+        {/* Main content */}
         <main 
           className={`
             pt-[calc(7rem + env(safe-area-inset-top,16px)))] 
