@@ -22,7 +22,7 @@ export default function AcquisitionPage() {
         Acquisition
       </h1>
 
-      {/* Traffic & Bounce Rate Cards – compact */}
+      {/* Traffic & Bounce Rate Cards – compact to save space */}
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6 mb-8">
         <div className="metric-card p-6 text-center">
           <h3 className="text-2xl md:text-3xl font-bold text-cyan-300 mb-3">Sessions (Last 30 Days)</h3>
@@ -59,13 +59,13 @@ export default function AcquisitionPage() {
         </p>
       </div>
 
-      {/* Charts – shortened height, fit side-by-side */}
+      {/* Charts – original full size kept */}
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="metric-card p-4 rounded-2xl h-64 md:h-80 lg:h-96 overflow-hidden">
+        <div className="metric-card p-8 rounded-2xl">
           <AcquisitionChart />
         </div>
 
-        <div className="metric-card p-4 rounded-2xl h-64 md:h-80 lg:h-96 overflow-hidden">
+        <div className="metric-card p-8 rounded-2xl">
           <CostTrendChart />
         </div>
       </div>
