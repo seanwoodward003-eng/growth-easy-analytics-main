@@ -20,6 +20,9 @@ export default function SettingsPage() {
   const [emailLoading, setEmailLoading] = useState(true);
   const [emailError, setEmailError] = useState<string | null>(null);
 
+  // Export loading state
+  const [exporting, setExporting] = useState(false);
+
   const [deleting, setDeleting] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -30,18 +33,12 @@ export default function SettingsPage() {
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Load email from API route
+  // Load email from API
   useEffect(() => {
     const fetchEmail = async () => {
       try {
-        const res = await fetch('/api/user/email', {
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to load email (${res.status})`);
-        }
-
+        const res = await fetch('/api/user/email', { credentials: 'include' });
+        if (!res.ok) throw new Error(`Failed (${res.status})`);
         const data = await res.json();
         setUserEmail(data.email || 'Not available');
       } catch (err) {
@@ -52,7 +49,6 @@ export default function SettingsPage() {
         setEmailLoading(false);
       }
     };
-
     fetchEmail();
   }, []);
 
@@ -142,22 +138,37 @@ export default function SettingsPage() {
   };
 
   const handleExportData = async () => {
+    setExporting(true);
     try {
       const res = await fetch('/api/user/export-data', {
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Export failed');
+
+      if (!res.ok) {
+        let errorMsg = 'Export failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch {}
+        throw new Error(`${errorMsg} (${res.status})`);
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'growth-easy-data.json';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      alert('Failed to export data');
-      console.error(error);
+
+      alert('Export successful! Check your downloads folder.');
+    } catch (error: any) {
+      console.error('Export error:', error);
+      alert(error.message || 'Failed to export data — check console or try again');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -326,16 +337,7 @@ export default function SettingsPage() {
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
           <p className="text-2xl text-cyan-300 mb-8">
-            Email:{' '}
-            {emailLoading ? (
-              'loading...'
-            ) : emailError ? (
-              emailError
-            ) : (
-              <span className="block break-words overflow-hidden text-ellipsis max-w-full text-lg md:text-2xl">
-                {userEmail}
-              </span>
-            )}
+            Email: {emailLoading ? 'loading...' : emailError ? emailError : userEmail}
           </p>
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
@@ -374,8 +376,12 @@ export default function SettingsPage() {
             <p className="text-xl text-cyan-200 mb-8">
               Download all your metrics and insights
             </p>
-            <button onClick={handleExportData} className="cyber-btn text-xl px-10 py-5">
-              Export Data
+            <button 
+              onClick={handleExportData} 
+              disabled={exporting || isLoading}
+              className={`cyber-btn text-xl px-10 py-5 ${exporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {exporting ? 'Exporting...' : 'Export Data'}
             </button>
           </div>
 
