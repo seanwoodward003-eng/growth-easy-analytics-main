@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';  // ← correct path now
 
-import { verifyCSRF } from '@/lib/auth';  // ← this is the circular import line
+// import { verifyCSRF } from '@/lib/auth';  // ← REMOVED THIS LINE (circular import crash)
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
