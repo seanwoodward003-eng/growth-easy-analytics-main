@@ -30,12 +30,12 @@ export default function SettingsPage() {
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Load email from new API route
+  // Load email from API route
   useEffect(() => {
     const fetchEmail = async () => {
       try {
         const res = await fetch('/api/user/email', {
-          credentials: 'include', // Sends cookies (access_token)
+          credentials: 'include',
         });
 
         if (!res.ok) {
@@ -326,7 +326,16 @@ export default function SettingsPage() {
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
           <p className="text-2xl text-cyan-300 mb-8">
-            Email: {emailLoading ? 'loading...' : emailError ? emailError : userEmail}
+            Email:{' '}
+            {emailLoading ? (
+              'loading...'
+            ) : emailError ? (
+              emailError
+            ) : (
+              <span className="block break-words overflow-hidden text-ellipsis max-w-full text-lg md:text-2xl">
+                {userEmail}
+              </span>
+            )}
           </p>
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
