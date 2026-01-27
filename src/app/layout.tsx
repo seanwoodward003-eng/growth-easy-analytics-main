@@ -5,7 +5,7 @@ import { Orbitron } from 'next/font/google';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ChevronDown, Menu, X } from 'lucide-react'; // Added ChevronDown import
+import { ChevronDown, Menu, X } from 'lucide-react'; // Added for clean icons
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -43,8 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>GrowthEasy AI</title>
       </head>
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header – fixed, compact */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 py-3 md:py-4">
+        {/* Header – fixed, compact, higher z-index */}
+        <header className="fixed top-0 left-0 right-0 z-[100] bg-[#0a0f2c]/95 backdrop-blur-lg border-b-4 border-cyan-400/50 px-4 py-3 md:py-4">
           <div className="max-w-screen-xl mx-auto flex items-center justify-between">
             {/* Logo – fixed blur */}
             <Link href="/dashboard" className="flex items-center gap-3">
@@ -58,10 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </Link>
 
-            {/* Menu button – fixed visibility on mobile */}
+            {/* Menu button – visible on mobile, high z-index */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden relative z-[100] p-3 rounded-full bg-gray-800/70 border border-cyan-500/50 hover:bg-gray-700/70 transition flex items-center justify-center !block"
+              className="lg:hidden relative z-[200] p-3 rounded-full bg-gray-800/80 border border-cyan-500/60 hover:bg-gray-700/80 transition flex items-center justify-center shadow-xl"
             >
               {menuOpen ? (
                 <X className="w-8 h-8 text-cyan-400" />
@@ -75,8 +75,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Mobile Menu */}
         {menuOpen && (
           <>
-            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-40" onClick={() => setMenuOpen(false)} />
-            <nav className="fixed top-0 right-0 w-80 h-full bg-[#0a0f2c]/98 backdrop-blur-xl z-50 border-l-4 border-cyan-400 pt-24 px-6 overflow-y-auto">
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[150]" onClick={() => setMenuOpen(false)} />
+            <nav className="fixed top-0 right-0 w-80 h-full bg-[#0a0f2c]/98 backdrop-blur-xl z-[200] border-l-4 border-cyan-400 pt-20 px-6 overflow-y-auto">
               <div className="space-y-5">
                 <Link href="/dashboard" onClick={() => setMenuOpen(false)} className={`block text-2xl md:text-3xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   Dashboard
@@ -131,8 +131,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* MAIN CONTENT – constrained to fit screen */}
-        <main className={isCoachPage ? 'pt-20 sm:pt-24' : 'pt-24 sm:pt-32 pb-20'}>
+        {/* MAIN CONTENT – increased top padding to clear header */}
+        <main className={isCoachPage ? 'pt-28 sm:pt-32' : 'pt-28 sm:pt-32 pb-20'}> {/* Increased pt-24 → pt-28 / pt-32 to clear header */}
           <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
             {/* Max width + no horizontal scroll */}
             <div className="max-w-screen-xl mx-auto">
