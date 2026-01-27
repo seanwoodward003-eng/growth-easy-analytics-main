@@ -52,13 +52,16 @@ export default function RetentionPage() {
         </div>
       </div>
 
-      {/* Retention Chart – original size kept */}
-      <div className="max-w-5xl mx-auto mb-8 metric-card p-6 md:p-8">
-        <RetentionChart />
-      </div>
+      {/* Split: Retention Chart (left 50%), AI Insights (right 50%) */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="metric-card p-6 md:p-8 rounded-2xl">
+          <RetentionChart />
+        </div>
 
-      {/* AI Insights – original size kept */}
-      <AIInsights />
+        <div className="metric-card p-6 md:p-8 rounded-2xl">
+          <AIInsights />
+        </div>
+      </div>
     </div>
   );
 }
