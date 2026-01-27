@@ -84,4 +84,3 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
 export const OPTIONS = () => new Response(null, { status: 200 });
 
 
-This is my api/chat
