@@ -103,7 +103,7 @@ export default function Pricing() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {/* Early Bird */}
         {showEarly && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/6] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
             <div className="flex flex-col items-center">
               <h2 className="text-xl md:text-2xl font-bold mb-2">Early Bird Lifetime</h2>
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
@@ -121,7 +121,7 @@ export default function Pricing() {
 
         {/* Standard Lifetime */}
         {showStandard && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/6] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
             <div className="flex flex-col items-center">
               <h2 className="text-xl md:text-2xl font-bold mb-2">Lifetime Access</h2>
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£79</p>
@@ -138,10 +138,10 @@ export default function Pricing() {
         )}
 
         {/* Monthly */}
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/6] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden">
+        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden">
           <div className="flex flex-col items-center">
             <h2 className="text-xl md:text-2xl font-bold mb-2">Monthly</h2>
-            <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49/mo</p>
+            <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
           </div>
           <button
             onClick={() => handleCheckout('monthly')}
@@ -153,7 +153,7 @@ export default function Pricing() {
         </div>
 
         {/* Annual */}
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/6] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
           <div className="flex flex-col items-center">
             <div className="bg-green-500/20 text-green-400 text-sm md:text-base font-bold px-3 py-1 rounded-full mb-2 inline-block">
               BEST VALUE — SAVE 16%
