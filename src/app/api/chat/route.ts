@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
+import { getRow, run } from '@/lib/db';
 import { StreamingTextResponse, OpenAIStream } from 'ai';
-import { requireAuth } from '@/lib/auth'; // ← Add this if not already
-import { run } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
+  // Optional CSRF check (keep if you want)
+  if (!verifyCSRF(request)) {
+    return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
+  }
+
   // Get current user from auth/session
   const auth = await requireAuth();
   if ('error' in auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
 
   const userId = auth.user.id;
@@ -44,20 +49,32 @@ export async function POST(request: NextRequest) {
   let metricsSummary = 'No metrics data available yet. Ask the user to connect their Shopify, GA4, and HubSpot accounts.';
 
   try {
-    // Shopify metrics from DB (adjust table/columns to match your schema)
-    const shopifyRow = await run(
+    // Shopify metrics from DB
+    const shopifyResult = await run(
       `SELECT revenue, churnRate, repeatRate, aov, ltv, atRisk 
        FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1`,
       [userId]
     );
 
-    // GA4 (real-time fetch)
-    const ga4Data = await fetchGA4Data(userId);
+    let shopifyRow = null;
+    // Safe null check first – TS won't complain about truthiness
+    if (shopifyResult == null) {
+      console.log('[Chat] No metrics row found for user', userId);
+    } else {
+      // Now safe to cast after guard
+      shopifyRow = shopifyResult as {
+        revenue: number | null;
+        churnRate: number | null;
+        repeatRate: number | null;
+        aov: number | null;
+        ltv: number | null;
+        atRisk: number | null;
+      };
+    }
 
-    // HubSpot (real-time fetch)
+    const ga4Data = await fetchGA4Data(userId);
     const hubspotData = await fetchHubSpotData(userId);
 
-    // Build readable summary
     let parts = [];
 
     if (shopifyRow) {
