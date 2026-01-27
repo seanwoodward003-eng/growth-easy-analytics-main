@@ -15,12 +15,12 @@ export default function SettingsPage() {
     refresh 
   } = useMetrics();
 
-  // Email loading states
+  // Email states
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [emailLoading, setEmailLoading] = useState(true);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  // Export loading state
+  // Export state
   const [exporting, setExporting] = useState(false);
 
   const [deleting, setDeleting] = useState(false);
@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Load email from API
+  // Load email
   useEffect(() => {
     const fetchEmail = async () => {
       try {
@@ -123,7 +123,7 @@ export default function SettingsPage() {
         setNewEmail('');
         setChangingEmail(false);
         setChangeEmailError('');
-        // Refresh email display
+        // Refresh email
         const newRes = await fetch('/api/user/email', { credentials: 'include' });
         const data = await newRes.json();
         setUserEmail(data.email || 'Not available');
@@ -145,12 +145,8 @@ export default function SettingsPage() {
       });
 
       if (!res.ok) {
-        let errorMsg = 'Export failed';
-        try {
-          const errorData = await res.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch {}
-        throw new Error(`${errorMsg} (${res.status})`);
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Export failed (${res.status})`);
       }
 
       const blob = await res.blob();
@@ -163,10 +159,10 @@ export default function SettingsPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      alert('Export successful! Check your downloads folder.');
+      alert('Export successful! Check your downloads.');
     } catch (error: any) {
       console.error('Export error:', error);
-      alert(error.message || 'Failed to export data — check console or try again');
+      alert(error.message || 'Failed to export data — try again');
     } finally {
       setExporting(false);
     }
@@ -332,13 +328,16 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Account */}
+      {/* Account – fixed email fit */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
-          <p className="text-2xl text-cyan-300 mb-8">
-            Email: {emailLoading ? 'loading...' : emailError ? emailError : userEmail}
-          </p>
+          <div className="text-2xl text-cyan-300 mb-8 flex flex-col gap-2">
+            <span className="font-bold">Email:</span>
+            <span className="break-words overflow-hidden text-ellipsis max-w-full text-lg md:text-2xl leading-snug bg-black/30 p-3 rounded-xl border border-cyan-500/30">
+              {emailLoading ? 'loading...' : emailError ? emailError : userEmail || 'Not available'}
+            </span>
+          </div>
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
               Change Email
@@ -378,7 +377,7 @@ export default function SettingsPage() {
             </p>
             <button 
               onClick={handleExportData} 
-              disabled={exporting || isLoading}
+              disabled={exporting}
               className={`cyber-btn text-xl px-10 py-5 ${exporting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {exporting ? 'Exporting...' : 'Export Data'}
