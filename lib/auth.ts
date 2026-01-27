@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';  // ← correct path now
 
-// import { verifyCSRF } from '@/lib/auth';  // ← THIS WAS THE CIRCULAR IMPORT — REMOVED
+// ← REMOVED: import { verifyCSRF } from '@/lib/auth';  (circular import – this was the only problem)
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
