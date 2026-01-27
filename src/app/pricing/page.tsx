@@ -12,11 +12,11 @@ function TrialExpiredBanner() {
   if (error !== 'trial_expired') return null;
 
   return (
-    <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/40 border-4 border-red-500 rounded-3xl shadow-2xl">
-      <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
+    <div className="max-w-5xl mx-auto mb-12 p-8 bg-red-900/40 border-4 border-red-500 rounded-3xl shadow-2xl">
+      <h2 className="text-5xl md:text-6xl font-black text-red-400 mb-4">
         Your 7-day free trial has ended
       </h2>
-      <p className="text-3xl md:text-4xl text-cyan-300">
+      <p className="text-2xl md:text-3xl text-cyan-300">
         Upgrade now to unlock unlimited access to GrowthEasy AI forever
       </p>
     </div>
@@ -75,41 +75,45 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen px-6 py-20 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
-      {/* Wrap the banner in Suspense — fixes prerender error */}
+    <div className="min-h-screen px-4 py-10 md:px-8 lg:px-12 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
+      {/* Wrap the banner in Suspense */}
       <Suspense fallback={null}>
         <TrialExpiredBanner />
       </Suspense>
 
-      <h1 className="glow-title text-6xl md:text-8xl font-black mb-8">Choose Your Plan</h1>
-      <p className="text-2xl text-cyan-300 mb-16">Lock in lifetime access before it's gone forever</p>
+      {/* Heading – 50% smaller */}
+      <h1 className="glow-title text-4xl md:text-5xl font-black mb-6">
+        Choose Your Plan
+      </h1>
+      <p className="text-xl md:text-2xl text-cyan-300 mb-10">Lock in lifetime access before it's gone forever</p>
 
-      {/* Urgency Counters */}
-      <div className="max-w-4xl mx-auto mb-20 space-y-6">
+      {/* Urgency Counters – compact */}
+      <div className="max-w-4xl mx-auto mb-10 space-y-4">
         {showEarly && (
-          <p className="text-5xl font-black text-red-400 animate-pulse">
+          <p className="text-3xl md:text-4xl font-black text-red-400 animate-pulse">
             Only {earlyLeft} Early Bird spots left at £49!
           </p>
         )}
-        <p className="text-4xl font-bold text-purple-400">
+        <p className="text-2xl md:text-3xl font-bold text-purple-400">
           Lifetime closes forever at {TOTAL_CAP} — {totalLeft} spots remaining
         </p>
         {lifetimeSoldOut && (
-          <p className="text-4xl font-bold text-gray-500">Lifetime Sold Out Forever</p>
+          <p className="text-2xl md:text-3xl font-bold text-gray-500">Lifetime Sold Out Forever</p>
         )}
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      {/* 4 Pricing Bubbles – equal size, square-ish, rounded edges */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {/* Early Bird */}
         {showEarly && (
-          <div className="metric-bubble p-12 border-4 border-cyan-400/80 shadow-2xl">
-            <h2 className="text-4xl font-bold mb-6">Early Bird Lifetime</h2>
-            <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49</p>
-            <p className="text-2xl text-red-400 mb-10">One-time • {earlyLeft} left</p>
+          <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-cyan-400/80 shadow-2xl">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Early Bird Lifetime</h2>
+            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49</p>
+            <p className="text-base md:text-lg text-red-400 mb-4">One-time • {earlyLeft} left</p>
             <button
               onClick={() => handleCheckout('early_ltd')}
               disabled={loading === 'early_ltd'}
-              className="cyber-btn text-3xl px-12 py-6 w-full"
+              className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
             >
               {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
             </button>
@@ -118,14 +122,14 @@ export default function Pricing() {
 
         {/* Standard Lifetime */}
         {showStandard && (
-          <div className="metric-bubble p-12 border-4 border-purple-500/80 shadow-2xl">
-            <h2 className="text-4xl font-bold mb-6">Lifetime Access</h2>
-            <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£79</p>
-            <p className="text-2xl text-purple-400 mb-10">One-time • Closes at 150</p>
+          <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-purple-500/80 shadow-2xl">
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Lifetime Access</h2>
+            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£79</p>
+            <p className="text-base md:text-lg text-purple-400 mb-4">One-time • Closes at 150</p>
             <button
               onClick={() => handleCheckout('standard_ltd')}
               disabled={loading === 'standard_ltd'}
-              className="cyber-btn text-3xl px-12 py-6 w-full"
+              className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
             >
               {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
             </button>
@@ -133,30 +137,30 @@ export default function Pricing() {
         )}
 
         {/* Monthly */}
-        <div className="metric-bubble p-12">
-          <h2 className="text-4xl font-bold mb-6">Monthly</h2>
-          <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£49<span className="text-4xl">/mo</span></p>
+        <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Monthly</h2>
+          <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49<span className="text-3xl md:text-4xl">/mo</span></p>
           <button
             onClick={() => handleCheckout('monthly')}
             disabled={loading === 'monthly'}
-            className="cyber-btn text-3xl px-12 py-6 w-full"
+            className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
           >
             {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
           </button>
         </div>
 
         {/* Annual – Best Value */}
-        <div className="metric-bubble p-12 border-4 border-green-500/80 shadow-2xl scale-105">
-          <div className="bg-green-500/20 text-green-400 text-xl font-bold px-6 py-3 rounded-full mb-6 inline-block">
+        <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-green-500/80 shadow-2xl scale-105">
+          <div className="bg-green-500/20 text-green-400 text-base md:text-lg font-bold px-4 py-2 rounded-full mb-3 inline-block">
             BEST VALUE — SAVE 16%
           </div>
-          <h2 className="text-4xl font-bold mb-6">Annual</h2>
-          <p className="text-8xl font-black text-cyan-400 glow-number mb-8">£490<span className="text-4xl">/year</span></p>
-          <p className="text-2xl text-green-400 mb-10">= £41/mo</p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-3">Annual</h2>
+          <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£490<span className="text-3xl md:text-4xl">/year</span></p>
+          <p className="text-base md:text-lg text-green-400 mb-4">= £41/mo</p>
           <button
             onClick={() => handleCheckout('annual')}
             disabled={loading === 'annual'}
-            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-3xl px-12 py-6 w-full"
+            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-xl md:text-2xl px-8 py-4 w-full mt-auto"
           >
             {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
           </button>
@@ -164,10 +168,10 @@ export default function Pricing() {
       </div>
 
       {/* Guarantee */}
-      <div className="max-w-4xl mx-auto mt-32 text-gray-300 text-xl space-y-6">
-        <p className="text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
+      <div className="max-w-4xl mx-auto mt-16 text-gray-300 text-lg md:text-xl space-y-4">
+        <p className="text-2xl md:text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
         <p>Lifetime plans include core access + ongoing minor updates forever. Major new features available as optional paid upgrades.</p>
-        <p className="text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
+        <p className="text-xl md:text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
       </div>
     </div>
   );
