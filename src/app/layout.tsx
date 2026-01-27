@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { SessionProvider } from 'next-auth/react'; // This import is required
+import { SessionProvider } from 'next-auth/react';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -44,8 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        <SessionProvider> {/* THIS LINE + CLOSING TAG FIXES THE NULL SESSION */}
-          {/* Header */}
+        <SessionProvider>
           <header 
             className="
               fixed top-0 left-0 right-0 z-[100] 
@@ -72,7 +71,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </header>
 
-          {/* Mobile Menu */}
           {menuOpen && (
             <>
               <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[150]" onClick={() => setMenuOpen(false)} />
@@ -135,7 +133,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </>
           )}
 
-          {/* Main content */}
           <main 
             className={`
               pt-[calc(7rem + env(safe-area-inset-top,16px)))] 
@@ -148,7 +145,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </main>
 
-          {/* Cookie Banner */}
           {showCookieBanner && (
             <div 
               className="
@@ -177,7 +173,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           )}
 
-          {/* Footer */}
           {!isCoachPage && (
             <footer className="py-8 text-center text-cyan-500 text-sm border-t border-cyan-900/50">
               <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
