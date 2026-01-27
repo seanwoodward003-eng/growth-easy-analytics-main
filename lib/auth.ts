@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { getRow } from './db';
-import { decrypt } from '@/lib/encryption';  // ← correct path now
+import { decrypt } from '@/lib/encryption';  // correct path
 
-// ← REMOVED: import { verifyCSRF } from '@/lib/auth';  (circular import – this was the only problem)
+// NO import { verifyCSRF } from '@/lib/auth'; ← removed (this was the circular crash)
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
@@ -143,7 +143,6 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
-  // Decrypt Shopify access token if present
   let decryptedShopifyToken: string | null = null;
   if (row.shopify_access_token) {
     try {
