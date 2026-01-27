@@ -40,14 +40,14 @@ export default function ChurnPage() {
   };
 
   return (
-    <div className="px-4 py-12 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+    <div className="px-4 py-10 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
       {/* Churn Rate heading – 50% smaller */}
-      <h1 className="glow-title text-center text-4xl md:text-6xl font-black mb-8 text-red-400">
+      <h1 className="glow-title text-center text-4xl md:text-6xl font-black mb-6 text-red-400">
         Churn Rate
       </h1>
 
       {/* 4 Metric Cards – tight horizontal row, same size as Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
         {/* Churn Rate */}
         <div className="metric-card p-4 rounded-2xl text-center aspect-square flex flex-col justify-center">
           <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Churn Rate</h3>
@@ -90,19 +90,19 @@ export default function ChurnPage() {
       </div>
 
       {/* Split: Churn Chart (left 50%), AI Insights (right 50%) – reduced size */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <div className="metric-card p-3 md:p-4 rounded-2xl h-64 md:h-80 lg:h-96"> {/* Reduced height ~1/4 */}
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="metric-card p-3 md:p-4 rounded-2xl h-48 md:h-64 lg:h-80 overflow-hidden">
           <ChurnChart />
         </div>
 
-        <div className="metric-card p-3 md:p-4 rounded-2xl h-64 md:h-80 lg:h-96"> {/* Reduced height ~1/4 */}
+        <div className="metric-card p-3 md:p-4 rounded-2xl h-48 md:h-64 lg:h-80 overflow-hidden">
           <AIInsights />
         </div>
       </div>
 
       {/* Win-Back Email Generator – centered button */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <div className="text-center mb-6">
+      <div className="max-w-5xl mx-auto mb-6">
+        <div className="text-center mb-4">
           <h2 className="text-3xl md:text-4xl font-black text-cyan-400">
             Fix Churn with AI
           </h2>
@@ -116,14 +116,14 @@ export default function ChurnPage() {
         </button>
 
         {emailTemplate && (
-          <div className="mt-8 bg-black/60 border-4 border-cyan-400 rounded-3xl p-8 md:p-10 shadow-2xl">
-            <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 text-center mb-6">
+          <div className="mt-6 bg-black/60 border-4 border-cyan-400 rounded-3xl p-6 md:p-8 shadow-2xl">
+            <h3 className="text-2xl md:text-3xl font-bold text-cyan-300 text-center mb-4">
               Your Personalized Win-Back Email
             </h3>
-            <div className="bg-gray-900/80 p-6 md:p-8 rounded-2xl text-left text-cyan-100 text-base md:text-lg leading-relaxed whitespace-pre-wrap">
+            <div className="bg-gray-900/80 p-5 md:p-6 rounded-2xl text-left text-cyan-100 text-base md:text-lg leading-relaxed whitespace-pre-wrap">
               {emailTemplate}
             </div>
-            <p className="text-center text-cyan-400 mt-6 text-base md:text-xl">
+            <p className="text-center text-cyan-400 mt-4 text-base md:text-xl">
               Copy this into Klaviyo or HubSpot and send to recover revenue!
             </p>
           </div>
