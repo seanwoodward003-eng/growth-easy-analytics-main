@@ -40,90 +40,95 @@ export default function ChurnPage() {
   };
 
   return (
-    <div className="px-6 py-20 md:px-12 lg:px-24">
-      <h1 className="glow-title text-center text-7xl md:text-9xl font-black mb-16 text-red-400">
+    <div className="px-4 py-12 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+      {/* Churn Rate heading – 50% smaller */}
+      <h1 className="glow-title text-center text-4xl md:text-6xl font-black mb-8 text-red-400">
         Churn Rate
       </h1>
 
-      <div className="max-w-4xl mx-auto text-center mb-20">
-        <p className="text-5xl text-cyan-300 mb-4">Churn Rate</p>
-        <p className="metric-value text-8xl text-red-400 mb-4">{metrics.churn.rate}%</p>
-        <p className="text-5xl text-red-400 mb-4">{metrics.churn.at_risk} at risk</p>
-        <p className="text-xl text-cyan-200">
-          {hubspotConnected 
-            ? 'High churn — send win-back emails to recover revenue' 
-            : 'Connect HubSpot for smarter silent churn detection & win-back'}
-        </p>
-      </div>
+      {/* 4 Metric Cards – tight horizontal row, same size as Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        {/* Churn Rate */}
+        <div className="metric-card p-4 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Churn Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-red-400">
+            {metrics.churn?.rate ?? 0}%
+          </p>
+          <p className="text-xs md:text-sm text-red-400">{metrics.churn?.at_risk ?? 0} at risk</p>
+        </div>
 
-      {/* ADDED: Email Engagement Stats – open rate + click rate cards */}
-      <div className="max-w-5xl mx-auto mb-20 grid md:grid-cols-2 gap-8">
-        <div className="metric-card p-8 text-center">
-          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Email Open Rate</h3>
-          <p className="text-6xl md:text-7xl font-black text-purple-400 mb-4">
+        {/* Email Open Rate */}
+        <div className="metric-card p-4 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Email Open Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-purple-400">
             {metrics.email?.openRate?.toFixed(1) || 'N/A'}%
           </p>
-          <p className="text-xl text-cyan-200">
-            {hubspotConnected ? 'Last 30 days from HubSpot' : 'Connect HubSpot to unlock'}
+          <p className="text-xs md:text-sm text-cyan-200">
+            {hubspotConnected ? 'Last 30 days' : 'Connect HubSpot'}
           </p>
         </div>
 
-        <div className="metric-card p-8 text-center">
-          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Click Rate</h3>
-          <p className="text-6xl md:text-7xl font-black text-purple-400 mb-4">
+        {/* Click Rate */}
+        <div className="metric-card p-4 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Click Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-purple-400">
             {metrics.email?.clickRate?.toFixed(1) || 'N/A'}%
           </p>
-          <p className="text-xl text-cyan-200">
-            {hubspotConnected ? 'Last 30 days from HubSpot' : 'Connect HubSpot to unlock'}
+          <p className="text-xs md:text-sm text-cyan-200">
+            {hubspotConnected ? 'Last 30 days' : 'Connect HubSpot'}
           </p>
         </div>
+
+        {/* Repeat Purchase Rate */}
+        <div className="metric-card p-4 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Repeat Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-green-400">
+            {metrics.repeatRate?.toFixed(1) || '0'}%
+          </p>
+          <p className="text-xs md:text-sm text-cyan-200">Higher = lower churn</p>
+        </div>
       </div>
 
-      {/* Repeat Purchase Rate */}
-      <div className="max-w-4xl mx-auto text-center mb-20">
-        <p className="text-5xl text-cyan-300 mb-4">Repeat Purchase Rate</p>
-        <p className="metric-value text-8xl text-green-400 mb-4">
-          {metrics.repeatRate?.toFixed(1) || '0'}%
-        </p>
-        <p className="text-xl text-cyan-200">Higher repeat rate = lower churn</p>
-      </div>
-
-      <div className="max-w-5xl mx-auto mb-20 metric-card p-8">
-        <ChurnChart />
-      </div>
-
-      {/* Win-Back Email Generator */}
-      <div className="max-w-5xl mx-auto mb-20">
-        <div className="text-center mb-12">
-          <h2 className="text-5xl font-black text-cyan-400 mb-8">
-            Fix Churn with AI
-          </h2>
-          <button
-            onClick={generateWinBackEmail}
-            disabled={loadingEmail}
-            className="cyber-btn text-3xl px-12 py-6 animate-pulse"
-          >
-            {loadingEmail ? 'Generating Email...' : 'Generate Win-Back Email for At-Risk Customers'}
-          </button>
+      {/* Split: Churn Chart (left 50%), AI Insights (right 50%) */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="metric-card p-4 md:p-6 rounded-2xl">
+          <ChurnChart />
         </div>
 
+        <div className="metric-card p-4 md:p-6 rounded-2xl">
+          <AIInsights />
+        </div>
+      </div>
+
+      {/* Win-Back Email Generator – moved below split */}
+      <div className="max-w-5xl mx-auto mb-8">
+        <div className="text-center mb-6">
+          <h2 className="text-3xl md:text-4xl font-black text-cyan-400">
+            Fix Churn with AI
+          </h2>
+        </div>
+        <button
+          onClick={generateWinBackEmail}
+          disabled={loadingEmail}
+          className="cyber-btn text-2xl md:text-3xl px-8 md:px-12 py-4 md:py-6 animate-pulse w-full md:w-auto mx-auto block"
+        >
+          {loadingEmail ? 'Generating Email...' : 'Generate Win-Back Email for At-Risk Customers'}
+        </button>
+
         {emailTemplate && (
-          <div className="bg-black/60 border-4 border-cyan-400 rounded-3xl p-10 shadow-2xl">
-            <h3 className="text-4xl font-bold text-cyan-300 text-center mb-8">
+          <div className="mt-8 bg-black/60 border-4 border-cyan-400 rounded-3xl p-8 md:p-10 shadow-2xl">
+            <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 text-center mb-6">
               Your Personalized Win-Back Email
             </h3>
-            <div className="bg-gray-900/80 p-8 rounded-2xl text-left text-cyan-100 text-lg leading-relaxed whitespace-pre-wrap">
+            <div className="bg-gray-900/80 p-6 md:p-8 rounded-2xl text-left text-cyan-100 text-base md:text-lg leading-relaxed whitespace-pre-wrap">
               {emailTemplate}
             </div>
-            <p className="text-center text-cyan-400 mt-8 text-xl">
+            <p className="text-center text-cyan-400 mt-6 text-base md:text-xl">
               Copy this into Klaviyo or HubSpot and send to recover revenue!
             </p>
           </div>
         )}
       </div>
-
-      {/* AI Insights */}
-      <AIInsights />
     </div>
   );
 }
