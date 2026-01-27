@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react'; // Added for reliable email access
+import { useSession } from 'next-auth/react';
 import useMetrics from "@/hooks/useMetrics";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { data: session, status } = useSession(); // Added: gets current logged-in user
+  const { data: session, status } = useSession();
 
   const { 
     metrics, 
@@ -23,7 +23,7 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [emailError, setEmailError] = useState('');
 
-  // Shopify connect state (from your original Dashboard code)
+  // Shopify connect state
   const [shopDomain, setShopDomain] = useState('');
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
@@ -156,7 +156,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Shopify connect handler (from your original Dashboard code)
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
       setConnectError('Please enter a valid .myshopify.com domain');
@@ -175,11 +174,11 @@ export default function SettingsPage() {
         Settings
       </h1>
 
-      {/* Integrations – OAuth connect/disconnect buttons */}
+      {/* Integrations */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Shopify */}
+          {/* Shopify card unchanged */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Shopify</h3>
             {shopifyConnected ? (
@@ -216,7 +215,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* GA4 */}
+          {/* GA4 card unchanged */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Google Analytics (GA4)</h3>
             {ga4Connected ? (
@@ -240,7 +239,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* HubSpot */}
+          {/* HubSpot card unchanged */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">HubSpot</h3>
             {hubspotConnected ? (
@@ -266,7 +265,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Subscription */}
+      {/* Subscription – unchanged */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
         <div className="metric-card p-12 text-center">
@@ -291,7 +290,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Account – now using session for email display */}
+      {/* Account – with debug pre added */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
@@ -301,6 +300,13 @@ export default function SettingsPage() {
               ? 'loading...'
               : session?.user?.email || metrics.user?.email || 'Not available'}
           </p>
+
+          {/* DEBUG BLOCK – shows the full session object */}
+          <pre className="text-xs text-gray-400 bg-black/50 p-4 rounded-xl mt-4 overflow-auto border border-cyan-500/30">
+            Session debug:{'\n'}
+            {JSON.stringify(session, null, 2)}
+          </pre>
+
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
               Change Email
@@ -329,7 +335,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Data & Privacy */}
+      {/* Data & Privacy – unchanged */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
         <div className="grid md:grid-cols-2 gap-8">
