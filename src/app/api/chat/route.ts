@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
 import { StreamingTextResponse, OpenAIStream } from 'ai';
+import { requireAuth } from '@/lib/auth'; // ← THIS WAS MISSING
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
 
@@ -57,11 +58,9 @@ export async function POST(request: NextRequest) {
     );
 
     let shopifyRow = null;
-    // Safe null check first – TS won't complain about truthiness
     if (shopifyResult == null) {
       console.log('[Chat] No metrics row found for user', userId);
     } else {
-      // Now safe to cast after guard
       shopifyRow = shopifyResult as {
         revenue: number | null;
         churnRate: number | null;
@@ -113,7 +112,6 @@ export async function POST(request: NextRequest) {
     metricsSummary = 'Error loading metrics — using general knowledge.';
   }
 
-  // System prompt with metrics injected
   const systemPrompt = `You are GrowthEasy AI, a sharp growth coach for Shopify stores.
 You have full access to the user's real-time store metrics below.
 
@@ -124,7 +122,6 @@ If no data, say "Connect your accounts to unlock personalized insights."
 
 Respond concisely in under 150 words.`;
 
-  // Full messages with system prompt first
   const fullMessages = [
     { role: 'system', content: systemPrompt },
     ...body.messages,
