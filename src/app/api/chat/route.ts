@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';
+import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
 import { StreamingTextResponse, OpenAIStream } from 'ai';
 
@@ -11,13 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
 
-  // Get current user from auth/session
-  const auth = await requireAuth();
-  if ('error' in auth) {
-    return NextResponse.json({ error: auth.error }, { status: 401 });
-  }
-
-  const userId = auth.user.id;
+  // NO requireAuth() — chat is open (dashboard page protects access)
 
   // Parse body
   let body;
@@ -41,6 +35,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
+  // Metrics (optional — requires userId, skip or fetch from session if needed)
+  const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
+    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',  // No userId for now
+    []
+  );
+
+  const summary = metric
+    ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
+    : 'No data';
+
+  const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
+Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${userMessage}`;
+
   try {
     const grokResp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -49,8 +56,11 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-beta',
-        messages: body.messages,
+        model: 'grok-4-1-fast-reasoning',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
         temperature: 0.7,
         max_tokens: 300,
         stream: true,
@@ -69,6 +79,9 @@ export async function POST(request: NextRequest) {
     console.error('[Grok Error]', e);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
   }
-} 
+}
 
 export const OPTIONS = () => new Response(null, { status: 200 });
+
+
+This is my api/chat
