@@ -5,6 +5,7 @@ import { Orbitron } from 'next/font/google';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { ChevronDown, Menu, X } from 'lucide-react'; // Added ChevronDown import
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -57,16 +58,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </Link>
 
-            {/* Menu button */}
+            {/* Menu button – fixed visibility on mobile */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="relative group px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-xl overflow-hidden border-4 border-transparent transition-all duration-300 hover:border-cyan-400/70 shadow-xl hover:shadow-cyan-500/40 flex-shrink-0"
+              className="lg:hidden relative z-[100] p-3 rounded-full bg-gray-800/70 border border-cyan-500/50 hover:bg-gray-700/70 transition flex items-center justify-center !block"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative z-10 bg-[#0a0f2c]/80 px-4 sm:px-6 md:px-8 py-1 sm:py-2 rounded-lg text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 glow-medium flex items-center gap-2">
-                Menu
-                <span className="text-lg sm:text-xl">▼</span>
-              </div>
+              {menuOpen ? (
+                <X className="w-8 h-8 text-cyan-400" />
+              ) : (
+                <Menu className="w-8 h-8 text-cyan-400" />
+              )}
             </button>
           </div>
         </header>
