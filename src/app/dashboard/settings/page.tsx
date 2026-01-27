@@ -180,14 +180,14 @@ export default function SettingsPage() {
   if (isLoading) return <div className="text-center text-4xl text-cyan-300 mt-40">Loading settings...</div>;
 
   return (
-    <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24"> {/* Reduced top padding from py-20 to py-12 */}
-      <h1 className="glow-title text-center text-4xl md:text-5xl font-black mb-12 text-cyan-400"> {/* Smaller subheading – matches Dashboard */}
+    <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24"> {/* Reduced py-20 → py-12 to move everything up */}
+      <h1 className="glow-title text-center text-4xl md:text-5xl font-black mb-16 text-cyan-400"> {/* Smaller subheading – matches Dashboard */}
         Settings
       </h1>
 
       {/* Integrations */}
-      <div className="max-w-5xl mx-auto mb-16"> {/* Reduced mb-20 to mb-16 */}
-        <h2 className="text-5xl font-black text-cyan-400 mb-10 text-center">Integrations</h2> {/* Reduced mb-12 to mb-10 */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {/* Shopify */}
           <div className="metric-card p-8 text-center">
@@ -229,7 +229,7 @@ export default function SettingsPage() {
               </>
             ) : (
               <button 
-                onClick={() => router.push('/dashboard')} 
+                onClick={() => router.push('/api/auth/ga4')} 
                 className="cyber-btn text-xl px-10 py-5"
               >
                 Connect GA4
@@ -253,7 +253,7 @@ export default function SettingsPage() {
               </>
             ) : (
               <button 
-                onClick={() => router.push('/dashboard')} 
+                onClick={() => router.push('/api/auth/hubspot')} 
                 className="cyber-btn text-xl px-10 py-5"
               >
                 Connect HubSpot
@@ -264,8 +264,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Subscription */}
-      <div className="max-w-5xl mx-auto mb-16"> {/* Reduced mb-20 to mb-16 */}
-        <h2 className="text-5xl font-black text-cyan-400 mb-10 text-center">Subscription</h2> {/* Reduced mb-12 to mb-10 */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
         <div className="metric-card p-12 text-center">
           <p className="text-4xl text-cyan-300 mb-8">
             Current Plan: <span className="text-green-400 font-black">{metrics.subscription?.plan || 'Trial'}</span>
@@ -289,8 +289,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Account */}
-      <div className="max-w-5xl mx-auto mb-16"> {/* Reduced mb-20 to mb-16 */}
-        <h2 className="text-5xl font-black text-cyan-400 mb-10 text-center">Account</h2> {/* Reduced mb-12 to mb-10 */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
           <p className="text-2xl text-cyan-300 mb-8">
             Email: {metrics.user?.email || 'loading...'}
@@ -324,8 +324,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Data & Privacy */}
-      <div className="max-w-5xl mx-auto mb-16"> {/* Reduced mb-20 to mb-16 */}
-        <h2 className="text-5xl font-black text-cyan-400 mb-10 text-center">Data & Privacy</h2> {/* Reduced mb-12 to mb-10 */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
         <div className="grid md:grid-cols-2 gap-8">
           <div className="metric-card p-10 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Export Your Data</h3>
