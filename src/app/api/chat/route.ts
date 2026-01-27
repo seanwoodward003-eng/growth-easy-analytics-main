@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
-import { getRow, run } from '@/lib/db';
 import { StreamingTextResponse, OpenAIStream } from 'ai';
+import { requireAuth } from '@/lib/auth'; // ← Add this if not already
+import { run } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  // Optional CSRF check
-  if (!verifyCSRF(request)) {
-    return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
-  }
-
-  // Get user ID from session (adjust if your auth uses different method)
-  const authHeader = request.headers.get('authorization') || request.cookies.get('access_token')?.value;
-  if (!authHeader) {
+  // Get current user from auth/session
+  const auth = await requireAuth();
+  if ('error' in auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // TODO: Replace this with your real auth/session logic to get userId
-  // Example: const userId = await getUserIdFromToken(authHeader);
-  const userId = 1; // ← REPLACE WITH REAL USER ID FROM SESSION/AUTH
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const userId = auth.user.id;
 
   // Parse body
   let body;
@@ -52,38 +41,38 @@ export async function POST(request: NextRequest) {
   // ────────────────────────────────────────────────────────────────
   // FETCH USER METRICS (Shopify + GA4 + HubSpot)
   // ────────────────────────────────────────────────────────────────
-  let metricsSummary = 'No data available yet. Ask the user to connect their accounts.';
+  let metricsSummary = 'No metrics data available yet. Ask the user to connect their Shopify, GA4, and HubSpot accounts.';
 
   try {
-    // Shopify metrics (from your DB)
-    const shopifyRow = await getRow(
-      `SELECT revenue_total, churn_rate, repeat_rate, ltv, aov, at_risk 
+    // Shopify metrics from DB (adjust table/columns to match your schema)
+    const shopifyRow = await run(
+      `SELECT revenue, churnRate, repeatRate, aov, ltv, atRisk 
        FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1`,
       [userId]
     );
 
-    // GA4
+    // GA4 (real-time fetch)
     const ga4Data = await fetchGA4Data(userId);
 
-    // HubSpot
+    // HubSpot (real-time fetch)
     const hubspotData = await fetchHubSpotData(userId);
 
-    // Build summary string (only include what's available)
-    let summaryParts = [];
+    // Build readable summary
+    let parts = [];
 
     if (shopifyRow) {
-      summaryParts.push(
-        `Revenue: £${shopifyRow.revenue_total?.toLocaleString() || '0'}`,
-        `Churn rate: ${shopifyRow.churn_rate || 0}%`,
-        `Repeat rate: ${shopifyRow.repeat_rate?.toFixed(1) || '0'}%`,
+      parts.push(
+        `Revenue: £${shopifyRow.revenue?.toLocaleString() || '0'}`,
+        `Churn rate: ${shopifyRow.churnRate || 0}%`,
+        `Repeat rate: ${shopifyRow.repeatRate?.toFixed(1) || '0'}%`,
         `AOV: £${shopifyRow.aov?.toFixed(2) || '0.00'}`,
         `LTV: £${shopifyRow.ltv?.toFixed(0) || '0'}`,
-        `At-risk customers: ${shopifyRow.at_risk || 0}`
+        `At-risk customers: ${shopifyRow.atRisk || 0}`
       );
     }
 
     if (ga4Data) {
-      summaryParts.push(
+      parts.push(
         `Sessions (GA4): ${ga4Data.sessions || 0}`,
         `Bounce rate (GA4): ${ga4Data.bounceRate?.toFixed(1) || '0'}%`,
         `Top channel (GA4): ${ga4Data.topChannels?.[0]?.sourceMedium || 'Unknown'}`,
@@ -92,15 +81,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (hubspotData) {
-      summaryParts.push(
+      parts.push(
         `Email open rate (HubSpot): ${hubspotData.openRate?.toFixed(1) || 'N/A'}%`,
         `Email click rate (HubSpot): ${hubspotData.clickRate?.toFixed(1) || 'N/A'}%`,
         `At-risk contacts (HubSpot): ${hubspotData.atRiskContacts || 0}`
       );
     }
 
-    if (summaryParts.length > 0) {
-      metricsSummary = summaryParts.join(' • ');
+    if (parts.length > 0) {
+      metricsSummary = parts.join(' • ');
     }
   } catch (err) {
     console.error('[Chat Metrics Error]', err);
