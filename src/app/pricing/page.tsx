@@ -102,18 +102,20 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* 4 Pricing Bubbles – equal size, square-ish, rounded edges */}
+      {/* 4 Pricing Bubbles – EQUAL SIZE, square, rounded, content fits inside */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {/* Early Bird */}
         {showEarly && (
-          <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-cyan-400/80 shadow-2xl">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">Early Bird Lifetime</h2>
-            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49</p>
-            <p className="text-base md:text-lg text-red-400 mb-4">One-time • {earlyLeft} left</p>
+          <div className="metric-card p-6 rounded-3xl text-center aspect-[4/5] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">Early Bird Lifetime</h2>
+              <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49</p>
+              <p className="text-base md:text-lg text-red-400 mb-4">One-time • {earlyLeft} left</p>
+            </div>
             <button
               onClick={() => handleCheckout('early_ltd')}
               disabled={loading === 'early_ltd'}
-              className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
+              className="cyber-btn text-xl md:text-2xl px-8 py-4 mt-4 w-full"
             >
               {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
             </button>
@@ -122,14 +124,16 @@ export default function Pricing() {
 
         {/* Standard Lifetime */}
         {showStandard && (
-          <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-purple-500/80 shadow-2xl">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3">Lifetime Access</h2>
-            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£79</p>
-            <p className="text-base md:text-lg text-purple-400 mb-4">One-time • Closes at 150</p>
+          <div className="metric-card p-6 rounded-3xl text-center aspect-[4/5] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">Lifetime Access</h2>
+              <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£79</p>
+              <p className="text-base md:text-lg text-purple-400 mb-4">One-time • Closes at 150</p>
+            </div>
             <button
               onClick={() => handleCheckout('standard_ltd')}
               disabled={loading === 'standard_ltd'}
-              className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
+              className="cyber-btn text-xl md:text-2xl px-8 py-4 mt-4 w-full"
             >
               {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
             </button>
@@ -137,30 +141,34 @@ export default function Pricing() {
         )}
 
         {/* Monthly */}
-        <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Monthly</h2>
-          <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49<span className="text-3xl md:text-4xl">/mo</span></p>
+        <div className="metric-card p-6 rounded-3xl text-center aspect-[4/5] flex flex-col justify-between max-w-[340px] mx-auto">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Monthly</h2>
+            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£49/mo</p>
+          </div>
           <button
             onClick={() => handleCheckout('monthly')}
             disabled={loading === 'monthly'}
-            className="cyber-btn text-xl md:text-2xl px-8 py-4 w-full mt-auto"
+            className="cyber-btn text-xl md:text-2xl px-8 py-4 mt-4 w-full"
           >
             {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
           </button>
         </div>
 
         {/* Annual – Best Value */}
-        <div className="metric-card p-6 md:p-8 rounded-3xl text-center aspect-square flex flex-col justify-center border-4 border-green-500/80 shadow-2xl scale-105">
-          <div className="bg-green-500/20 text-green-400 text-base md:text-lg font-bold px-4 py-2 rounded-full mb-3 inline-block">
-            BEST VALUE — SAVE 16%
+        <div className="metric-card p-6 rounded-3xl text-center aspect-[4/5] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl scale-105 max-w-[340px] mx-auto">
+          <div>
+            <div className="bg-green-500/20 text-green-400 text-base md:text-lg font-bold px-4 py-2 rounded-full mb-3 inline-block">
+              BEST VALUE — SAVE 16%
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-3">Annual</h2>
+            <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£490/year</p>
+            <p className="text-base md:text-lg text-green-400 mb-4">= £41/mo</p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Annual</h2>
-          <p className="text-6xl md:text-7xl font-black text-cyan-400 glow-number mb-3">£490<span className="text-3xl md:text-4xl">/year</span></p>
-          <p className="text-base md:text-lg text-green-400 mb-4">= £41/mo</p>
           <button
             onClick={() => handleCheckout('annual')}
             disabled={loading === 'annual'}
-            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-xl md:text-2xl px-8 py-4 w-full mt-auto"
+            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-xl md:text-2xl px-8 py-4 mt-4 w-full"
           >
             {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
           </button>
