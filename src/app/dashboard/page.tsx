@@ -18,38 +18,11 @@ export default function Dashboard() {
     refresh 
   } = useMetrics();
 
-  // Debug logs
-  console.log('Dashboard render - shopifyConnected:', shopifyConnected, 'isLoading:', isLoading);
-
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false);
   const [webhookRegistered, setWebhookRegistered] = useState(false);
-
-  // Client-side user data fetch for debug + verification
-  const [currentUser, setCurrentUser] = useState<{ id?: number; shopifyShop?: string | null; shopifyAccessToken?: string | null } | null>(null);
-  const [userLoading, setUserLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          setCurrentUser(data.user);
-          console.log('DASHBOARD DEBUG - Fetched user ID:', data.user?.id);
-          console.log('DASHBOARD DEBUG - shopifyShop from DB:', data.user?.shopifyShop ?? 'NULL - not connected');
-          console.log('DASHBOARD DEBUG - hasToken:', !!data.user?.shopifyAccessToken);
-        }
-      } catch (err) {
-        console.error('Failed to fetch current user:', err);
-      } finally {
-        setUserLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
 
   const biggestOpportunity = metrics.churn?.rate > 7 
     ? `Reduce churn (${metrics.churn.rate}%) — fixing 2% = +£${Math.round(metrics.revenue.total * 0.02 / 12)}k MRR potential`
@@ -59,17 +32,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     const justConnected = searchParams.get('shopify_connected') === 'true';
-    console.log('useEffect - justConnected:', justConnected, 'shopifyConnected:', shopifyConnected);
 
     if (justConnected) {
-      console.log('Strong refresh after Shopify connect');
       refresh();
       setTimeout(() => refresh(), 500);
       setTimeout(() => refresh(), 1500);
       window.history.replaceState({}, '', '/dashboard');
       alert('Shopify Connected Successfully!');
     }
-  }, [searchParams, refresh, shopifyConnected]);
+  }, [searchParams, refresh]);
 
   const handleShopifyConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
@@ -94,207 +65,107 @@ export default function Dashboard() {
       }
 
       const data = await res.json();
-      console.log('Shopify webhook registration result:', data);
-      
       alert('Shopify webhook registration result:\n' + JSON.stringify(data, null, 2));
       
       if (data?.success || data?.registered?.length > 0 || data?.message?.toLowerCase().includes('success')) {
         setWebhookRegistered(true);
       }
     } catch (err) {
-      console.error('Failed to register Shopify webhook:', err);
       alert('Failed to register Shopify webhook:\n' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsRegisteringWebhook(false);
     }
   };
 
-  const handleResetShopify = async () => {
-    if (!confirm('Reset Shopify connection? This clears tokens for your account only.')) return;
-    
-    try {
-      const res = await fetch('/api/reset-shopify', { method: 'POST' });
-      if (res.ok) {
-        alert('Shopify connection reset! Refreshing...');
-        window.location.reload();
-      } else {
-        alert('Reset failed');
-      }
-    } catch (err) {
-      console.error('Reset error:', err);
-      alert('Error resetting');
-    }
-  };
-
   return (
-    <div className="min-h-screen px-6 py-12 md:px-12 lg:px-24">
-      <h1 className="text-center text-6xl md:text-8xl font-black mb-12 bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
-        Dashboard
-      </h1>
+    <div className="min-h-screen px-4 py-4 md:px-6 lg:px-8 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+      {/* Header area – compact, with connect buttons top-right */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-0">
+        <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+          Dashboard
+        </h1>
 
-      {/* Debug panel */}
-      <div className="max-w-4xl mx-auto mb-8 p-6 bg-gray-900/50 rounded-xl border border-cyan-500/30">
-        <h2 className="text-xl text-cyan-300 mb-4">Debug Info</h2>
-        {userLoading ? (
-          <p>Loading user data...</p>
-        ) : (
-          <>
-            <p>User ID: {currentUser?.id ?? 'Not loaded'}</p>
-            <p>Shopify Shop: {currentUser?.shopifyShop ?? 'NULL - not connected'}</p>
-            <p>Has Token: {currentUser?.shopifyAccessToken ? 'Yes' : 'No'}</p>
-            <p>From hook - shopifyConnected: {shopifyConnected ? 'Yes' : 'No'}</p>
-          </>
-        )}
-        <button
-          onClick={handleResetShopify}
-          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-        >
-          Reset Shopify Connection
-        </button>
+        {/* Connect buttons – small, top-right */}
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          {!shopifyConnected && (
+            <button 
+              onClick={handleShopifyConnect}
+              disabled={isConnecting}
+              className="cyber-btn text-sm px-4 py-2 bg-cyan-600 hover:bg-cyan-500"
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+            </button>
+          )}
+          {!ga4Connected && (
+            <button 
+              onClick={() => window.location.href = '/api/auth/ga4'} 
+              className="cyber-btn text-sm px-4 py-2 bg-purple-600 hover:bg-purple-500"
+            >
+              Connect GA4
+            </button>
+          )}
+          {!hubspotConnected && (
+            <button 
+              onClick={() => window.location.href = '/api/auth/hubspot'} 
+              className="cyber-btn text-sm px-4 py-2 bg-pink-600 hover:bg-pink-500"
+            >
+              Connect HubSpot
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Connect Banner - only shows if something is missing */}
-      {anyConnectionMissing && (
-        <div 
-          key={`banner-${shopifyConnected}-${ga4Connected}-${hubspotConnected}-${Date.now()}`}
-          className="max-w-4xl mx-auto text-center mb-20 p-12 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md"
-        >
-          <p className="text-3xl text-cyan-300 mb-6">
-            Connect your accounts to unlock real-time data and AI-powered insights
-          </p>
-          <div className="flex flex-wrap justify-center gap-6 mt-10">
-
-            {/* Shopify - only show input when NOT connected */}
-            {!shopifyConnected && (
-              <div className="flex flex-col items-center gap-6">
-                <p className="text-2xl text-cyan-200">Connect your Shopify store</p>
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                  <input
-                    type="text"
-                    placeholder="your-store.myshopify.com"
-                    value={shopDomain}
-                    onChange={(e) => setShopDomain(e.target.value.trim())}
-                    onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
-                    disabled={isConnecting}
-                    className="px-8 py-5 bg-white/10 backdrop-blur border border-cyan-500/50 rounded-xl text-white placeholder-cyan-300 text-xl focus:outline-none focus:border-cyan-300 w-full max-w-md"
-                  />
-                  <button
-                    onClick={handleShopifyConnect}
-                    disabled={isConnecting || !shopDomain}
-                    className="cyber-btn text-2xl px-10 py-5 disabled:opacity-50 whitespace-nowrap"
-                  >
-                    {isConnecting ? 'Connecting...' : 'Connect Shopify'}
-                  </button>
-                </div>
-                {error && <p className="text-red-400 text-lg mt-3">{error}</p>}
-                <p className="text-cyan-200 text-sm max-w-md mt-2">
-                  Found in Settings → Domains in your Shopify admin
-                </p>
-              </div>
-            )}
-
-            {/* GA4 */}
-            {!ga4Connected && (
-              <button 
-                onClick={() => window.location.href = '/api/auth/ga4'} 
-                className="cyber-btn text-2xl px-10 py-5"
-              >
-                Connect GA4
-              </button>
-            )}
-
-            {/* HubSpot */}
-            {!hubspotConnected && (
-              <button 
-                onClick={() => window.location.href = '/api/auth/hubspot'} 
-                className="cyber-btn text-2xl px-10 py-5"
-              >
-                Connect HubSpot
-              </button>
-            )}
-
-            {/* Webhook registration */}
-            {shopifyConnected && !webhookRegistered && (
-              <button
-                onClick={handleRegisterWebhook}
-                disabled={isRegisteringWebhook}
-                className="cyber-btn text-2xl px-10 py-5 disabled:opacity-60"
-              >
-                {isRegisteringWebhook 
-                  ? 'Registering Webhooks...' 
-                  : 'Register Shopify Webhooks (one-time)'}
-              </button>
-            )}
-
-            {shopifyConnected && webhookRegistered && (
-              <div className="text-green-400 text-xl font-medium flex items-center gap-2">
-                <span>✓ Shopify webhooks registered</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Biggest Opportunity Card */}
+      {/* Biggest Opportunity – top-left, compact */}
       {!isLoading && (
-        <div className="max-w-5xl mx-auto mb-16 p-10 rounded-3xl bg-gradient-to-r from-purple-900/30 to-cyan-900/30 border-4 border-purple-500/60 text-center">
-          <p className="text-2xl text-purple-300 mb-4">Your Biggest Opportunity Right Now</p>
-          <p className="text-4xl md:text-5xl font-bold text-white">{biggestOpportunity}</p>
+        <div className="mb-6 p-5 rounded-xl bg-gradient-to-r from-purple-900/40 to-cyan-900/40 border border-purple-500/30 text-left max-w-2xl">
+          <p className="text-lg text-purple-300 mb-2">Biggest Opportunity Right Now</p>
+          <p className="text-xl md:text-2xl font-bold text-white">{biggestOpportunity}</p>
         </div>
       )}
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
-        <div className="metric-card p-10 text-center">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Revenue</h3>
-          <p className="text-7xl font-black text-cyan-400 mb-4">
+      {/* 4 Metric Cards – tight row, square-ish with rounded edges */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div className="metric-card p-4 md:p-6 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Revenue</h3>
+          <p className="text-3xl md:text-4xl font-black text-cyan-400">
             £{metrics.revenue?.total?.toLocaleString() || '0'}
           </p>
-          <p className="text-3xl text-green-400">{metrics.revenue?.trend || ''}</p>
-          <p className="text-xl text-cyan-200 mt-6">Revenue growing — double down on top channel</p>
+          <p className="text-xs md:text-sm text-green-400">{metrics.revenue?.trend || ''}</p>
         </div>
 
-        <div className="metric-card p-10 text-center">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Churn Rate</h3>
-          <p className="text-7xl font-black text-red-400 mb-4">
+        <div className="metric-card p-4 md:p-6 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Churn Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-red-400">
             {metrics.churn?.rate ?? 0}%
           </p>
-          <p className="text-3xl text-red-400">{metrics.churn?.at_risk ?? 0} at risk</p>
-          <p className="text-xl text-cyan-200 mt-6">High churn — send win-back emails</p>
+          <p className="text-xs md:text-sm text-red-400">{metrics.churn?.at_risk ?? 0} at risk</p>
         </div>
 
-        <div className="metric-card p-10 text-center">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Average Order Value</h3>
-          <p className="text-7xl font-black text-green-400 mb-4">
+        <div className="metric-card p-4 md:p-6 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">AOV</h3>
+          <p className="text-3xl md:text-4xl font-black text-green-400">
             £{metrics.aov?.toFixed(2) || '0.00'}
           </p>
-          <p className="text-xl text-cyan-200 mt-6">Increase with bundles & upsells</p>
         </div>
 
-        <div className="metric-card p-10 text-center">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-6">Repeat Purchase Rate</h3>
-          <p className="text-7xl font-black text-green-400 mb-4">
+        <div className="metric-card p-4 md:p-6 rounded-2xl text-center aspect-square flex flex-col justify-center">
+          <h3 className="text-base md:text-lg font-bold text-cyan-300 mb-1">Repeat Rate</h3>
+          <p className="text-3xl md:text-4xl font-black text-green-400">
             {metrics.repeatRate?.toFixed(1) || '0'}%
           </p>
-          <p className="text-xl text-cyan-200 mt-6">Customers buying again</p>
-        </div>
-
-        <div className="metric-card p-10 text-center col-span-1 md:col-span-2 lg:col-span-4">
-          <h3 className="text-4xl font-bold text-cyan-300 mb-6">LTV:CAC Ratio</h3>
-          <p className="text-7xl font-black text-green-400 mb-8">
-            {metrics.performance?.ratio || '0'}:1
-          </p>
-          <p className="text-xl text-cyan-200">Ratio healthy — scale acquisition safely</p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto mb-20">
-        <div className="metric-card p-8">
+      {/* Split Section: Left Revenue Chart (50%), Right AI Insights (50%) */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="metric-card p-4 md:p-6 rounded-2xl">
           <RevenueChart />
         </div>
-      </div>
 
-      <AIInsights />
+        <div className="metric-card p-4 md:p-6 rounded-2xl">
+          <AIInsights />
+        </div>
+      </div>
     </div>
   );
 }
