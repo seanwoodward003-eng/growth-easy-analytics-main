@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react'; // Added for reliable email access
 import useMetrics from "@/hooks/useMetrics";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { data: session, status } = useSession(); // Added: gets current logged-in user
+
   const { 
     metrics, 
     isLoading, 
@@ -288,12 +291,15 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Account */}
+      {/* Account – now using session for email display */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
           <p className="text-2xl text-cyan-300 mb-8">
-            Email: {metrics.user?.email || 'loading...'}
+            Email:{' '}
+            {status === 'loading'
+              ? 'loading...'
+              : session?.user?.email || metrics.user?.email || 'Not available'}
           </p>
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
