@@ -20,63 +20,39 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [emailError, setEmailError] = useState('');
 
-  const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
-    console.log(`[DEBUG] Disconnect button clicked — type = ${type}`);
+  // Shopify connect state (from your original Dashboard code)
+  const [shopDomain, setShopDomain] = useState('');
+  const [connectError, setConnectError] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
 
+  const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
     if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? This will stop data syncing from this source.`)) {
-      console.log('[DEBUG] User cancelled the confirmation dialog');
       return;
     }
-
-    console.log('[DEBUG] User confirmed → starting disconnect attempt');
 
     setDeleting(true);
 
     try {
-      console.log('[DEBUG] Preparing fetch to /api/integrations/disconnect');
-      console.log('[DEBUG] Sending body:', JSON.stringify({ type }));
-
       const res = await fetch('/api/integrations/disconnect', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type }),
       });
 
-      console.log('[DEBUG] Fetch finished');
-      console.log('[DEBUG] Status:', res.status);
-      console.log('[DEBUG] ok?', res.ok);
-      console.log('[DEBUG] Content-Type:', res.headers.get('Content-Type'));
-
-      const raw = await res.clone().text();
-      console.log('[DEBUG] Raw server response (full):', raw);
-
-      let data;
-      try {
-        data = await res.json();
-        console.log('[DEBUG] Parsed JSON successfully:', data);
-      } catch (jsonErr) {
-        console.error('[DEBUG] JSON parse failed:', jsonErr instanceof Error ? jsonErr.message : String(jsonErr));
-        data = { error: 'Invalid JSON from server' };
-      }
+      const data = await res.json();
 
       if (res.ok) {
-        console.log(`[DEBUG] Success — ${type} disconnected`);
         alert(`${type.toUpperCase()} disconnected successfully`);
         refresh();
       } else {
-        console.warn('[DEBUG] Server returned non-ok status');
-        console.log('[DEBUG] Server error data:', data);
         alert(data?.error || `Failed to disconnect (${res.status})`);
       }
     } catch (error) {
-      console.error('[DEBUG] Fetch / network error:', error);
       alert('Network error — check console for details');
+      console.error(error);
     } finally {
       setDeleting(false);
-      console.log('[DEBUG] handleDisconnect finished');
     }
   };
 
@@ -177,6 +153,17 @@ export default function SettingsPage() {
     }
   };
 
+  // Shopify connect handler (from your original Dashboard code)
+  const handleShopifyConnect = () => {
+    if (!shopDomain.endsWith('.myshopify.com')) {
+      setConnectError('Please enter a valid .myshopify.com domain');
+      return;
+    }
+    setConnectError('');
+    setIsConnecting(true);
+    window.location.href = `/api/auth/shopify?shop=${encodeURIComponent(shopDomain.trim().toLowerCase())}`;
+  };
+
   if (isLoading) return <div className="text-center text-4xl text-cyan-300 mt-40">Loading settings...</div>;
 
   return (
@@ -185,7 +172,7 @@ export default function SettingsPage() {
         Settings
       </h1>
 
-      {/* Integrations */}
+      {/* Integrations – OAuth connect/disconnect buttons */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
@@ -198,18 +185,31 @@ export default function SettingsPage() {
                 <button 
                   onClick={() => handleDisconnect('shopify')} 
                   disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
                 >
                   {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
-              <button 
-                onClick={() => router.push('/dashboard')} 
-                className="cyber-btn text-xl px-10 py-5"
-              >
-                Connect Shopify
-              </button>
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  placeholder="your-store.myshopify.com"
+                  value={shopDomain}
+                  onChange={(e) => setShopDomain(e.target.value.trim())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
+                  disabled={isConnecting}
+                  className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
+                />
+                <button
+                  onClick={handleShopifyConnect}
+                  disabled={isConnecting || !shopDomain}
+                  className="cyber-btn text-xl px-10 py-5 w-full"
+                >
+                  {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+                </button>
+                {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
+              </div>
             )}
           </div>
 
@@ -222,15 +222,15 @@ export default function SettingsPage() {
                 <button 
                   onClick={() => handleDisconnect('ga4')} 
                   disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
                 >
                   {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
               <button 
-                onClick={() => router.push('/dashboard')} 
-                className="cyber-btn text-xl px-10 py-5"
+                onClick={() => router.push('/api/auth/ga4')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
               >
                 Connect GA4
               </button>
@@ -246,15 +246,15 @@ export default function SettingsPage() {
                 <button 
                   onClick={() => handleDisconnect('hubspot')} 
                   disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50"
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
                 >
                   {deleting ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </>
             ) : (
               <button 
-                onClick={() => router.push('/dashboard')} 
-                className="cyber-btn text-xl px-10 py-5"
+                onClick={() => router.push('/api/auth/hubspot')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
               >
                 Connect HubSpot
               </button>
