@@ -89,18 +89,18 @@ export default function ChurnPage() {
         </div>
       </div>
 
-      {/* Split: Churn Chart (left 50%), AI Insights (right 50%) */}
+      {/* Split: Churn Chart (left 50%), AI Insights (right 50%) – reduced size */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <div className="metric-card p-4 md:p-6 rounded-2xl">
+        <div className="metric-card p-3 md:p-4 rounded-2xl h-64 md:h-80 lg:h-96"> {/* Reduced height ~1/4 */}
           <ChurnChart />
         </div>
 
-        <div className="metric-card p-4 md:p-6 rounded-2xl">
+        <div className="metric-card p-3 md:p-4 rounded-2xl h-64 md:h-80 lg:h-96"> {/* Reduced height ~1/4 */}
           <AIInsights />
         </div>
       </div>
 
-      {/* Win-Back Email Generator – moved below split */}
+      {/* Win-Back Email Generator – centered button */}
       <div className="max-w-5xl mx-auto mb-8">
         <div className="text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-black text-cyan-400">
@@ -110,7 +110,7 @@ export default function ChurnPage() {
         <button
           onClick={generateWinBackEmail}
           disabled={loadingEmail}
-          className="cyber-btn text-2xl md:text-3xl px-8 md:px-12 py-4 md:py-6 animate-pulse w-full md:w-auto mx-auto block"
+          className="cyber-btn text-2xl md:text-3xl px-8 md:px-12 py-4 md:py-6 animate-pulse mx-auto block w-full md:w-auto"
         >
           {loadingEmail ? 'Generating Email...' : 'Generate Win-Back Email for At-Risk Customers'}
         </button>
