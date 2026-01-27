@@ -55,16 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "
         >
           <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <img 
-                src="/logo.png"
-                alt="GrowthEasy AI"
-                className="h-10 md:h-12 w-auto object-contain"
-              />
-              <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-cyan-400 whitespace-nowrap">
-                GrowthEasy AI
-              </h1>
-            </Link>
+            
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
