@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import useMetrics from "@/hooks/useMetrics";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
-
   const { 
     metrics, 
     isLoading, 
@@ -18,15 +15,46 @@ export default function SettingsPage() {
     refresh 
   } = useMetrics();
 
+  // Email loading states
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(true);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
   const [deleting, setDeleting] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [changeEmailError, setChangeEmailError] = useState('');
 
   // Shopify connect state
   const [shopDomain, setShopDomain] = useState('');
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Load email from new API route
+  useEffect(() => {
+    const fetchEmail = async () => {
+      try {
+        const res = await fetch('/api/user/email', {
+          credentials: 'include', // Sends cookies (access_token)
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to load email (${res.status})`);
+        }
+
+        const data = await res.json();
+        setUserEmail(data.email || 'Not available');
+      } catch (err) {
+        console.error('Email fetch error:', err);
+        setEmailError('Could not load email');
+        setUserEmail('Error');
+      } finally {
+        setEmailLoading(false);
+      }
+    };
+
+    fetchEmail();
+  }, []);
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
     if (!confirm(`Are you sure you want to disconnect ${type.toUpperCase()}? This will stop data syncing from this source.`)) {
@@ -82,7 +110,7 @@ export default function SettingsPage() {
   const handleChangeEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !/^\S+@\S+\.\S+$/.test(newEmail)) {
-      setEmailError('Please enter a valid email address');
+      setChangeEmailError('Please enter a valid email address');
       return;
     }
 
@@ -98,14 +126,17 @@ export default function SettingsPage() {
         alert('Email updated successfully');
         setNewEmail('');
         setChangingEmail(false);
-        setEmailError('');
-        refresh();
+        setChangeEmailError('');
+        // Refresh email display
+        const newRes = await fetch('/api/user/email', { credentials: 'include' });
+        const data = await newRes.json();
+        setUserEmail(data.email || 'Not available');
       } else {
         const data = await res.json();
-        setEmailError(data.error || 'Failed to update email');
+        setChangeEmailError(data.error || 'Failed to update email');
       }
     } catch (error) {
-      setEmailError('Network error');
+      setChangeEmailError('Network error');
       console.error(error);
     }
   };
@@ -178,7 +209,7 @@ export default function SettingsPage() {
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Shopify card unchanged */}
+          {/* Shopify */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Shopify</h3>
             {shopifyConnected ? (
@@ -215,7 +246,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* GA4 card unchanged */}
+          {/* GA4 */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Google Analytics (GA4)</h3>
             {ga4Connected ? (
@@ -239,7 +270,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {/* HubSpot card unchanged */}
+          {/* HubSpot */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">HubSpot</h3>
             {hubspotConnected ? (
@@ -265,7 +296,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Subscription – unchanged */}
+      {/* Subscription */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
         <div className="metric-card p-12 text-center">
@@ -290,23 +321,13 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Account – with debug pre added */}
+      {/* Account */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
           <p className="text-2xl text-cyan-300 mb-8">
-            Email:{' '}
-            {status === 'loading'
-              ? 'loading...'
-              : session?.user?.email || metrics.user?.email || 'Not available'}
+            Email: {emailLoading ? 'loading...' : emailError ? emailError : userEmail}
           </p>
-
-          {/* DEBUG BLOCK – shows the full session object */}
-          <pre className="text-xs text-gray-400 bg-black/50 p-4 rounded-xl mt-4 overflow-auto border border-cyan-500/30">
-            Session debug:{'\n'}
-            {JSON.stringify(session, null, 2)}
-          </pre>
-
           <div className="flex justify-center gap-6">
             <button onClick={() => setChangingEmail(true)} className="cyber-btn text-xl px-8 py-4">
               Change Email
@@ -321,7 +342,7 @@ export default function SettingsPage() {
                 placeholder="New email address"
                 className="w-full p-4 mb-4 bg-[#0a0f2c] border-2 border-cyan-400 text-cyan-200 rounded-xl"
               />
-              {emailError && <p className="text-red-400 mb-4">{emailError}</p>}
+              {changeEmailError && <p className="text-red-400 mb-4">{changeEmailError}</p>}
               <div className="flex justify-end gap-4">
                 <button type="button" onClick={() => setChangingEmail(false)} className="cyber-btn text-xl px-8 py-4 bg-gray-600/80">
                   Cancel
@@ -335,7 +356,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Data & Privacy – unchanged */}
+      {/* Data & Privacy */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
         <div className="grid md:grid-cols-2 gap-8">
