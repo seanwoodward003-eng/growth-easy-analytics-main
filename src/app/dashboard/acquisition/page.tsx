@@ -16,51 +16,59 @@ export default function AcquisitionPage() {
   } = useMetrics();
 
   return (
-    <div className="px-6 py-20 md:px-12 lg:px-24">
-      <h1 className="glow-title text-center text-6xl md:text-8xl font-black mb-16 text-cyan-400">
+    <div className="px-4 py-10 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+      {/* Acquisition heading – 50% smaller */}
+      <h1 className="glow-title text-center text-4xl md:text-5xl font-black mb-6 text-cyan-400">
         Acquisition
       </h1>
 
-      {/* ADDED: Traffic & Bounce Rate Cards – full width on mobile, 2-col on desktop */}
-      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 mb-20">
-        <div className="metric-card p-8 text-center">
-          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Sessions (Last 30 Days)</h3>
-          <p className="text-6xl md:text-7xl font-black text-cyan-400 mb-4">
+      {/* Traffic & Bounce Rate Cards – compact */}
+      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6 mb-8">
+        <div className="metric-card p-6 text-center">
+          <h3 className="text-2xl md:text-3xl font-bold text-cyan-300 mb-3">Sessions (Last 30 Days)</h3>
+          <p className="text-5xl md:text-6xl font-black text-cyan-400 mb-2">
             {metrics.traffic?.sessions?.toLocaleString() || '0'}
           </p>
-          <p className="text-xl text-cyan-200">
+          <p className="text-lg text-cyan-200">
             {ga4Connected ? 'From GA4' : 'Connect GA4 to unlock real traffic data'}
           </p>
         </div>
 
-        <div className="metric-card p-8 text-center">
-          <h3 className="text-3xl md:text-4xl font-bold text-cyan-300 mb-6">Bounce Rate</h3>
-          <p className="text-6xl md:text-7xl font-black text-red-400 mb-4">
+        <div className="metric-card p-6 text-center">
+          <h3 className="text-2xl md:text-3xl font-bold text-cyan-300 mb-3">Bounce Rate</h3>
+          <p className="text-5xl md:text-6xl font-black text-red-400 mb-2">
             {metrics.traffic?.bounceRate?.toFixed(1) || '0'}%
           </p>
-          <p className="text-xl text-cyan-200">
+          <p className="text-lg text-cyan-200">
             {ga4Connected ? 'From GA4' : 'Connect GA4 to see bounce insights'}
           </p>
         </div>
       </div>
 
-      {/* Your original content – unchanged */}
-      <div className="max-w-4xl mx-auto text-center mb-20">
-        <p className="text-5xl text-cyan-300 mb-4">Top Channel</p>
-        <p className="metric-value text-8xl text-cyan-400 mb-4">{metrics.acquisition.top_channel}</p>
-        <p className="text-2xl text-cyan-200 mb-4">Acquisition Cost: £{metrics.acquisition.cac}</p>
-        <p className="text-xl text-purple-300 mt-6">Top channel driving growth — allocate 60% budget here to lower CAC</p>
+      {/* Top Channel – compact */}
+      <div className="max-w-4xl mx-auto text-center mb-8">
+        <p className="text-4xl text-cyan-300 mb-2">Top Channel</p>
+        <p className="text-6xl md:text-7xl font-black text-cyan-400 mb-2">{metrics.acquisition.top_channel}</p>
+        <p className="text-xl text-cyan-200 mb-2">
+          Acquisition Cost: £{metrics.acquisition.acquisition_cost?.toFixed(2) || '0'}
+        </p>
+        <p className="text-lg text-purple-300">
+          {ga4Connected 
+            ? 'Top channel driving growth — allocate 60% budget here to lower CAC' 
+            : 'Connect GA4 to unlock accurate channel & CAC data'}
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 mb-20">
-        <div className="metric-card p-8">
+      {/* Charts – shortened height, fit side-by-side */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="metric-card p-4 rounded-2xl h-64 md:h-80 lg:h-96 overflow-hidden">
           <AcquisitionChart />
         </div>
-        <div className="metric-card p-8">
+
+        <div className="metric-card p-4 rounded-2xl h-64 md:h-80 lg:h-96 overflow-hidden">
           <CostTrendChart />
         </div>
       </div>
-
     </div>
   );
 }
