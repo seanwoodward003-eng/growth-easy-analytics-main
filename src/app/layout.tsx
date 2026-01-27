@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { SessionProvider } from 'next-auth/react'; // Added: required for useSession
+import { SessionProvider } from 'next-auth/react'; // This import is required
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -44,8 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        <SessionProvider> {/* Added: wraps all client components so useSession works */}
-          {/* Header – logo image completely removed */}
+        <SessionProvider> {/* THIS LINE + CLOSING TAG FIXES THE NULL SESSION */}
+          {/* Header */}
           <header 
             className="
               fixed top-0 left-0 right-0 z-[100] 
