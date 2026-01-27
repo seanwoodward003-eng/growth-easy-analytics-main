@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from 'ai/react';
-import { Paperclip, Image, Smile, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 export default function AIGrowthCoachPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
@@ -31,8 +31,8 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Messages area – extra top padding to clear fixed header, no cut-off */}
-      <div className="flex-1 overflow-y-auto px-4 pt-24 pb-32"> {/* Increased pt-24 to clear header */}
+      {/* Messages area – extra top padding to clear fixed header (no cut-off) */}
+      <div className="flex-1 overflow-y-auto px-4 pt-32 pb-24"> {/* pt-32 clears header, pb-24 gives room for input bar */}
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -73,16 +73,9 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Input bar – fixed at bottom, full width, safe area */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30 z-10">
+      {/* Input bar – raised slightly higher, no emojis/buttons except Send */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30 z-10">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Paperclip className="w-6 h-6 text-cyan-300" />
-          </button>
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Image className="w-6 h-6 text-cyan-300" />
-          </button>
-
           <input
             value={input}
             onChange={handleInputChange}
@@ -90,13 +83,6 @@ export default function AIGrowthCoachPage() {
             className="flex-1 bg-gray-800/70 text-white px-6 py-4 rounded-full border border-cyan-500/50 focus:outline-none focus:border-cyan-300 text-lg placeholder-cyan-400/60 backdrop-blur-md"
             autoFocus
           />
-
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Smile className="w-6 h-6 text-cyan-300" />
-          </button>
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition rotate-180">
-            <Smile className="w-6 h-6 text-cyan-300" />
-          </button>
 
           <button
             type="submit"
