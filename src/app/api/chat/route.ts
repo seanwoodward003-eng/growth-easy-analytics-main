@@ -69,6 +69,6 @@ export async function POST(request: NextRequest) {
     console.error('[Grok Error]', e);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
   }
-}
+} 
 
 export const OPTIONS = () => new Response(null, { status: 200 });
