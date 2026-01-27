@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
-import { run } from '@/lib/db';
+import { verifyCSRF } from '@/lib/auth';
+import { getRow, run } from '@/lib/db';
 import { StreamingTextResponse, OpenAIStream } from 'ai';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
@@ -12,6 +12,14 @@ export async function POST(request: NextRequest) {
   if (!verifyCSRF(request)) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
+
+  // Get current user from auth/session
+  const auth = await requireAuth();
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
+
+  const userId = auth.user.id;
 
   // Parse body
   let body;
@@ -35,15 +43,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
-  // TEMP: Replace with your real user ID from session/auth
-  const userId = 1; // ← CHANGE THIS TO REAL USER ID
-
   // ────────────────────────────────────────────────────────────────
-  // FETCH & INJECT METRICS (this is the only addition)
+  // FETCH USER METRICS (Shopify + GA4 + HubSpot)
   // ────────────────────────────────────────────────────────────────
-  let metricsSummary = 'No metrics data available yet. Ask the user to connect their accounts.';
+  let metricsSummary = 'No metrics data available yet. Ask the user to connect their Shopify, GA4, and HubSpot accounts.';
 
   try {
+    // Shopify metrics from DB
     const shopifyResult = await run(
       `SELECT revenue, churnRate, repeatRate, aov, ltv, atRisk 
        FROM metrics WHERE user_id = ? ORDER BY date DESC LIMIT 1`,
@@ -52,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     let shopifyRow = null;
     if (shopifyResult == null) {
-      console.log('[Chat] No metrics row found');
+      console.log('[Chat] No metrics row found for user', userId);
     } else {
       shopifyRow = shopifyResult as any;
     }
