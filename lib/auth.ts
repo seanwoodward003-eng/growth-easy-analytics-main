@@ -35,7 +35,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // ← HARD SET TO FALSE for now (prevents rejection in preview/local)
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 1,
@@ -43,7 +43,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // ← HARD SET TO FALSE
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
@@ -51,7 +51,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('csrf_token', csrf, {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // ← HARD SET TO FALSE
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
@@ -146,7 +146,7 @@ export async function requireAuth() {
   let decryptedShopifyToken: string | null = null;
   if (row.shopify_access_token) {
     try {
-      decryptedShopifyToken = await decrypt(row.shopify_access_token);  // ← THIS IS THE ONLY CHANGE: added 'await'
+      decryptedShopifyToken = await decrypt(row.shopify_access_token);
       console.log('[AUTH] requireAuth → shopify_access_token decrypted successfully');
     } catch (err) {
       console.error('[AUTH] requireAuth → decryption failed for shopify_access_token:', err);
