@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getRow } from './db';
-import { decrypt } from '@/lib/encryption';  // ← correct path now
+import { decrypt } from '@/lib/encryption';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
 const REFRESH_SECRET = process.env.REFRESH_SECRET!;
@@ -24,7 +24,7 @@ export function generateTokens(userId: number, email: string) {
 
 export function generateCsrfToken() {
   const array = new Uint8Array(32);
-  crypto.getRandomValues(array); // Web Crypto — works in Edge & browsers
+  crypto.getRandomValues(array);
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
@@ -32,10 +32,11 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   const cookieStore = await cookies();
 
   console.log('[AUTH] Setting cookies — access_token length:', access.length);
+  console.log('[AUTH] Setting cookies — secure flag:', process.env.NODE_ENV === 'production' ? 'true' : 'false');
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
-    secure: true,  // ← FIXED TO TRUE (Vercel is always HTTPS)
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 1,
@@ -43,7 +44,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
-    secure: true,  // ← FIXED TO TRUE
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
@@ -51,7 +52,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('csrf_token', csrf, {
     httpOnly: false,
-    secure: true,  // ← FIXED TO TRUE
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
@@ -62,15 +63,18 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value;
 
+  console.log('[AUTH] getCurrentUser called — access_token cookie:', accessToken ? 'present (length ' + accessToken.length + ')' : 'missing');
+
   if (!accessToken) {
-    console.log('[AUTH] getCurrentUser → no access_token cookie');
     return null;
   }
 
-  console.log('[AUTH] getCurrentUser → verifying access_token (length:', accessToken.length, ')');
+  console.log('[AUTH] getCurrentUser → verifying access_token');
 
   try {
     const payload = jwt.verify(accessToken, JWT_SECRET);
+
+    console.log('[AUTH] getCurrentUser → token verified, payload sub:', payload.sub);
 
     if (
       typeof payload === 'object' &&
@@ -90,7 +94,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     console.log('[AUTH] getCurrentUser → payload invalid');
     return null;
   } catch (error) {
-    console.log('[AUTH] getCurrentUser → token verification failed:', error);
+    console.error('[AUTH] getCurrentUser → token verification failed:', error);
     return null;
   }
 }
@@ -103,7 +107,7 @@ export async function requireAuth() {
     return { error: 'Unauthorized', status: 401 };
   }
 
-  console.log('[AUTH] requireAuth → loading full user row from DB for id:', user.id);
+  console.log('[AUTH] requireAuth → user found, id:', user.id);
 
   const row = await getRow<{
     trial_end: string;
@@ -123,7 +127,6 @@ export async function requireAuth() {
   }
 
   console.log('[AUTH] requireAuth → DB row loaded → shopify_shop:', row.shopify_shop || '(null)');
-  console.log('[AUTH] requireAuth → shopify_access_token exists:', !!row.shopify_access_token);
 
   const now = new Date();
   const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
@@ -146,12 +149,15 @@ export async function requireAuth() {
   let decryptedShopifyToken: string | null = null;
   if (row.shopify_access_token) {
     try {
+      console.log('[AUTH] requireAuth → attempting to decrypt shopify_access_token');
       decryptedShopifyToken = await decrypt(row.shopify_access_token);
       console.log('[AUTH] requireAuth → shopify_access_token decrypted successfully');
     } catch (err) {
       console.error('[AUTH] requireAuth → decryption failed for shopify_access_token:', err);
       decryptedShopifyToken = null;
     }
+  } else {
+    console.log('[AUTH] requireAuth → no shopify_access_token in DB');
   }
 
   return {
@@ -173,6 +179,7 @@ export async function verifyCSRF(request: Request): Promise<boolean> {
   const cookieStore = await cookies();
   const cookieCsrf = cookieStore.get('csrf_token')?.value;
   const headerCsrf = request.headers.get('X-CSRF-Token');
+  console.log('[AUTH] verifyCSRF — cookieCsrf:', cookieCsrf, 'headerCsrf:', headerCsrf);
   return !!cookieCsrf && !!headerCsrf && cookieCsrf === headerCsrf;
 }
 
