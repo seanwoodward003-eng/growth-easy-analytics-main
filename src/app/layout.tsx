@@ -130,9 +130,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
                 <button
                   onClick={() => {
-                    document.cookie = 'access_token=; Max-Age=0; path=/';
-                    document.cookie = 'refresh_token=; Max-Age=0; path=/';
-                    document.cookie = 'csrf_token=; Max-Age=0; path=/';
+                   // Safe cookie clearing (adds secure flag in production)
+const clearCookie = (name: string) => {
+  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+};
+
+clearCookie('access_token');
+clearCookie('refresh_token');
+clearCookie('csrf_token');
                     window.location.href = '/';
                   }}
                   className="w-full text-left text-2xl text-red-400 py-3"
