@@ -154,10 +154,13 @@ export default function SettingsPage() {
       const a = document.createElement('a');
       a.href = url;
       a.download = 'growth-easy-data.json';
-      document.body.appendChild(a);
+
+      // SAFE DOWNLOAD: click without appending to DOM
       a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+
+      // Clean up
+      URL.revokeObjectURL(url);
+      a.remove();
 
       alert('Export successful! Check your downloads.');
     } catch (error: any) {
