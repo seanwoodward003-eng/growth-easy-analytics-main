@@ -35,7 +35,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('access_token', access, {
     httpOnly: true,
-    secure: false,  // ← HARD SET TO FALSE for now (prevents rejection in preview/local)
+    secure: true,  // ← FIXED TO TRUE (Vercel is always HTTPS)
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 1,
@@ -43,7 +43,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
-    secure: false,  // ← HARD SET TO FALSE
+    secure: true,  // ← FIXED TO TRUE
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
@@ -51,7 +51,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
 
   cookieStore.set('csrf_token', csrf, {
     httpOnly: false,
-    secure: false,  // ← HARD SET TO FALSE
+    secure: true,  // ← FIXED TO TRUE
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
