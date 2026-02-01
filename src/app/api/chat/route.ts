@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
-import { streamText, StreamingTextResponse } from 'ai';  // ← Updated imports
+import { streamText } from 'ai';  // ← only this import now (new streaming API)
 
 export const maxDuration = 60;
 
@@ -59,7 +59,13 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
       max_tokens: 300,
     });
 
-    return new StreamingTextResponse(textStream);
+    return new Response(textStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (e: any) {
     console.error('[Grok Error]', e);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
