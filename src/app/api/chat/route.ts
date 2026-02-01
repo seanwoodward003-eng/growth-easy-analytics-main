@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
-import { StreamingTextResponse, OpenAIStream } from 'ai';
+import { streamText, StreamingTextResponse } from 'ai';  // ← Updated imports
 
 export const maxDuration = 60;
 
@@ -49,32 +49,17 @@ export async function POST(request: NextRequest) {
 Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${userMessage}`;
 
   try {
-    const grokResp = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-        stream: true,
-      }),
+    const { textStream } = await streamText({
+      model: 'grok-beta',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
     });
 
-    if (!grokResp.ok) {
-      const errorText = await grokResp.text();
-      return NextResponse.json({ reply: `Grok error ${grokResp.status}` });
-    }
-
-    const stream = OpenAIStream(grokResp);
-
-    return new StreamingTextResponse(stream);
+    return new StreamingTextResponse(textStream);
   } catch (e: any) {
     console.error('[Grok Error]', e);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
@@ -82,5 +67,3 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
-
-
