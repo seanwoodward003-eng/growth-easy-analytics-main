@@ -13,15 +13,17 @@ export default function CookieConsent() {
   }, []);
 
   const acceptCookies = () => {
-    // Set cookie for 1 year
-    document.cookie = 'cookie_consent=true; max-age=' + 60*60*24*365 + '; path=/; SameSite=Lax';
+    // Set cookie for 1 year - secure in production
+    const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    document.cookie = `cookie_consent=true; max-age=${60*60*24*365}; path=/; SameSite=Strict${secureFlag}`;
     setShow(false);
     // Reload to trigger any analytics/scripts that depend on consent
     window.location.reload();
   };
 
   const declineCookies = () => {
-    document.cookie = 'cookie_consent=false; max-age=' + 60*60*24*365 + '; path=/; SameSite=Lax';
+    const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    document.cookie = `cookie_consent=false; max-age=${60*60*24*365}; path=/; SameSite=Strict${secureFlag}`;
     setShow(false);
   };
 
