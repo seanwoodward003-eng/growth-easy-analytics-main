@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
-import { streamText } from 'ai';  // ← only this import now (new streaming API)
+import { streamText } from 'ai';  // ← correct current import
 
 export const maxDuration = 60;
 
