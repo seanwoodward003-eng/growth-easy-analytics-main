@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';  // ← correct path now
 
@@ -24,7 +23,9 @@ export function generateTokens(userId: number, email: string) {
 }
 
 export function generateCsrfToken() {
-  return randomBytes(32).toString('hex');
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array); // Web Crypto — works in Edge & browsers
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export async function setAuthCookies(access: string, refresh: string, csrf: string) {
