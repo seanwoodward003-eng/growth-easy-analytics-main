@@ -14,9 +14,9 @@
     "shopify:deploy": "npx shopify app deploy"
   },
   "dependencies": {
-    "@ai-sdk/react": "^0.0.41",
+    "@ai-sdk/react": "^0.0.66",
     "@libsql/client": "^0.10.0",
-    "ai": "^3.4.5",
+    "ai": "^5.0.52",
     "drizzle-orm": "^0.35.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.463.0",
