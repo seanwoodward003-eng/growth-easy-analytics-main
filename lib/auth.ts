@@ -36,7 +36,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('access_token', access, {
     httpOnly: true,
     secure: true,  // ← FIXED TO TRUE (permanent for HTTPS)
-    sameSite: 'lax',
+    sameSite: 'none',
     path: '/',
     maxAge: 60 * 60 * 1,
   });
@@ -44,7 +44,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('refresh_token', refresh, {
     httpOnly: true,
     secure: true,  // ← FIXED TO TRUE
-    sameSite: 'lax',
+    sameSite: 'none',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
@@ -52,7 +52,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   cookieStore.set('csrf_token', csrf, {
     httpOnly: false,
     secure: true,  // ← FIXED TO TRUE
-    sameSite: 'lax',
+    sameSite: 'none',
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
