@@ -1,8 +1,6 @@
-// app/api/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTokens, setAuthCookies } from '@/lib/auth';
 import { getRow } from '@/lib/db';
-import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
   const json = await request.json();
@@ -20,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   // Generate fresh tokens
   const { access, refresh } = generateTokens(user.id, email);
-  const csrf = randomBytes(32).toString('hex');
+  const csrf = crypto.getRandomValues(new Uint8Array(32)).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');  // Web Crypto — no import needed
 
   const response = NextResponse.json({
     success: true,
