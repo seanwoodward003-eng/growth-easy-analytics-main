@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow, run } from '@/lib/db';
-import { streamText } from 'ai';  // ← correct current import
+import { streamText } from 'ai';  // Current import for streaming
 
 export const maxDuration = 60;
 
@@ -56,7 +56,7 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
         { role: 'user', content: userMessage },
       ],
       temperature: 0.7,
-      max_tokens: 300,
+      // max_tokens removed — not supported in top-level; model defaults are fine
     });
 
     return new Response(textStream, {
