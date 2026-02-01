@@ -181,9 +181,13 @@ export default function SettingsPage() {
         credentials: 'include',
       });
       if (res.ok) {
-        document.cookie = 'access_token=; Max-Age=0; path=/';
-        document.cookie = 'refresh_token=; Max-Age=0; path=/';
-        document.cookie = 'csrf_token=; Max-Age=0; path=/';
+        const clearCookie = (name: string) => {
+  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+};
+
+clearCookie('access_token');
+clearCookie('refresh_token');
+clearCookie('csrf_token');
         alert('Account deleted');
         router.push('/');
       } else {
