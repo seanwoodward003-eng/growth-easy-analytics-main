@@ -146,7 +146,7 @@ export async function requireAuth() {
   let decryptedShopifyToken: string | null = null;
   if (row.shopify_access_token) {
     try {
-      decryptedShopifyToken = decrypt(row.shopify_access_token);
+      decryptedShopifyToken = await decrypt(row.shopify_access_token);  // ← ADDED 'await' here
       console.log('[AUTH] requireAuth → shopify_access_token decrypted successfully');
     } catch (err) {
       console.error('[AUTH] requireAuth → decryption failed for shopify_access_token:', err);
