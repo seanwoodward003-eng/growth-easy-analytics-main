@@ -15,6 +15,12 @@ export interface AuthUser {
   hubspot_connected?: boolean | null;
 }
 
+// Custom interface for our JWT payload shape
+interface CustomJwtPayload extends jwt.JwtPayload {
+  sub: number;
+  email: string;
+}
+
 export function generateTokens(userId: number, email: string) {
   const access = jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: '1h' });
   const refresh = jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: '90d' });
@@ -73,13 +79,28 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   console.log('[AUTH] getCurrentUser → verifying access_token (length:', accessToken.length, ')');
 
   try {
-    const payload = jwt.verify(accessToken, JWT_SECRET) as { sub: number; email: string };
+    const payload = jwt.verify(accessToken, JWT_SECRET);
 
-    console.log('[AUTH] getCurrentUser → valid token, user id:', payload.sub);
-    return {
-      id: payload.sub,
-      email: payload.email,
-    };
+    // Type guard to safely check our expected shape
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'sub' in payload &&
+      typeof (payload as any).sub === 'number' &&
+      'email' in payload &&
+      typeof (payload as any).email === 'string'
+    ) {
+      const typedPayload = payload as CustomJwtPayload;
+      console.log('[AUTH] getCurrentUser → valid token, user id:', typedPayload.sub);
+      return {
+        id: typedPayload.sub,
+        email: typedPayload.email,
+      };
+    }
+
+    console.log('[AUTH] getCurrentUser → payload shape invalid');
+    return null;
   } catch (error) {
     console.log('[AUTH] getCurrentUser → token verification failed:', (error as Error).message);
     return null;
@@ -161,8 +182,19 @@ export async function verifyCSRF(request: Request): Promise<boolean> {
 
 export function verifyRefreshToken(token: string): { sub: number } | null {
   try {
-    const payload = jwt.verify(token, REFRESH_SECRET) as { sub: number };
-    return { sub: payload.sub };
+    const payload = jwt.verify(token, REFRESH_SECRET);
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'sub' in payload &&
+      typeof (payload as any).sub === 'number'
+    ) {
+      return { sub: (payload as any).sub };
+    }
+
+    return null;
   } catch {
     return null;
   }
