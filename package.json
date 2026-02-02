@@ -31,8 +31,7 @@
     "stripe": "^16.12.0",
     "swr": "^2.2.5",
     "zod": "^3.23.8",
-    "next-auth": "^5.0.0",           // ← upgraded from beta.30 to stable v5
-    "jose": "^5.9.6"
+    "next-auth": "^5.0.0",           
   },
   "devDependencies": {
     "@shopify/cli": "^3.63.0",
