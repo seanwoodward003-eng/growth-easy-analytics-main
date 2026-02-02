@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
 
   console.log('Verify: Token valid - logging in user:', newUser.id, pendingUser.email);
 
-  const { access, refresh } = generateTokens(newUser.id, pendingUser.email);
+  // ── ADD AWAIT HERE ──
+  const { access, refresh } = await generateTokens(newUser.id, pendingUser.email);
+
   const csrf = crypto.randomBytes(32).toString('hex');
 
   const response = NextResponse.redirect(new URL('/dashboard?verified=true', request.url));
