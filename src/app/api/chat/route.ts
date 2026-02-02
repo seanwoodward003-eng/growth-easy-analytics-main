@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';
+import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
 import { getRow } from '@/lib/db';
-import { streamText } from 'ai';
-import { xai } from '@ai-sdk/xai';  // ← Direct xAI provider (no Vercel Gateway)
 
 export const maxDuration = 60;
 
@@ -44,16 +42,33 @@ export async function POST(request: NextRequest) {
 Answer concisely in under 150 words. Be actionable, direct, helpful. Question: ${userMessage}`;
 
   try {
-    const { textStream } = await streamText({
-      model: xai('grok-beta'),  // ← Direct xAI call — no Vercel Gateway
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      temperature: 0.7,
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'grok-beta',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+        stream: true,
+      }),
     });
 
-    return new Response(textStream, {
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Grok API Error]', errorText);
+      return NextResponse.json({ reply: `Grok error ${response.status}` }, { status: response.status });
+    }
+
+    // Direct stream passthrough (no SDK needed)
+    return new Response(response.body, {
+      status: response.status,
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
