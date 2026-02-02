@@ -23,8 +23,13 @@ export async function POST(request: NextRequest) {
 
   console.log('[LOGIN] User found, ID:', user.id);
 
-  const { access, refresh } = generateTokens(user.id, email);
-  const csrf = crypto.getRandomValues(new Uint8Array(32)).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+  // ── Added await here ──
+  const { access, refresh } = await generateTokens(user.id, email);
+
+  const csrf = crypto.getRandomValues(new Uint8Array(32)).reduce(
+    (str, byte) => str + byte.toString(16).padStart(2, '0'),
+    ''
+  );
 
   console.log('[LOGIN] Tokens generated, access length:', access.length);
 
