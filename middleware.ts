@@ -43,15 +43,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect only dashboard routes
+  // Protect dashboard routes
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
-    // Bypass auth check on direct redirect from login (allows first request after setAuthCookies)
-    if (request.headers.get('referer')?.includes('/api/login')) {
-      console.log('[MIDDLEWARE] Bypassing auth check for login redirect');
-      return NextResponse.next();
-    }
+    console.log('[MIDDLEWARE] Dashboard request – access_token present?', !!accessToken, 'length:', accessToken?.length || 0);
 
     if (!accessToken) {
       console.log('[MIDDLEWARE] No access_token — redirecting with login_required');
@@ -66,7 +62,7 @@ export async function middleware(request: NextRequest) {
       payload = jwt.verify(accessToken, JWT_SECRET);
       console.log('[MIDDLEWARE] Token verified, user ID:', payload.sub);
     } catch (err) {
-      console.log('[MIDDLEWARE] Token verification failed:', err);
+      console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
@@ -94,11 +90,7 @@ export async function middleware(request: NextRequest) {
       const now = new Date();
       const trialEnd = user.trial_end ? new Date(user.trial_end) : null;
 
-      if (
-        user.subscription_status === 'trial' &&
-        trialEnd &&
-        now > trialEnd
-      ) {
+      if (user.subscription_status === 'trial' && trialEnd && now > trialEnd) {
         console.log('[MIDDLEWARE] Trial expired');
         const url = request.nextUrl.clone();
         url.pathname = '/';
@@ -108,7 +100,7 @@ export async function middleware(request: NextRequest) {
 
       response.headers.set('x-user-id', userId.toString());
     } catch (dbError) {
-      console.error('Middleware trial check error:', dbError);
+      console.error('[MIDDLEWARE] Trial/user check error:', dbError);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
