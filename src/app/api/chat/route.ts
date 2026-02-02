@@ -55,15 +55,15 @@ Never give generic answers — tailor insights to the user's specific context wh
         ...modelMessages,
       ],
 
-      // Optional tuning — feel free to adjust or remove
+      // Optional tuning
       temperature: 0.7,
-      maxOutputTokens: 2048,  // ← fixed: renamed from maxTokens
+      maxOutputTokens: 2048,
     });
 
-    // Return in format that useChat expects
-    return result.toDataStreamResponse({
+    // Return in format that useChat expects (v6 rename)
+    return result.toTextStreamResponse({
       headers: {
-        'x-vercel-ai-ui-message-stream': 'v1', // optional, helps some versions
+        'x-vercel-ai-ui-message-stream': 'v1', // still useful as safety net
       },
     });
   } catch (error) {
