@@ -1,7 +1,7 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react'; // ← correct import for v6
-import { Send } from 'lucide-react';
+import { useChat } from 'ai/react';
+import { Paperclip, Image, Smile, Send } from 'lucide-react';
 
 export default function AIGrowthCoachPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
@@ -31,7 +31,7 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Messages area */}
+      {/* Messages — extra padding for input bar */}
       <div className="flex-1 overflow-y-auto px-4 pt-20 pb-32">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
@@ -57,11 +57,11 @@ export default function AIGrowthCoachPage() {
                 )}
               </div>
 
-              {/* Message bubble */}
+              {/* Bubble */}
               <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
                 {m.role === 'assistant' && <p className="text-cyan-400 text-sm mb-2">Grok online</p>}
                 <div className={`relative px-6 py-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 text-white' : 'bg-gray-800/90 text-cyan-100'} backdrop-blur-md border border-cyan-500/30`}>
-                  {/* Chat tail */}
+                  {/* Tail */}
                   <div className={`absolute top-0 w-0 h-0 border-8 border-transparent ${m.role === 'user' ? 'right-0 -mr-4 border-l-purple-900/80' : 'left-0 -ml-4 border-r-gray-800/90'}`} />
                   <p className="text-lg leading-relaxed whitespace-pre-wrap">{m.content}</p>
                 </div>
@@ -73,9 +73,16 @@ export default function AIGrowthCoachPage() {
         </div>
       </div>
 
-      {/* Input bar */}
+      {/* Input bar — mobile-safe with safe-area */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
+          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+            <Paperclip className="w-6 h-6 text-cyan-300" />
+          </button>
+          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+            <Image className="w-6 h-6 text-cyan-300" />
+          </button>
+
           <input
             value={input}
             onChange={handleInputChange}
@@ -83,6 +90,13 @@ export default function AIGrowthCoachPage() {
             className="flex-1 bg-gray-800/70 text-white px-6 py-4 rounded-full border border-cyan-500/50 focus:outline-none focus:border-cyan-300 text-lg placeholder-cyan-400/60 backdrop-blur-md"
             autoFocus
           />
+
+          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+            <Smile className="w-6 h-6 text-cyan-300" />
+          </button>
+          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition rotate-180">
+            <Smile className="w-6 h-6 text-cyan-300" />
+          </button>
 
           <button
             type="submit"
@@ -97,3 +111,4 @@ export default function AIGrowthCoachPage() {
     </div>
   );
 }
+
