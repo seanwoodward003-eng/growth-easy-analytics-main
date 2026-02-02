@@ -43,10 +43,11 @@ export default function Pricing() {
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
     setLoading(plan);
 
-    console.log('[Checkout Debug] Button clicked → starting handleCheckout for plan:', plan);
+    console.log('[Checkout Debug] Button clicked - plan:', plan);
+    console.log('[Checkout Debug] Starting full checkout flow');
 
     try {
-      console.log('[Checkout Debug] Fetching /api/create-checkout...');
+      console.log('[Checkout Debug] Sending POST to /api/create-checkout');
 
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -56,52 +57,54 @@ export default function Pricing() {
       });
 
       console.log('[Checkout Debug] Server response status:', res.status);
+      console.log('[Checkout Debug] Response headers:', Object.fromEntries(res.headers.entries()));
 
       const data = await res.json();
-      console.log('[Checkout Debug] Server response data:', JSON.stringify(data, null, 2));
+      console.log('[Checkout Debug] Server response data (full JSON):', JSON.stringify(data, null, 2));
 
       if (!res.ok) {
-        console.error('[Checkout Debug] Server returned non-OK status:', res.status);
-        throw new Error(data.error || 'Failed to create checkout session');
+        console.error('[Checkout Debug] Server error response - status not OK');
+        throw new Error(data.error || `Server error ${res.status}`);
       }
 
       if (!data.sessionId) {
-        console.error('[Checkout Debug] No sessionId in response');
+        console.error('[Checkout Debug] No sessionId in server response');
         throw new Error('No sessionId returned from server');
       }
 
-      console.log('[Checkout Debug] Session ID received:', data.sessionId);
+      console.log('[Checkout Debug] Session ID received successfully:', data.sessionId);
 
-      console.log('[Checkout Debug] Calling getStripe()...');
+      console.log('[Checkout Debug] Loading Stripe library via getStripe()');
       const stripe = await getStripe();
-      console.log('[Checkout Debug] getStripe() returned:', stripe ? 'Stripe object loaded' : 'NULL / FAILED');
+      console.log('[Checkout Debug] getStripe() result:', stripe ? 'Stripe loaded' : 'Stripe FAILED to load (null)');
 
       if (!stripe) {
-        console.error('[Checkout Debug] Stripe failed to load — throwing error');
+        console.error('[Checkout Debug] Stripe library did not load - throwing error');
         throw new Error('Failed to load Stripe');
       }
 
-      console.log('[Checkout Debug] Stripe loaded → calling redirectToCheckout...');
+      console.log('[Checkout Debug] Stripe ready - initiating redirect to checkout');
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
 
       if (error) {
-        console.error('[Checkout Debug] redirectToCheckout returned error:', error.message);
+        console.error('[Checkout Debug] Stripe redirect error:', error.message);
         throw error;
       }
 
-      console.log('[Checkout Debug] redirectToCheckout succeeded — should be on Stripe now');
+      console.log('[Checkout Debug] Redirect succeeded - should be on Stripe page now');
     } catch (err: any) {
-      console.error('[Checkout Debug] FULL CHECKOUT FAILURE — this is the root error');
+      console.error('[Checkout Debug] CRITICAL CHECKOUT FAILURE - full details:');
       console.error('[Checkout Debug] Error message:', err.message || 'No message');
       console.error('[Checkout Debug] Error name:', err.name || 'unknown');
-      console.error('[Checkout Debug] Full error object:', err);
+      console.error('[Checkout Debug] Full error object:', JSON.stringify(err, null, 2));
       console.error('[Checkout Debug] Stack trace:', err.stack || 'no stack');
 
-      alert('Checkout failed: ' + (err.message || 'Please try again'));
+      alert('Checkout failed: ' + (err.message || 'Unknown error - check browser console for details'));
     } finally {
       setLoading(null);
+      console.log('[Checkout Debug] handleCheckout finished');
     }
   };
 
@@ -130,7 +133,7 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* 4 Pricing Bubbles */}
+      {/* Pricing cards */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {showEarly && (
           <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
