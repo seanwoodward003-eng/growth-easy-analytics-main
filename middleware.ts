@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { getRow } from '@/lib/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
+const JWT_SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || process.env.SECRET_KEY!
+);
 
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_FRONTEND_URL!,
@@ -57,26 +59,17 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    let payload: any;
     try {
-      payload = jwt.verify(accessToken, JWT_SECRET);
-      console.log('[MIDDLEWARE] Token verified, user ID:', payload.sub);
-    } catch (err) {
-      console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'session_expired');
+      const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
 
-      const redirectResponse = NextResponse.redirect(url);
-      redirectResponse.cookies.delete('access_token');
-      redirectResponse.cookies.delete('refresh_token');
-      redirectResponse.cookies.delete('csrf_token');
-      return redirectResponse;
-    }
+      const userIdStr = payload.sub;
+      if (typeof userIdStr !== 'string') throw new Error('Invalid sub claim');
 
-    const userId = payload.sub;
+      const userId = parseInt(userIdStr, 10);
+      if (isNaN(userId)) throw new Error('Invalid user ID');
 
-    try {
+      console.log('[MIDDLEWARE] Token verified, user ID:', userId);
+
       const user = await getRow<{
         trial_end: string | null;
         subscription_status: string;
@@ -99,11 +92,17 @@ export async function middleware(request: NextRequest) {
       }
 
       response.headers.set('x-user-id', userId.toString());
-    } catch (dbError) {
-      console.error('[MIDDLEWARE] Trial/user check error:', dbError);
+    } catch (err) {
+      console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
       const url = request.nextUrl.clone();
       url.pathname = '/';
-      return NextResponse.redirect(url);
+      url.searchParams.set('error', 'session_expired');
+
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.cookies.delete('access_token');
+      redirectResponse.cookies.delete('refresh_token');
+      redirectResponse.cookies.delete('csrf_token');
+      return redirectResponse;
     }
   }
 
