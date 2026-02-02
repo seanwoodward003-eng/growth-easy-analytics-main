@@ -49,7 +49,7 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-beta',
+        model: 'grok-4-1-fast-reasoning',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
