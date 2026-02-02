@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
 Answer concisely in under 150 words. Be actionable, direct, helpful. Question: ${userMessage}`;
 
   try {
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+    const grokResp = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
+        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',
+        model: 'grok-4-1-fast-reasoning',  // ← your original model name
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
@@ -60,15 +60,14 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!grokResp.ok) {
+      const errorText = await grokResp.text();
       console.error('[Grok API Error]', errorText);
-      return NextResponse.json({ reply: `Grok error ${response.status}` }, { status: response.status });
+      return NextResponse.json({ reply: `Grok error ${grokResp.status}` }, { status: grokResp.status });
     }
 
-    // Direct stream passthrough (no SDK needed)
-    return new Response(response.body, {
-      status: response.status,
+    return new Response(grokResp.body, {
+      status: grokResp.status,
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
