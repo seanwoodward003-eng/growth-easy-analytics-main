@@ -1,4 +1,3 @@
-// app/api/refresh/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTokens, generateCsrfToken, setAuthCookies, verifyRefreshToken } from '@/lib/auth';
 
@@ -9,7 +8,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
   }
 
-  const payload = verifyRefreshToken(refreshToken);
+  // ← Add await here
+  const payload = await verifyRefreshToken(refreshToken);
+
   if (!payload) {
     const response = NextResponse.json({ error: 'Invalid refresh token' }, { status: 401 });
     response.cookies.delete('access_token');
@@ -29,7 +30,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const { access, refresh: newRefresh } = generateTokens(payload.sub, user.email);
+  // ← Add await here too
+  const { access, refresh: newRefresh } = await generateTokens(payload.sub, user.email);
+
   const csrf = generateCsrfToken();
 
   const response = NextResponse.json({ success: true });
