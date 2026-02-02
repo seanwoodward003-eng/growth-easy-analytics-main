@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';
 import { getRow } from '@/lib/db';
-import { streamText } from '@ai-sdk/xai';  // ← Use xAI provider
+import { streamText } from 'ai';
 
 export const maxDuration = 60;
 
@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
-  // Optional metrics (no userId for now)
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
     'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',
     []
@@ -45,7 +44,7 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
 
   try {
     const result = await streamText({
-      model: 'grok-beta',  // works with xAI provider
+      model: 'grok-beta',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -53,7 +52,7 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       temperature: 0.7,
     });
 
-    // New streaming response format for AI SDK v5+
+    // Modern streaming response format (required in ai v5+)
     return result.toDataStreamResponse({
       headers: {
         'X-Content-Type-Options': 'nosniff',
@@ -62,7 +61,7 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       },
     });
   } catch (e: any) {
-    console.error('[Chat API Error]', e);
+    console.error('[Chat API Error]', e.message, e.stack);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' }, { status: 500 });
   }
 }
