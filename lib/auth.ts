@@ -16,8 +16,9 @@ export interface AuthUser {
 }
 
 // Custom interface for our JWT payload shape
+// Use string for sub to match @types/jsonwebtoken + JWT spec
 interface CustomJwtPayload extends jwt.JwtPayload {
-  sub: number;
+  sub: string;  // ← changed to string
   email: string;
 }
 
@@ -57,7 +58,7 @@ export async function setAuthCookies(access: string, refresh: string, csrf: stri
   });
 
   cookieStore.set('csrf_token', csrf, {
-    httpOnly: false,           // client needs to read it for headers
+    httpOnly: false,
     secure: isProd,
     sameSite: 'lax' as const,
     path: '/',
@@ -81,21 +82,25 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const payload = jwt.verify(accessToken, JWT_SECRET);
 
-    // Type guard to safely check our expected shape
     if (
       payload &&
       typeof payload === 'object' &&
       payload !== null &&
       'sub' in payload &&
-      typeof (payload as any).sub === 'number' &&
+      typeof payload.sub === 'string' &&  // ← updated check
       'email' in payload &&
-      typeof (payload as any).email === 'string'
+      typeof payload.email === 'string'
     ) {
-      const typedPayload = payload as CustomJwtPayload;
-      console.log('[AUTH] getCurrentUser → valid token, user id:', typedPayload.sub);
+      const userId = parseInt(payload.sub, 10);  // ← parse string → number
+      if (isNaN(userId)) {
+        console.log('[AUTH] getCurrentUser → invalid sub (not a number)');
+        return null;
+      }
+
+      console.log('[AUTH] getCurrentUser → valid token, user id:', userId);
       return {
-        id: typedPayload.sub,
-        email: typedPayload.email,
+        id: userId,
+        email: payload.email,
       };
     }
 
@@ -108,6 +113,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function requireAuth() {
+  // ... (unchanged – this calls getCurrentUser which now returns number id)
   console.log('[AUTH] requireAuth called');
   const user = await getCurrentUser();
   if (!user) {
@@ -147,7 +153,6 @@ export async function requireAuth() {
     return { error: 'subscription_canceled', status: 403 };
   }
 
-  // Decrypt Shopify access token if present
   let decryptedShopifyToken: string | null = null;
   if (row.shopify_access_token) {
     try {
@@ -189,9 +194,12 @@ export function verifyRefreshToken(token: string): { sub: number } | null {
       typeof payload === 'object' &&
       payload !== null &&
       'sub' in payload &&
-      typeof (payload as any).sub === 'number'
+      typeof payload.sub === 'string'  // ← updated to string
     ) {
-      return { sub: (payload as any).sub };
+      const userId = parseInt(payload.sub, 10);
+      if (!isNaN(userId)) {
+        return { sub: userId };
+      }
     }
 
     return null;
