@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard routes
+  // Protect dashboard routes – only check login, NOT trial/subscription
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
@@ -70,6 +70,11 @@ export async function middleware(request: NextRequest) {
 
       console.log('[MIDDLEWARE] Token verified, user ID:', userId);
 
+      // ────────────────────────────────────────────────────────────────
+      // REMOVED: Trial/subscription check – moved to dashboard layout/pages
+      // ────────────────────────────────────────────────────────────────
+
+      // Optional: still fetch user row if you need it for header or logging
       const user = await getRow<{
         trial_end: string | null;
         subscription_status: string;
@@ -78,20 +83,16 @@ export async function middleware(request: NextRequest) {
         [userId]
       );
 
-      if (!user) throw new Error('User not found');
-
-      const now = new Date();
-      const trialEnd = user.trial_end ? new Date(user.trial_end) : null;
-
-      if (user.subscription_status === 'trial' && trialEnd && now > trialEnd) {
-        console.log('[MIDDLEWARE] Trial expired');
+      if (!user) {
+        console.log('[MIDDLEWARE] User not found in DB');
         const url = request.nextUrl.clone();
         url.pathname = '/';
-        url.searchParams.set('error', 'trial_expired');
         return NextResponse.redirect(url);
       }
 
       response.headers.set('x-user-id', userId.toString());
+      // You can also set headers like x-subscription-status if needed for client
+      // response.headers.set('x-subscription-status', user.subscription_status);
     } catch (err) {
       console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
       const url = request.nextUrl.clone();
