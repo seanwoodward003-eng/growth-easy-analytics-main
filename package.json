@@ -15,8 +15,8 @@
   },
 "dependencies": {
   "@ai-sdk/react": "^0.0.66",
-  "@ai-sdk/xai": "^0.0.8",  // ← ADD this for direct Grok calls
-  "ai": "3.3.0",  // ← Downgrade to pre-gateway version (stable, direct calls)
+  "@ai-sdk/xai": "^0.0.8",  
+  "ai": "3.3.0",  
   "drizzle-orm": "^0.35.0",
   "jsonwebtoken": "^9.0.3",
   "lucide-react": "^0.463.0",
