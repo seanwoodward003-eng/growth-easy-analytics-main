@@ -1,10 +1,12 @@
 import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY!;
-const REFRESH_SECRET = process.env.REFRESH_SECRET!;
+const JWT_SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET || process.env.SECRET_KEY!
+);
+const REFRESH_SECRET_KEY = new TextEncoder().encode(process.env.REFRESH_SECRET!);
 
 export interface AuthUser {
   id: number;
@@ -15,16 +17,19 @@ export interface AuthUser {
   hubspot_connected?: boolean | null;
 }
 
-// Custom interface for our JWT payload shape
-// Use string for sub to match @types/jsonwebtoken + JWT spec
-interface CustomJwtPayload extends jwt.JwtPayload {
-  sub: string;  // ← changed to string
-  email: string;
-}
+export async function generateTokens(userId: number, email: string) {
+  const access = await new SignJWT({ sub: userId.toString(), email })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(JWT_SECRET_KEY);
 
-export function generateTokens(userId: number, email: string) {
-  const access = jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: '1h' });
-  const refresh = jwt.sign({ sub: userId }, REFRESH_SECRET, { expiresIn: '90d' });
+  const refresh = await new SignJWT({ sub: userId.toString() })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('90d')
+    .sign(REFRESH_SECRET_KEY);
+
   return { access, refresh };
 }
 
@@ -80,20 +85,15 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   console.log('[AUTH] getCurrentUser → verifying access_token (length:', accessToken.length, ')');
 
   try {
-    const payload = jwt.verify(accessToken, JWT_SECRET);
+    const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
 
     if (
-      payload &&
-      typeof payload === 'object' &&
-      payload !== null &&
-      'sub' in payload &&
-      typeof payload.sub === 'string' &&  // ← updated check
-      'email' in payload &&
+      typeof payload.sub === 'string' &&
       typeof payload.email === 'string'
     ) {
-      const userId = parseInt(payload.sub, 10);  // ← parse string → number
+      const userId = parseInt(payload.sub, 10);
       if (isNaN(userId)) {
-        console.log('[AUTH] getCurrentUser → invalid sub (not a number)');
+        console.log('[AUTH] getCurrentUser → invalid sub value');
         return null;
       }
 
@@ -112,8 +112,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
+// requireAuth, verifyCSRF remain unchanged — they call getCurrentUser which now works in Edge
+
 export async function requireAuth() {
-  // ... (unchanged – this calls getCurrentUser which now returns number id)
   console.log('[AUTH] requireAuth called');
   const user = await getCurrentUser();
   if (!user) {
@@ -185,17 +186,11 @@ export async function verifyCSRF(request: Request): Promise<boolean> {
   return !!cookieCsrf && !!headerCsrf && cookieCsrf === headerCsrf;
 }
 
-export function verifyRefreshToken(token: string): { sub: number } | null {
+export async function verifyRefreshToken(token: string): Promise<{ sub: number } | null> {
   try {
-    const payload = jwt.verify(token, REFRESH_SECRET);
+    const { payload } = await jwtVerify(token, REFRESH_SECRET_KEY);
 
-    if (
-      payload &&
-      typeof payload === 'object' &&
-      payload !== null &&
-      'sub' in payload &&
-      typeof payload.sub === 'string'  // ← updated to string
-    ) {
+    if (typeof payload.sub === 'string') {
       const userId = parseInt(payload.sub, 10);
       if (!isNaN(userId)) {
         return { sub: userId };
