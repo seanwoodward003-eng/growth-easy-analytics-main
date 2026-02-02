@@ -19,12 +19,23 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Security headers
+  // Security headers (added CSP with Stripe domains allowed)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // CORS for API
+  // Content-Security-Policy – allow Stripe.js and related domains
+  // This fixes "Failed to load Stripe.js" if CSP was blocking it
+  response.headers.set('Content-Security-Policy', `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://js.stripe.com;
+    connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com;
+    frame-src 'self' https://js.stripe.com https://checkout.stripe.com;
+    img-src 'self' data: https://*.stripe.com;
+    style-src 'self' 'unsafe-inline';
+  `);
+
+  // CORS for API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     if (isAllowedOrigin) {
       response.headers.set('Access-Control-Allow-Origin', origin!);
@@ -38,14 +49,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // HTTPS redirect
+  // Force HTTPS in production
   if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
     const url = new URL(request.url);
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard routes – only check login, NOT trial/subscription
+  // Protect dashboard routes – only check login (token + user exists)
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
@@ -70,11 +81,7 @@ export async function middleware(request: NextRequest) {
 
       console.log('[MIDDLEWARE] Token verified, user ID:', userId);
 
-      // ────────────────────────────────────────────────────────────────
-      // REMOVED: Trial/subscription check – moved to dashboard layout/pages
-      // ────────────────────────────────────────────────────────────────
-
-      // Optional: still fetch user row if you need it for header or logging
+      // Fetch user row (for existence check + optional headers)
       const user = await getRow<{
         trial_end: string | null;
         subscription_status: string;
@@ -90,9 +97,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
 
-      response.headers.set('x-user-id', userId.toString());
-      // You can also set headers like x-subscription-status if needed for client
+      // Optional: expose subscription status to client if needed later
       // response.headers.set('x-subscription-status', user.subscription_status);
+
+      response.headers.set('x-user-id', userId.toString());
     } catch (err) {
       console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
       const url = request.nextUrl.clone();
