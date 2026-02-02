@@ -1,68 +1,75 @@
 // app/api/chat/route.ts
 import { xai } from '@ai-sdk/xai';
-import { streamText, convertToCoreMessages } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';  // ← changed here
 import { NextRequest } from 'next/server';
 
-// Optional: Give long responses / reasoning models more time
+// Allow longer execution time for complex responses / reasoning
 export const maxDuration = 90;
 
-// Optional: Use Node.js runtime if you have edge-related streaming issues
+// Optional: Use Node.js runtime if you experience edge runtime streaming issues
 // export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse the incoming request body (useChat sends { messages: [...] })
-    const { messages } = await req.json();
+    // Parse the request body (useChat sends { messages: [...] })
+    const body = await req.json();
+    const { messages } = body;
 
-    // Convert to the core message format expected by the SDK
-    // This handles system/user/assistant/tool messages properly
-    const coreMessages = convertToCoreMessages(messages);
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Optional: Add your custom system prompt here if you want Grok to behave like a growth coach
+    // Convert UI messages → ModelMessages (required in v6)
+    const modelMessages = await convertToModelMessages(messages);  // ← changed + await
+
+    // Define system prompt for growth coach behavior
     const systemPrompt = `
 You are Grok, an expert AI growth coach built by xAI.
-You specialize in helping startups, SaaS companies, and founders with:
-- Growth strategies
-- Reducing churn
-- Increasing revenue & LTV
-- User acquisition & marketing
-- Product-led growth
-- Metrics & analytics
-- Fundraising & scaling advice
+You specialize in helping startups, SaaS companies, founders, and product teams with:
 
-Be direct, insightful, data-driven, and occasionally witty.
-Use markdown for formatting when helpful (tables, lists, bold, code blocks).
-Keep answers actionable and concise unless the user asks for deep detail.
+- Growth strategies (product-led, marketing, viral loops)
+- Reducing churn and increasing retention
+- Revenue optimization (pricing, LTV, expansion revenue)
+- User acquisition channels and cost-efficient scaling
+- SaaS metrics (MRR, ARR, NRR, CAC, LTV:CAC, churn rate, etc.)
+- Product-market fit and positioning
+- Fundraising, go-to-market, and scaling advice
+
+Be direct, data-driven, practical, and concise.
+Use markdown formatting (tables, bullet points, bold, code blocks) when helpful.
+Give actionable advice with clear next steps.
+Be honest — call out bad assumptions or risky ideas.
+Occasionally add humor or wit when it fits naturally.
+Never give generic answers — tailor insights to the user's specific context when provided.
     `.trim();
 
+    // Stream text from Grok
     const result = await streamText({
-      model: xai('grok-beta'), // ← Change this to your preferred model
-      // Possible model names (as of early 2026):
-      // 'grok-beta'
-      // 'grok-4'
-      // 'grok-4-fast-reasoning'
-      // 'grok-4-vision' (if multimodal needed later)
+      model: xai('grok-beta'), // or 'grok-4', 'grok-4-fast-reasoning', etc.
 
-      messages: coreMessages,
-      system: systemPrompt, // ← comment out if you don't want a system prompt
+      // In v6 you can pass system as a separate message instead of string
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...modelMessages,
+      ],
 
-      // Optional settings you can tune
+      // Optional tuning
       temperature: 0.7,
       maxTokens: 2048,
-      // topP: 0.95,
-      // frequencyPenalty: 0.1,
     });
 
-    // Return in the exact streaming format that useChat expects
+    // Return in format that useChat expects
     return result.toDataStreamResponse({
       headers: {
-        'x-vercel-ai-ui-message-stream': 'v1', // optional but helps some versions
+        'x-vercel-ai-ui-message-stream': 'v1', // optional, helps some versions
       },
     });
   } catch (error) {
     console.error('[API /chat] Error:', error);
 
-    // Return a simple error response so the frontend doesn't hang forever
     return new Response(
       JSON.stringify({
         error: 'Failed to get response from Grok',
