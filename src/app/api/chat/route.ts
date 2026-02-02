@@ -1,99 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
-import { getRow } from '@/lib/db';
+// app/api/chat/route.ts
+import { xai } from '@ai-sdk/xai';
+import { streamText, convertToCoreMessages } from 'ai';
+import { NextRequest } from 'next/server';
 
-export const maxDuration = 60;
+// Optional: Give long responses / reasoning models more time
+export const maxDuration = 90;
 
-export async function POST(request: NextRequest) {
-  console.log('[DEBUG CHAT] POST request received to /api/chat');
+// Optional: Use Node.js runtime if you have edge-related streaming issues
+// export const runtime = 'nodejs';
 
-  if (!verifyCSRF(request)) {
-    console.log('[DEBUG CHAT] CSRF check failed');
-    return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
-  }
-
-  let body;
+export async function POST(req: NextRequest) {
   try {
-    body = await request.json();
-    console.log('[DEBUG CHAT] Request body parsed successfully', body);
-  } catch (e) {
-    console.error('[DEBUG CHAT] Failed to parse JSON body', e);
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
+    // Parse the incoming request body (useChat sends { messages: [...] })
+    const { messages } = await req.json();
 
-  let userMessage = '';
-  if (Array.isArray(body.messages)) {
-    const latest = [...body.messages].reverse().find(m => m.role === 'user' && typeof m.content === 'string');
-    userMessage = latest?.content?.trim() || '';
-  }
-  if (!userMessage && typeof body.message === 'string') {
-    userMessage = body.message.trim();
-  }
+    // Convert to the core message format expected by the SDK
+    // This handles system/user/assistant/tool messages properly
+    const coreMessages = convertToCoreMessages(messages);
 
-  console.log('[DEBUG CHAT] Extracted user message:', userMessage || '(empty)');
+    // Optional: Add your custom system prompt here if you want Grok to behave like a growth coach
+    const systemPrompt = `
+You are Grok, an expert AI growth coach built by xAI.
+You specialize in helping startups, SaaS companies, and founders with:
+- Growth strategies
+- Reducing churn
+- Increasing revenue & LTV
+- User acquisition & marketing
+- Product-led growth
+- Metrics & analytics
+- Fundraising & scaling advice
 
-  if (!userMessage) {
-    console.log('[DEBUG CHAT] No valid user message');
-    return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
-  }
+Be direct, insightful, data-driven, and occasionally witty.
+Use markdown for formatting when helpful (tables, lists, bold, code blocks).
+Keep answers actionable and concise unless the user asks for deep detail.
+    `.trim();
 
-  const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
-    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',
-    []
-  );
+    const result = await streamText({
+      model: xai('grok-beta'), // ← Change this to your preferred model
+      // Possible model names (as of early 2026):
+      // 'grok-beta'
+      // 'grok-4'
+      // 'grok-4-fast-reasoning'
+      // 'grok-4-vision' (if multimodal needed later)
 
-  const summary = metric
-    ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
-    : 'No data';
+      messages: coreMessages,
+      system: systemPrompt, // ← comment out if you don't want a system prompt
 
-  console.log('[DEBUG CHAT] Metrics summary:', summary);
+      // Optional settings you can tune
+      temperature: 0.7,
+      maxTokens: 2048,
+      // topP: 0.95,
+      // frequencyPenalty: 0.1,
+    });
 
-  const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
-Answer concisely in under 150 words. Be actionable, direct, helpful. Question: ${userMessage}`;
-
-  console.log('[DEBUG CHAT] System prompt ready — calling Grok');
-
-  try {
-    const grokResp = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
+    // Return in the exact streaming format that useChat expects
+    return result.toDataStreamResponse({
       headers: {
-        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
-        'Content-Type': 'application/json',
+        'x-vercel-ai-ui-message-stream': 'v1', // optional but helps some versions
       },
-      body: JSON.stringify({
-        model: 'grok-4-1-fast-reasoning',  // ← your original model
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
-        temperature: 0.7,
-        max_tokens: 300,
-        stream: true,
+    });
+  } catch (error) {
+    console.error('[API /chat] Error:', error);
+
+    // Return a simple error response so the frontend doesn't hang forever
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to get response from Grok',
+        details: error instanceof Error ? error.message : 'Unknown error',
       }),
-    });
-
-    console.log('[DEBUG CHAT] Grok API response status:', grokResp.status);
-
-    if (!grokResp.ok) {
-      const errorText = await grokResp.text();
-      console.error('[DEBUG CHAT] Grok API error:', errorText);
-      return NextResponse.json({ reply: `Grok error ${grokResp.status}: ${errorText}` }, { status: grokResp.status });
-    }
-
-    console.log('[DEBUG CHAT] Grok stream starting — passthrough');
-
-    return new Response(grokResp.body, {
-      status: grokResp.status,
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
-  } catch (e: any) {
-    console.error('[DEBUG CHAT] Full API error:', e.message, e.stack);
-    return NextResponse.json({ reply: 'Connection error — could not reach Grok' }, { status: 500 });
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }
-
-export const OPTIONS = () => new Response(null, { status: 200 });
