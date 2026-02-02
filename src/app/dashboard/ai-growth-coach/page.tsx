@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export default function AIGrowthCoachPage() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,9 +28,7 @@ export default function AIGrowthCoachPage() {
         body: JSON.stringify({ message: userMessage }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Chat failed: ${response.status}`);
-      }
+      if (!response.ok) throw new Error('Chat failed');
 
       if (!response.body) {
         throw new Error('No response body');
@@ -51,7 +54,7 @@ export default function AIGrowthCoachPage() {
         });
       }
 
-      // Final flush for any remaining chunk
+      // Final flush
       setMessages((prev) => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1].content = aiMessage;
