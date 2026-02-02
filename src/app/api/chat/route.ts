@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyCSRF } from '@/lib/auth';
 import { getRow } from '@/lib/db';
 import { streamText } from 'ai';
+import { xai } from '@ai-sdk/xai';  // ← Direct xAI provider (no Vercel Gateway)
 
 export const maxDuration = 60;
 
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
 Answer concisely in under 150 words. Be actionable, direct, helpful. Question: ${userMessage}`;
 
   try {
-    const result = await streamText({
-      model: 'grok-beta',
+    const { textStream } = await streamText({
+      model: xai('grok-beta'),  // ← Direct xAI call — no Vercel Gateway
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
@@ -52,10 +53,9 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       temperature: 0.7,
     });
 
-    // Correct method for AI SDK v5+ streaming
-    return result.toTextStreamResponse({
+    return new Response(textStream, {
       headers: {
-        'X-Content-Type-Options': 'nosniff',
+        'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
       },
