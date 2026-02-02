@@ -42,7 +42,12 @@ export default function Pricing() {
 
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
     setLoading(plan);
+
+    console.log('[Checkout Debug] Button clicked → starting handleCheckout for plan:', plan);
+
     try {
+      console.log('[Checkout Debug] Fetching /api/create-checkout...');
+
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
@@ -50,26 +55,52 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
+      console.log('[Checkout Debug] Server response status:', res.status);
+
       const data = await res.json();
+      console.log('[Checkout Debug] Server response data:', JSON.stringify(data, null, 2));
+
       if (!res.ok) {
+        console.error('[Checkout Debug] Server returned non-OK status:', res.status);
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
+      if (!data.sessionId) {
+        console.error('[Checkout Debug] No sessionId in response');
+        throw new Error('No sessionId returned from server');
+      }
+
+      console.log('[Checkout Debug] Session ID received:', data.sessionId);
+
+      console.log('[Checkout Debug] Calling getStripe()...');
       const stripe = await getStripe();
+      console.log('[Checkout Debug] getStripe() returned:', stripe ? 'Stripe object loaded' : 'NULL / FAILED');
+
       if (!stripe) {
+        console.error('[Checkout Debug] Stripe failed to load — throwing error');
         throw new Error('Failed to load Stripe');
       }
 
+      console.log('[Checkout Debug] Stripe loaded → calling redirectToCheckout...');
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
 
       if (error) {
+        console.error('[Checkout Debug] redirectToCheckout returned error:', error.message);
         throw error;
       }
+
+      console.log('[Checkout Debug] redirectToCheckout succeeded — should be on Stripe now');
     } catch (err: any) {
-      console.error('Checkout error:', err);
+      console.error('[Checkout Debug] FULL CHECKOUT FAILURE — this is the root error');
+      console.error('[Checkout Debug] Error message:', err.message || 'No message');
+      console.error('[Checkout Debug] Error name:', err.name || 'unknown');
+      console.error('[Checkout Debug] Full error object:', err);
+      console.error('[Checkout Debug] Stack trace:', err.stack || 'no stack');
+
       alert('Checkout failed: ' + (err.message || 'Please try again'));
+    } finally {
       setLoading(null);
     }
   };
@@ -99,9 +130,8 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* 4 Pricing Bubbles – EQUAL SIZE, longer/taller, content fits inside */}
+      {/* 4 Pricing Bubbles */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        {/* Early Bird */}
         {showEarly && (
           <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
             <div className="flex flex-col items-center">
@@ -119,7 +149,6 @@ export default function Pricing() {
           </div>
         )}
 
-        {/* Standard Lifetime */}
         {showStandard && (
           <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
             <div className="flex flex-col items-center">
@@ -137,7 +166,6 @@ export default function Pricing() {
           </div>
         )}
 
-        {/* Monthly */}
         <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden">
           <div className="flex flex-col items-center">
             <h2 className="text-xl md:text-2xl font-bold mb-2">Monthly</h2>
@@ -152,7 +180,6 @@ export default function Pricing() {
           </button>
         </div>
 
-        {/* Annual */}
         <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
           <div className="flex flex-col items-center">
             <div className="bg-green-500/20 text-green-400 text-sm md:text-base font-bold px-3 py-1 rounded-full mb-2 inline-block">
