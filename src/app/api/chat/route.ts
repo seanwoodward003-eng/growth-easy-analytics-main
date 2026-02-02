@@ -48,7 +48,7 @@ Never give generic answers — tailor insights to the user's specific context wh
 
     // Stream text from Grok using the fast-reasoning variant
     const result = await streamText({
-      model: xai('grok-4-fast-reasoning'),  // ← this is the model you asked for
+      model: xai('grok-4-fast-reasoning'),
 
       messages: [
         { role: 'system', content: systemPrompt },
@@ -57,7 +57,7 @@ Never give generic answers — tailor insights to the user's specific context wh
 
       // Optional tuning — feel free to adjust or remove
       temperature: 0.7,
-      maxTokens: 2048,
+      maxOutputTokens: 2048,  // ← fixed: renamed from maxTokens
     });
 
     // Return in format that useChat expects
