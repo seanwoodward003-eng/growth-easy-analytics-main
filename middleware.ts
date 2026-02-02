@@ -47,12 +47,14 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
-    // Bypass auth check on direct redirect from login
+    // Bypass auth check on direct redirect from login (allows first request after setAuthCookies)
     if (request.headers.get('referer')?.includes('/api/login')) {
+      console.log('[MIDDLEWARE] Bypassing auth check for login redirect');
       return NextResponse.next();
     }
 
     if (!accessToken) {
+      console.log('[MIDDLEWARE] No access_token — redirecting with login_required');
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'login_required');
@@ -62,7 +64,9 @@ export async function middleware(request: NextRequest) {
     let payload: any;
     try {
       payload = jwt.verify(accessToken, JWT_SECRET);
+      console.log('[MIDDLEWARE] Token verified, user ID:', payload.sub);
     } catch (err) {
+      console.log('[MIDDLEWARE] Token verification failed:', err);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
@@ -95,6 +99,7 @@ export async function middleware(request: NextRequest) {
         trialEnd &&
         now > trialEnd
       ) {
+        console.log('[MIDDLEWARE] Trial expired');
         const url = request.nextUrl.clone();
         url.pathname = '/';
         url.searchParams.set('error', 'trial_expired');
