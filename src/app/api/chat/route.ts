@@ -1,83 +1,83 @@
-// app/api/chat/route.ts
-import { xai } from '@ai-sdk/xai';
-import { streamText, convertToModelMessages } from 'ai';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
+import { getRow, run } from '@/lib/db';
 
-// Allow longer execution time for complex responses / reasoning
-export const maxDuration = 90;
+export const maxDuration = 60;
 
-// Optional: Use Node.js runtime if you experience edge runtime streaming issues
-// export const runtime = 'nodejs';
+export async function POST(request: NextRequest) {
+  // Optional CSRF check (keep if you want)
+  if (!verifyCSRF(request)) {
+    return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
+  }
 
-export async function POST(req: NextRequest) {
+  // NO requireAuth() — chat is open (dashboard page protects access)
+
+  // Parse body
+  let body;
   try {
-    // Parse the request body (useChat sends { messages: [...] })
-    const body = await req.json();
-    const { messages } = body;
+    body = await request.json();
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+  // Extract latest user message
+  let userMessage = '';
+  if (Array.isArray(body.messages)) {
+    const latest = [...body.messages].reverse().find(m => m.role === 'user' && typeof m.content === 'string');
+    userMessage = latest?.content?.trim() || '';
+  }
+  if (!userMessage && typeof body.message === 'string') {
+    userMessage = body.message.trim();
+  }
+
+  if (!userMessage) {
+    return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
+  }
+
+  // Metrics (optional — requires userId, skip or fetch from session if needed)
+  const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
+    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',  // No userId for now
+    []
+  );
+
+  const summary = metric
+    ? `Revenue: £${metric.revenue || 0}, Churn: ${metric.churn_rate || 0}%, At-risk: ${metric.at_risk || 0}`
+    : 'No data';
+
+  const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
+Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${userMessage}`;
+
+  try {
+    const grokResp = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.GROK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'grok-4-1-fast-reasoning',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+        stream: true,
+      }),
+    });
+
+    if (!grokResp.ok) {
+      const errorText = await grokResp.text();
+      return NextResponse.json({ reply: `Grok error ${grokResp.status}` });
     }
 
-    // Convert UI messages → ModelMessages (required in AI SDK v6)
-    const modelMessages = await convertToModelMessages(messages);
+    const stream = OpenAIStream(grokResp);
 
-    // Define system prompt for growth coach behavior
-    const systemPrompt = `
-You are Grok, an expert AI growth coach built by xAI.
-You specialize in helping startups, SaaS companies, founders, and product teams with:
-
-- Growth strategies (product-led, marketing, viral loops)
-- Reducing churn and increasing retention
-- Revenue optimization (pricing, LTV, expansion revenue)
-- User acquisition channels and cost-efficient scaling
-- SaaS metrics (MRR, ARR, NRR, CAC, LTV:CAC, churn rate, etc.)
-- Product-market fit and positioning
-- Fundraising, go-to-market, and scaling advice
-
-Be direct, data-driven, practical, and concise.
-Use markdown formatting (tables, bullet points, bold, code blocks) when helpful.
-Give actionable advice with clear next steps.
-Be honest — call out bad assumptions or risky ideas.
-Occasionally add humor or wit when it fits naturally.
-Never give generic answers — tailor insights to the user's specific context when provided.
-    `.trim();
-
-    // Stream text from Grok using the fast-reasoning variant
-    const result = await streamText({
-      model: xai('grok-4-fast-reasoning'),
-
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...modelMessages,
-      ],
-
-      // Optional tuning
-      temperature: 0.7,
-      maxOutputTokens: 2048,
-    });
-
-    // Return in format that useChat expects (v6 rename)
-    return result.toTextStreamResponse({
-      headers: {
-        'x-vercel-ai-ui-message-stream': 'v1', // still useful as safety net
-      },
-    });
-  } catch (error) {
-    console.error('[API /chat] Error:', error);
-
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to get response from Grok',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new StreamingTextResponse(stream);
+  } catch (e: any) {
+    console.error('[Grok Error]', e);
+    return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
   }
 }
+
+export const OPTIONS = () => new Response(null, { status: 200 });
