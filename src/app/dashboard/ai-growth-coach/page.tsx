@@ -3,8 +3,13 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export default function AIGrowthCoachPage() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
