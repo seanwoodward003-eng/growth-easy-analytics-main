@@ -3,13 +3,8 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 
-type Message = {
-  role: 'user' | 'assistant';
-  content: string;
-};
-
 export default function AIGrowthCoachPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,6 +24,10 @@ export default function AIGrowthCoachPage() {
       });
 
       if (!response.ok) throw new Error('Chat failed');
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
