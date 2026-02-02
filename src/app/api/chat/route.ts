@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
+import { verifyCSRF } from '@/lib/auth';  // keep if you have it, remove if not needed
 import { getRow, run } from '@/lib/db';
+
+// These two lines were missing — add them
+import { OpenAIStream, StreamingTextResponse } from 'ai';
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  // Optional CSRF check (keep if you want)
+  // Optional CSRF check (remove if not using)
   if (!verifyCSRF(request)) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
 
-  // NO requireAuth() — chat is open (dashboard page protects access)
-
-  // Parse body
   let body;
   try {
     body = await request.json();
@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Extract latest user message
   let userMessage = '';
   if (Array.isArray(body.messages)) {
     const latest = [...body.messages].reverse().find(m => m.role === 'user' && typeof m.content === 'string');
@@ -34,9 +33,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
-  // Metrics (optional — requires userId, skip or fetch from session if needed)
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
-    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',  // No userId for now
+    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',
     []
   );
 
@@ -68,6 +66,7 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
 
     if (!grokResp.ok) {
       const errorText = await grokResp.text();
+      console.error('Grok API error:', grokResp.status, errorText);
       return NextResponse.json({ reply: `Grok error ${grokResp.status}` });
     }
 
