@@ -19,22 +19,13 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Security headers + CSP allowing all your third-party services
+  // Security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // CSP – broad but safe allowance for Stripe, Shopify, GA4, HubSpot, xAI
-  // This fixes blocked scripts/connects/frames for all these services
-  response.headers.set('Content-Security-Policy', `
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.shopify.com https://www.googletagmanager.com https://*.google-analytics.com https://js.hs-scripts.com https://*.hubspot.com https://js.hs-banner.com https://js.hsadspixel.net https://api.x.ai https://grok.x.ai;
-    connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com https://api.shopify.com https://*.shopify.com https://www.google-analytics.com https://*.google-analytics.com https://api.hubapi.com https://*.hubspot.com https://api.x.ai https://grok.x.ai;
-    frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.shopify.com https://forms.hsforms.com https://*.hubspot.com;
-    img-src 'self' data: https://*.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://cdn.shopify.com https://*.hubspot.com https://*.hsadspixel.net;
-    style-src 'self' 'unsafe-inline';
-    font-src 'self' data:;
-  `);
+  // CSP as SINGLE LINE to avoid middleware crash
+  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.shopify.com https://www.googletagmanager.com https://*.google-analytics.com https://js.hs-scripts.com https://*.hubspot.com https://js.hs-banner.com https://js.hsadspixel.net https://api.x.ai https://grok.x.ai; connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com https://api.shopify.com https://*.shopify.com https://www.google-analytics.com https://*.google-analytics.com https://api.hubapi.com https://*.hubspot.com https://api.x.ai https://grok.x.ai; frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.shopify.com https://forms.hsforms.com https://*.hubspot.com; img-src 'self' data: https://*.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://cdn.shopify.com https://*.hubspot.com https://*.hsadspixel.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:;");
 
   // CORS for API
   if (request.nextUrl.pathname.startsWith('/api')) {
@@ -50,14 +41,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // HTTPS redirect in production
+  // HTTPS redirect
   if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
     const url = new URL(request.url);
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard routes – only check login (no trial/subscription block)
+  // Protect dashboard routes – only login check
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
@@ -98,7 +89,6 @@ export async function middleware(request: NextRequest) {
       }
 
       response.headers.set('x-user-id', userId.toString());
-      // Optional: expose subscription status to client for soft gating
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
     } catch (err) {
