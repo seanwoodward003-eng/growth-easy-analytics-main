@@ -1,27 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // Optional CSRF
-import { getRow, run } from '@/lib/db';
-import { streamText } from 'ai';  // Current import for streaming
+import { verifyCSRF } from '@/lib/auth';
+import { getRow } from '@/lib/db';
+import { streamText } from '@ai-sdk/xai';  // ← Use xAI provider
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  // Optional CSRF check (keep if you want)
   if (!verifyCSRF(request)) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
 
-  // NO requireAuth() — chat is open (dashboard page protects access)
-
-  // Parse body
   let body;
   try {
     body = await request.json();
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Extract latest user message
   let userMessage = '';
   if (Array.isArray(body.messages)) {
     const latest = [...body.messages].reverse().find(m => m.role === 'user' && typeof m.content === 'string');
@@ -35,9 +30,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
-  // Metrics (optional — requires userId, skip or fetch from session if needed)
+  // Optional metrics (no userId for now)
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
-    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',  // No userId for now
+    'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',
     []
   );
 
@@ -46,29 +41,29 @@ export async function POST(request: NextRequest) {
     : 'No data';
 
   const systemPrompt = `You are GrowthEasy AI, a sharp growth coach. User metrics: ${summary}. 
-Answer the question concisely in under 150 words. Be actionable, direct, and helpful. Question: ${userMessage}`;
+Answer concisely in under 150 words. Be actionable, direct, helpful. Question: ${userMessage}`;
 
   try {
-    const { textStream } = await streamText({
-      model: 'grok-beta',
+    const result = await streamText({
+      model: 'grok-beta',  // works with xAI provider
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
       ],
       temperature: 0.7,
-      // max_tokens removed — not supported in top-level; model defaults are fine
     });
 
-    return new Response(textStream, {
+    // New streaming response format for AI SDK v5+
+    return result.toDataStreamResponse({
       headers: {
-        'Content-Type': 'text/event-stream',
+        'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
       },
     });
   } catch (e: any) {
-    console.error('[Grok Error]', e);
-    return NextResponse.json({ reply: 'Connection error — could not reach Grok' });
+    console.error('[Chat API Error]', e);
+    return NextResponse.json({ reply: 'Connection error — could not reach Grok' }, { status: 500 });
   }
 }
 
