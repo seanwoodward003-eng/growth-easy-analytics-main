@@ -47,6 +47,11 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
+    // Bypass auth check on direct redirect from login
+    if (request.headers.get('referer')?.includes('/api/login')) {
+      return NextResponse.next();
+    }
+
     if (!accessToken) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
@@ -111,5 +116,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/dashboard/:path*'],
 };
-
-
