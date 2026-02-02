@@ -52,8 +52,8 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       temperature: 0.7,
     });
 
-    // Modern streaming response format (required in ai v5+)
-    return result.toDataStreamResponse({
+    // Correct method for AI SDK v5+ streaming
+    return result.toTextStreamResponse({
       headers: {
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'no-cache',
@@ -61,7 +61,7 @@ Answer concisely in under 150 words. Be actionable, direct, helpful. Question: $
       },
     });
   } catch (e: any) {
-    console.error('[Chat API Error]', e.message, e.stack);
+    console.error('[Chat API Error]', e);
     return NextResponse.json({ reply: 'Connection error — could not reach Grok' }, { status: 500 });
   }
 }
