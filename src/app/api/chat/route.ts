@@ -1,6 +1,6 @@
 // app/api/chat/route.ts
 import { xai } from '@ai-sdk/xai';
-import { streamText, convertToModelMessages } from 'ai';  // ← changed here
+import { streamText, convertToModelMessages } from 'ai';
 import { NextRequest } from 'next/server';
 
 // Allow longer execution time for complex responses / reasoning
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Convert UI messages → ModelMessages (required in v6)
-    const modelMessages = await convertToModelMessages(messages);  // ← changed + await
+    // Convert UI messages → ModelMessages (required in AI SDK v6)
+    const modelMessages = await convertToModelMessages(messages);
 
     // Define system prompt for growth coach behavior
     const systemPrompt = `
@@ -46,17 +46,16 @@ Occasionally add humor or wit when it fits naturally.
 Never give generic answers — tailor insights to the user's specific context when provided.
     `.trim();
 
-    // Stream text from Grok
+    // Stream text from Grok using the fast-reasoning variant
     const result = await streamText({
-      model: xai('grok-beta'), // or 'grok-4', 'grok-4-fast-reasoning', etc.
+      model: xai('grok-4-fast-reasoning'),  // ← this is the model you asked for
 
-      // In v6 you can pass system as a separate message instead of string
       messages: [
         { role: 'system', content: systemPrompt },
         ...modelMessages,
       ],
 
-      // Optional tuning
+      // Optional tuning — feel free to adjust or remove
       temperature: 0.7,
       maxTokens: 2048,
     });
