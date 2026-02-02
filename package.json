@@ -14,17 +14,14 @@
     "shopify:deploy": "npx shopify app deploy"
   },
   "dependencies": {
-    "@ai-sdk/react": "^0.0.67",
-    "@ai-sdk/xai": "^3.0.46",
+    "@ai-sdk/react": "^0.0.66",
+    "ai": "3.3.0",
     "@libsql/client": "^0.17.0",
-    "ai": "^6.0.67",
     "drizzle-orm": "^0.35.0",
-    "jose": "^5.9.6",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.463.0",
     "luxon": "^3.5.0",
     "next": "16.1.5",
-    "next-auth": "5.0.0-beta.30",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "recharts": "^2.12.7",
@@ -33,7 +30,9 @@
     "@stripe/stripe-js": "^4.5.0",
     "stripe": "^16.12.0",
     "swr": "^2.2.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "next-auth": "5.0.0-beta.30",
+    "jose": "^5.9.6"
   },
   "devDependencies": {
     "@shopify/cli": "^3.63.0",
