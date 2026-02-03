@@ -1,212 +1,125 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import getStripe from '@/lib/getStripe';
+import { useState } from 'react';
 
-// Small Client Component that uses useSearchParams
-function TrialExpiredBanner() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
-
-  if (error !== 'trial_expired') return null;
+export default function PricingPage() {
+  const [selectedPlan, setSelectedPlan] = useState('lifetime');
 
   return (
-    <div className="max-w-5xl mx-auto mb-12 p-8 bg-red-900/40 border-4 border-red-500 rounded-3xl shadow-2xl">
-      <h2 className="text-5xl md:text-6xl font-black text-red-400 mb-4">
-        Your 7-day free trial has ended
-      </h2>
-      <p className="text-2xl md:text-3xl text-cyan-300">
-        Upgrade now to unlock unlimited access to GrowthEasy AI forever
-      </p>
-    </div>
-  );
-}
-
-export default function Pricing() {
-  const [loading, setLoading] = useState<string | null>(null);
-
-  // TODO: Replace with real DB fetch in production
-  const earlyBirdSold = 0;
-  const totalLifetimeSold = 0;
-
-  const EARLY_CAP = 75;
-  const TOTAL_CAP = 150;
-
-  const earlyLeft = EARLY_CAP - earlyBirdSold;
-  const totalLeft = TOTAL_CAP - totalLifetimeSold;
-
-  const showEarly = earlyBirdSold < EARLY_CAP;
-  const showStandard = totalLifetimeSold < TOTAL_CAP;
-  const lifetimeSoldOut = totalLifetimeSold >= TOTAL_CAP;
-
-  const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
-    setLoading(plan);
-
-    console.log('[Checkout Debug] Button clicked - plan:', plan);
-    console.log('[Checkout Debug] Starting full checkout flow');
-
-    try {
-      console.log('[Checkout Debug] Sending POST to /api/create-checkout');
-
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
-
-      console.log('[Checkout Debug] Server response status:', res.status);
-      console.log('[Checkout Debug] Response headers:', Object.fromEntries(res.headers.entries()));
-
-      const data = await res.json();
-      console.log('[Checkout Debug] Server response data (full JSON):', JSON.stringify(data, null, 2));
-
-      if (!res.ok) {
-        console.error('[Checkout Debug] Server error response - status not OK');
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
-
-      if (!data.sessionId) {
-        console.error('[Checkout Debug] No sessionId in server response');
-        throw new Error('No sessionId returned from server');
-      }
-
-      console.log('[Checkout Debug] Session ID received successfully:', data.sessionId);
-
-      console.log('[Checkout Debug] Loading Stripe library via getStripe()');
-      const stripe = await getStripe();
-      console.log('[Checkout Debug] getStripe() result:', stripe ? 'Stripe loaded' : 'Stripe FAILED to load (null)');
-
-      if (!stripe) {
-        console.error('[Checkout Debug] Stripe library did not load - throwing error');
-        throw new Error('Failed to load Stripe');
-      }
-
-      console.log('[Checkout Debug] Stripe ready - initiating redirect to checkout');
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
-
-      if (error) {
-        console.error('[Checkout Debug] Stripe redirect error:', error.message);
-        throw error;
-      }
-
-      console.log('[Checkout Debug] Redirect succeeded - should be on Stripe page now');
-    } catch (err: any) {
-      console.error('[Checkout Debug] CRITICAL CHECKOUT FAILURE - full details:');
-      console.error('[Checkout Debug] Error message:', err.message || 'No message');
-      console.error('[Checkout Debug] Error name:', err.name || 'unknown');
-      console.error('[Checkout Debug] Full error object:', JSON.stringify(err, null, 2));
-      console.error('[Checkout Debug] Stack trace:', err.stack || 'no stack');
-
-      alert('Checkout failed: ' + (err.message || 'Unknown error - check browser console for details'));
-    } finally {
-      setLoading(null);
-      console.log('[Checkout Debug] handleCheckout finished');
-    }
-  };
-
-  return (
-    <div className="min-h-screen px-4 py-10 md:px-8 lg:px-12 text-center bg-gradient-to-b from-black to-[#0a0f2c]">
-      <Suspense fallback={null}>
-        <TrialExpiredBanner />
-      </Suspense>
-
-      <h1 className="glow-title text-4xl md:text-5xl font-black mb-6">
-        Choose Your Plan
+    <div className="min-h-screen px-4 py-20 md:px-12 lg:px-24 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
+      <h1 className="glow-title text-center text-7xl md:text-9xl font-black mb-20 text-cyan-400">
+        Pricing
       </h1>
-      <p className="text-xl md:text-2xl text-cyan-300 mb-10">Lock in lifetime access before it's gone forever</p>
 
-      <div className="max-w-4xl mx-auto mb-10 space-y-4">
-        {showEarly && (
-          <p className="text-3xl md:text-4xl font-black text-red-400 animate-pulse">
-            Only {earlyLeft} Early Bird spots left at £49!
-          </p>
-        )}
-        <p className="text-2xl md:text-3xl font-bold text-purple-400">
-          Lifetime closes forever at {TOTAL_CAP} — {totalLeft} spots remaining
+      <div className="max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* One-time Plan */}
+          <div className="metric-card p-8 rounded-2xl text-center border-2 border-cyan-500/30 hover:border-cyan-400 transition">
+            <h2 className="text-4xl font-black text-cyan-300 mb-4">One-time</h2>
+            <p className="text-5xl font-black text-green-400 mb-6">£49</p>
+            <p className="text-xl text-gray-300 mb-8">Lifetime Access</p>
+
+            <ul className="text-left space-y-4 mb-8">
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Full AI Growth Coach
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Real-time metrics
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Unlimited queries
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Future updates
+              </li>
+            </ul>
+
+            {/* Disabled Buy Button */}
+            <div className="relative opacity-60 pointer-events-none group">
+              <button className="w-full p-5 bg-cyan-500 text-black rounded-xl font-bold text-xl cursor-not-allowed">
+                Buy Now – £49
+              </button>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-xl">
+                <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                  Demo mode – coming soon
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Plan */}
+          <div className="metric-card p-8 rounded-2xl text-center border-2 border-purple-500/30 hover:border-purple-400 transition">
+            <h2 className="text-4xl font-black text-purple-300 mb-4">Monthly</h2>
+            <p className="text-5xl font-black text-green-400 mb-6">£29/mo</p>
+            <p className="text-xl text-gray-300 mb-8">Cancel anytime</p>
+
+            <ul className="text-left space-y-4 mb-8">
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> All features
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Priority support
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Monthly updates
+              </li>
+            </ul>
+
+            {/* Disabled Subscribe Button */}
+            <div className="relative opacity-60 pointer-events-none group">
+              <button className="w-full p-5 bg-purple-500 text-black rounded-xl font-bold text-xl cursor-not-allowed">
+                Subscribe – £29/mo
+              </button>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-xl">
+                <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                  Demo mode – coming soon
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lifetime Plan */}
+          <div className="metric-card p-8 rounded-2xl text-center border-2 border-cyan-500/50 hover:border-cyan-400 transition relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-black px-6 py-2 rounded-full font-bold text-xl">
+              Most Popular
+            </div>
+            <h2 className="text-4xl font-black text-cyan-300 mb-4 mt-8">Lifetime</h2>
+            <p className="text-5xl font-black text-green-400 mb-6">£149</p>
+            <p className="text-xl text-gray-300 mb-8">One-time payment</p>
+
+            <ul className="text-left space-y-4 mb-8">
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Everything in One-time
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> Priority updates
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-green-400">✓</span> VIP support
+              </li>
+            </ul>
+
+            {/* Disabled Lifetime Button */}
+            <div className="relative opacity-60 pointer-events-none group">
+              <button className="w-full p-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-black rounded-xl font-bold text-xl cursor-not-allowed">
+                Get Lifetime – £149
+              </button>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-xl">
+                <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                  Demo mode – coming soon
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ or other content – add if you have it */}
+      <div className="max-w-4xl mx-auto text-center mt-20">
+        <h2 className="text-4xl font-bold text-cyan-400 mb-8">Questions?</h2>
+        <p className="text-xl text-gray-300">
+          Drop us a line or join the waiting list for updates.
         </p>
-        {lifetimeSoldOut && (
-          <p className="text-2xl md:text-3xl font-bold text-gray-500">Lifetime Sold Out Forever</p>
-        )}
-      </div>
-
-      {/* Pricing cards */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        {showEarly && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
-            <div className="flex flex-col items-center">
-              <h2 className="text-xl md:text-2xl font-bold mb-2">Early Bird Lifetime</h2>
-              <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
-              <p className="text-sm md:text-base text-red-400 mb-2">One-time • {earlyLeft} left</p>
-            </div>
-            <button
-              onClick={() => handleCheckout('early_ltd')}
-              disabled={loading === 'early_ltd'}
-              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
-            >
-              {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
-            </button>
-          </div>
-        )}
-
-        {showStandard && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
-            <div className="flex flex-col items-center">
-              <h2 className="text-xl md:text-2xl font-bold mb-2">Lifetime Access</h2>
-              <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£79</p>
-              <p className="text-sm md:text-base text-purple-400 mb-2">One-time • Closes at 150</p>
-            </div>
-            <button
-              onClick={() => handleCheckout('standard_ltd')}
-              disabled={loading === 'standard_ltd'}
-              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
-            >
-              {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
-            </button>
-          </div>
-        )}
-
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden">
-          <div className="flex flex-col items-center">
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Monthly</h2>
-            <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
-          </div>
-          <button
-            onClick={() => handleCheckout('monthly')}
-            disabled={loading === 'monthly'}
-            className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
-          >
-            {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
-          </button>
-        </div>
-
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
-          <div className="flex flex-col items-center">
-            <div className="bg-green-500/20 text-green-400 text-sm md:text-base font-bold px-3 py-1 rounded-full mb-2 inline-block">
-              BEST VALUE — SAVE 16%
-            </div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Annual</h2>
-            <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£490</p>
-            <p className="text-sm md:text-base text-green-400 mb-2">= £41/mo</p>
-          </div>
-          <button
-            onClick={() => handleCheckout('annual')}
-            disabled={loading === 'annual'}
-            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-lg md:text-xl px-6 py-3 mt-2 w-full"
-          >
-            {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
-          </button>
-        </div>
-      </div>
-
-      {/* Guarantee */}
-      <div className="max-w-4xl mx-auto mt-16 text-gray-300 text-lg md:text-xl space-y-4">
-        <p className="text-2xl md:text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
-        <p>Lifetime plans include core access + ongoing minor updates forever. Major new features available as optional paid upgrades.</p>
-        <p className="text-xl md:text-2xl text-purple-400 font-bold">Price increases automatically as we grow — lock in now.</p>
       </div>
     </div>
   );
