@@ -8,14 +8,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email } = body;
 
-    if (!name || !email || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Name and valid email required' }, { status: 400 });
     }
 
-    // Send to your email
     const { data, error } = await resend.emails.send({
       from: 'Waiting List <onboarding@resend.dev>', // or your verified domain
-      to: 'seanwoodward003@gmail.com',  // ← your email
+      to: 'seanwoodward003@gmail.com',
       subject: 'New Waiting List Signup',
       html: `
         <h2>New Waiting List Signup</h2>
@@ -23,9 +22,9 @@ export async function POST(request: NextRequest) {
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Time:</strong> ${new Date().toISOString()}</p>
         <br/>
-        <p>Reply to this email to contact them directly.</p>
+        <p>Reply directly to this email to contact them.</p>
       `,
-      reply_to: email, // so you can reply directly to the user
+      replyTo: email,  // ← FIXED HERE (camelCase, no underscore)
     });
 
     if (error) {
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Thanks for joining the waiting list!' });
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[WAITLIST] Error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
