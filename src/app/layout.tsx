@@ -141,6 +141,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/pricing" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${pathname === '/pricing' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   Upgrade
                 </Link>
+
+                {/* Sign Up – DISABLED */}
+                <div className="relative opacity-60 pointer-events-none group">
+                  <Link href="/signup" className="block text-2xl py-3 border-b border-cyan-600/50 text-cyan-300 cursor-not-allowed">
+                    Sign Up
+                  </Link>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                      Demo mode – coming soon
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sign In – DISABLED */}
+                <div className="relative opacity-60 pointer-events-none group">
+                  <Link href="/signin" className="block text-2xl py-3 border-b border-cyan-600/50 text-cyan-300 cursor-not-allowed">
+                    Sign In
+                  </Link>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                      Demo mode – coming soon
+                    </span>
+                  </div>
+                </div>
+
                 <button
                   onClick={handleLogout}
                   className="w-full text-left text-2xl text-red-400 py-3"
