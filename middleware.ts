@@ -14,6 +14,14 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
+  // DEMO MODE BYPASS – ADDED HERE (only this block is new)
+  if (process.env.DEMO_MODE === 'true') {
+    console.log('[MIDDLEWARE] Demo mode active — bypassing all auth checks');
+    return NextResponse.next();
+  }
+
+  // === ALL YOUR ORIGINAL CODE BELOW – UNCHANGED ===
+
   const origin = request.headers.get('origin');
   const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
