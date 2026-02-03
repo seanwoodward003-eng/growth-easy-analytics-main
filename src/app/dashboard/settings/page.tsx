@@ -15,6 +15,9 @@ export default function SettingsPage() {
     refresh 
   } = useMetrics();
 
+  // Demo mode check – extract here to avoid Turbopack JSX parsing bug
+  const isDemoMode = process.env.DEMO_MODE === 'true';
+
   // Email states
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [emailLoading, setEmailLoading] = useState(true);
@@ -229,7 +232,7 @@ export default function SettingsPage() {
             {shopifyConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                {process.env.DEMO_MODE === 'true' ? (
+                {isDemoMode ? (
                   <div className="relative opacity-60 pointer-events-none group">
                     <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
                       Disconnect
@@ -252,7 +255,7 @@ export default function SettingsPage() {
               </>
             ) : (
               <div className="flex flex-col gap-4">
-                {process.env.DEMO_MODE === 'true' ? (
+                {isDemoMode ? (
                   <div className="relative opacity-60 pointer-events-none group">
                     <input
                       type="text"
@@ -303,7 +306,7 @@ export default function SettingsPage() {
             {ga4Connected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                {process.env.DEMO_MODE === 'true' ? (
+                {isDemoMode ? (
                   <div className="relative opacity-60 pointer-events-none group">
                     <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
                       Disconnect
@@ -325,7 +328,7 @@ export default function SettingsPage() {
                 )}
               </>
             ) : (
-              {process.env.DEMO_MODE === 'true' ? (
+              {isDemoMode ? (
                 <div className="relative opacity-60 pointer-events-none group">
                   <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
                     Connect GA4
@@ -353,7 +356,7 @@ export default function SettingsPage() {
             {hubspotConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                {process.env.DEMO_MODE === 'true' ? (
+                {isDemoMode ? (
                   <div className="relative opacity-60 pointer-events-none group">
                     <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
                       Disconnect
@@ -375,7 +378,7 @@ export default function SettingsPage() {
                 )}
               </>
             ) : (
-              {process.env.DEMO_MODE === 'true' ? (
+              {isDemoMode ? (
                 <div className="relative opacity-60 pointer-events-none group">
                   <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
                     Connect HubSpot
@@ -497,4 +500,4 @@ export default function SettingsPage() {
       </div>
     </div>
   );
-} 
+}
