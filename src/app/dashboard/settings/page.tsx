@@ -182,12 +182,12 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const clearCookie = (name: string) => {
-  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
-};
+          document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+        };
 
-clearCookie('access_token');
-clearCookie('refresh_token');
-clearCookie('csrf_token');
+        clearCookie('access_token');
+        clearCookie('refresh_token');
+        clearCookie('csrf_token');
         alert('Account deleted');
         router.push('/');
       } else {
@@ -229,33 +229,70 @@ clearCookie('csrf_token');
             {shopifyConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <button 
-                  onClick={() => handleDisconnect('shopify')} 
-                  disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
-                >
-                  {deleting ? 'Disconnecting...' : 'Disconnect'}
-                </button>
+                {process.env.DEMO_MODE === 'true' ? (
+                  <div className="relative opacity-60 pointer-events-none group">
+                    <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
+                      Disconnect
+                    </button>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                      <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                        Demo mode – coming soon
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleDisconnect('shopify')} 
+                    disabled={deleting}
+                    className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                  >
+                    {deleting ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
+                )}
               </>
             ) : (
               <div className="flex flex-col gap-4">
-                <input
-                  type="text"
-                  placeholder="your-store.myshopify.com"
-                  value={shopDomain}
-                  onChange={(e) => setShopDomain(e.target.value.trim())}
-                  onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
-                  disabled={isConnecting}
-                  className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
-                />
-                <button
-                  onClick={handleShopifyConnect}
-                  disabled={isConnecting || !shopDomain}
-                  className="cyber-btn text-xl px-10 py-5 w-full"
-                >
-                  {isConnecting ? 'Connecting...' : 'Connect Shopify'}
-                </button>
-                {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
+                {process.env.DEMO_MODE === 'true' ? (
+                  <div className="relative opacity-60 pointer-events-none group">
+                    <input
+                      type="text"
+                      placeholder="your-store.myshopify.com"
+                      disabled
+                      className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none text-xl opacity-50 cursor-not-allowed"
+                    />
+                    <button
+                      disabled
+                      className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed"
+                    >
+                      Connect Shopify
+                    </button>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                      <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                        Demo mode – coming soon
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="your-store.myshopify.com"
+                      value={shopDomain}
+                      onChange={(e) => setShopDomain(e.target.value.trim())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
+                      disabled={isConnecting}
+                      className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
+                    />
+                    <button
+                      onClick={handleShopifyConnect}
+                      disabled={isConnecting || !shopDomain}
+                      className="cyber-btn text-xl px-10 py-5 w-full"
+                    >
+                      {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+                    </button>
+                    {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -266,21 +303,47 @@ clearCookie('csrf_token');
             {ga4Connected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <button 
-                  onClick={() => handleDisconnect('ga4')} 
-                  disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
-                >
-                  {deleting ? 'Disconnecting...' : 'Disconnect'}
-                </button>
+                {process.env.DEMO_MODE === 'true' ? (
+                  <div className="relative opacity-60 pointer-events-none group">
+                    <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
+                      Disconnect
+                    </button>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                      <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                        Demo mode – coming soon
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleDisconnect('ga4')} 
+                    disabled={deleting}
+                    className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                  >
+                    {deleting ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
+                )}
               </>
             ) : (
-              <button 
-                onClick={() => router.push('/api/auth/ga4')} 
-                className="cyber-btn text-xl px-10 py-5 w-full"
-              >
-                Connect GA4
-              </button>
+              {process.env.DEMO_MODE === 'true' ? (
+                <div className="relative opacity-60 pointer-events-none group">
+                  <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
+                    Connect GA4
+                  </button>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                      Demo mode – coming soon
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => router.push('/api/auth/ga4')} 
+                  className="cyber-btn text-xl px-10 py-5 w-full"
+                >
+                  Connect GA4
+                </button>
+              )}
             )}
           </div>
 
@@ -290,21 +353,47 @@ clearCookie('csrf_token');
             {hubspotConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <button 
-                  onClick={() => handleDisconnect('hubspot')} 
-                  disabled={deleting}
-                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
-                >
-                  {deleting ? 'Disconnecting...' : 'Disconnect'}
-                </button>
+                {process.env.DEMO_MODE === 'true' ? (
+                  <div className="relative opacity-60 pointer-events-none group">
+                    <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
+                      Disconnect
+                    </button>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                      <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                        Demo mode – coming soon
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleDisconnect('hubspot')} 
+                    disabled={deleting}
+                    className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                  >
+                    {deleting ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
+                )}
               </>
             ) : (
-              <button 
-                onClick={() => router.push('/api/auth/hubspot')} 
-                className="cyber-btn text-xl px-10 py-5 w-full"
-              >
-                Connect HubSpot
-              </button>
+              {process.env.DEMO_MODE === 'true' ? (
+                <div className="relative opacity-60 pointer-events-none group">
+                  <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
+                    Connect HubSpot
+                  </button>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
+                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
+                      Demo mode – coming soon
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => router.push('/api/auth/hubspot')} 
+                  className="cyber-btn text-xl px-10 py-5 w-full"
+                >
+                  Connect HubSpot
+                </button>
+              )}
             )}
           </div>
         </div>
