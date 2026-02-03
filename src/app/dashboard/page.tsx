@@ -105,6 +105,76 @@ export default function Dashboard() {
           <p className="text-2xl md:text-3xl font-bold text-white">{biggestOpportunity}</p>
         </div>
       )}
+
+      {/* Waiting List Form – ADDED HERE (bottom of page) */}
+      <div className="max-w-5xl mx-auto mt-12 p-8 bg-gray-900/80 border border-cyan-500/30 rounded-2xl backdrop-blur-sm">
+        <h2 className="text-3xl font-bold text-cyan-400 mb-6 text-center">
+          Join the Waiting List
+        </h2>
+        <p className="text-gray-300 mb-8 text-center max-w-2xl mx-auto">
+          Be the first to get full access to GrowthEasy AI + 3 months free when we launch publicly.
+        </p>
+
+        <form 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const formData = new FormData(form);
+            const name = formData.get('name') as string;
+            const email = formData.get('email') as string;
+
+            if (!name || !email) {
+              alert('Name and email required');
+              return;
+            }
+
+            try {
+              const res = await fetch('/api/waitlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email }),
+              });
+
+              const data = await res.json();
+
+              if (res.ok) {
+                alert('Thanks! You\'re on the list.');
+                form.reset();
+              } else {
+                alert(data.error || 'Something went wrong');
+              }
+            } catch (err) {
+              alert('Network error');
+            }
+          }}
+          className="max-w-md mx-auto space-y-4"
+        >
+          <input
+            type="text"
+            name="name"
+            placeholder="Your name"
+            required
+            className="w-full p-4 bg-gray-800 border border-cyan-500/50 rounded-lg text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-400"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Your email address"
+            required
+            className="w-full p-4 bg-gray-800 border border-cyan-500/50 rounded-lg text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-400"
+          />
+          <button 
+            type="submit" 
+            className="w-full p-4 bg-cyan-500 text-black rounded-lg font-bold hover:bg-cyan-400 transition"
+          >
+            Join Waiting List
+          </button>
+        </form>
+
+        <p className="text-xs text-cyan-500/70 mt-6 text-center">
+          We respect your privacy. Unsubscribe anytime.
+        </p>
+      </div>
     </div>
   );
 }
