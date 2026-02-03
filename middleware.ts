@@ -14,14 +14,6 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
-  // DEMO MODE BYPASS – ADDED HERE (only this block is new)
-  if (process.env.DEMO_MODE === 'true') {
-    console.log('[MIDDLEWARE] Demo mode active — bypassing all auth checks');
-    return NextResponse.next();
-  }
-
-  // === ALL YOUR ORIGINAL CODE BELOW – UNCHANGED ===
-
   const origin = request.headers.get('origin');
   const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
@@ -56,62 +48,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard routes – only login check
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    const accessToken = request.cookies.get('access_token')?.value;
-
-    console.log('[MIDDLEWARE] Dashboard request – access_token present?', !!accessToken, 'length:', accessToken?.length || 0);
-
-    if (!accessToken) {
-      console.log('[MIDDLEWARE] No access_token — redirecting with login_required');
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'login_required');
-      return NextResponse.redirect(url);
-    }
-
-    try {
-      const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
-
-      const userIdStr = payload.sub;
-      if (typeof userIdStr !== 'string') throw new Error('Invalid sub claim');
-
-      const userId = parseInt(userIdStr, 10);
-      if (isNaN(userId)) throw new Error('Invalid user ID');
-
-      console.log('[MIDDLEWARE] Token verified, user ID:', userId);
-
-      const user = await getRow<{
-        trial_end: string | null;
-        subscription_status: string;
-      }>(
-        'SELECT trial_end, subscription_status FROM users WHERE id = ?',
-        [userId]
-      );
-
-      if (!user) {
-        console.log('[MIDDLEWARE] User not found in DB');
-        const url = request.nextUrl.clone();
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-      }
-
-      response.headers.set('x-user-id', userId.toString());
-      response.headers.set('x-subscription-status', user.subscription_status);
-      response.headers.set('x-trial-end', user.trial_end || '');
-    } catch (err) {
-      console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'session_expired');
-
-      const redirectResponse = NextResponse.redirect(url);
-      redirectResponse.cookies.delete('access_token');
-      redirectResponse.cookies.delete('refresh_token');
-      redirectResponse.cookies.delete('csrf_token');
-      return redirectResponse;
-    }
-  }
+  // DASHBOARD IS NOW PUBLIC – NO LOGIN/SIGNUP REQUIRED
+  // (entire dashboard protection block removed)
 
   return response;
 }
