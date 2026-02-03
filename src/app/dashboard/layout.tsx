@@ -1,5 +1,7 @@
 // app/dashboard/layout.tsx
 
+export const dynamic = 'force-dynamic';
+
 // import { getCurrentUser } from '@/lib/auth';    // commented out for public access
 import { redirect } from 'next/navigation';       // can keep or comment; not used now
 
