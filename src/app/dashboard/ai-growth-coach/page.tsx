@@ -34,81 +34,166 @@ export default function AIGrowthCoachPage() {
       {/* Messages — extra padding for input bar */}
       <div className="flex-1 overflow-y-auto px-4 pt-20 pb-32">
         <div className="max-w-4xl mx-auto space-y-6">
-          {messages.length === 0 && (
-            <div className="h-full flex items-center justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 blur-3xl bg-cyan-500/30 animate-pulse rounded-full" />
-                <svg className="h-64 w-64 text-cyan-400 drop-shadow-2xl" viewBox="0 0 163.53 163.53" fill="currentColor">
-                  <rect width="163.53" height="163.53" rx="40" className="opacity-20" />
-                  <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
-                </svg>
-              </div>
-            </div>
-          )}
-
-          {messages.map((m) => (
-            <div key={m.id} className={`flex items-start gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
-                {m.role === 'assistant' && (
-                  <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
-                    <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
-                  </svg>
-                )}
+          {process.env.DEMO_MODE === 'true' ? (
+            <>
+              {/* Demo mode static content */}
+              <div className="text-center py-12">
+                <h2 className="text-3xl font-bold text-cyan-400 mb-4">AI Growth Coach (Demo Mode)</h2>
+                <p className="text-gray-300 max-w-2xl mx-auto">
+                  Real AI chat is disabled in demo mode. Below is a sample conversation to show how it works.
+                </p>
               </div>
 
-              {/* Bubble */}
-              <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
-                {m.role === 'assistant' && <p className="text-cyan-400 text-sm mb-2">Grok online</p>}
-                <div className={`relative px-6 py-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 text-white' : 'bg-gray-800/90 text-cyan-100'} backdrop-blur-md border border-cyan-500/30`}>
-                  {/* Tail */}
-                  <div className={`absolute top-0 w-0 h-0 border-8 border-transparent ${m.role === 'user' ? 'right-0 -mr-4 border-l-purple-900/80' : 'left-0 -ml-4 border-r-gray-800/90'}`} />
-                  <p className="text-lg leading-relaxed whitespace-pre-wrap">{m.content}</p>
+              {/* Static sample messages */}
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                      <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col items-start max-w-2xl">
+                    <p className="text-cyan-400 text-sm mb-2">You:</p>
+                    <div className="relative px-6 py-4 rounded-2xl bg-gradient-to-r from-purple-900/80 to-cyan-900/80 text-white backdrop-blur-md border border-cyan-500/30">
+                      <div className="absolute top-0 w-0 h-0 border-8 border-transparent right-0 -mr-4 border-l-purple-900/80" />
+                      <p className="text-lg leading-relaxed whitespace-pre-wrap">
+                        How do I reduce churn from 12%?
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                      <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col items-start max-w-2xl">
+                    <p className="text-cyan-400 text-sm mb-2">Grok online</p>
+                    <div className="relative px-6 py-4 rounded-2xl bg-gray-800/90 text-cyan-100 backdrop-blur-md border border-cyan-500/30">
+                      <div className="absolute top-0 w-0 h-0 border-8 border-transparent left-0 -ml-4 border-r-gray-800/90" />
+                      <p className="text-lg leading-relaxed whitespace-pre-wrap">
+                        Target at-risk customers first with personalized win-back emails and discounts. Offer a 20% off coupon to the top 20% at-risk segment — retention emails have 30–40% open rates in Shopify stores. Track results in the Retention tab.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 flex-row-reverse">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                      <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col items-end max-w-2xl">
+                    <p className="text-white mt-2">What’s my biggest revenue leak?</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                      <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col items-start max-w-2xl">
+                    <p className="text-cyan-400 text-sm mb-2">Grok online</p>
+                    <div className="relative px-6 py-4 rounded-2xl bg-gray-800/90 text-cyan-100 backdrop-blur-md border border-cyan-500/30">
+                      <div className="absolute top-0 w-0 h-0 border-8 border-transparent left-0 -ml-4 border-r-gray-800/90" />
+                      <p className="text-lg leading-relaxed whitespace-pre-wrap">
+                        Silent churn from inactive customers is costing you ~£3k/month. Re-engage with automated win-back flows and upsell bundles to active users. Check the Churn tab for at-risk segments.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            </>
+          ) : (
+            // === REAL CHAT – YOUR ORIGINAL CODE BELOW – UNCHANGED ===
+            <>
+              {messages.length === 0 && (
+                <div className="h-full flex items-center justify-center">
+                  <div className="relative">
+                    <div className="absolute inset-0 blur-3xl bg-cyan-500/30 animate-pulse rounded-full" />
+                    <svg className="h-64 w-64 text-cyan-400 drop-shadow-2xl" viewBox="0 0 163.53 163.53" fill="currentColor">
+                      <rect width="163.53" height="163.53" rx="40" className="opacity-20" />
+                      <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                    </svg>
+                  </div>
+                </div>
+              )}
 
-          {isLoading && <p className="text-center text-cyan-400 animate-pulse">Thinking...</p>}
+              {messages.map((m) => (
+                <div key={m.id} className={`flex items-start gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  {/* Avatar */}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-cyan-500/50 shadow-lg flex items-center justify-center flex-shrink-0">
+                    {m.role === 'assistant' && (
+                      <svg className="w-8 h-8 text-cyan-300" viewBox="0 0 163.53 163.53" fill="currentColor">
+                        <polygon points="105.02 34.51 38.72 129.19 58.68 129.19 124.98 34.51 105.02 34.51" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Bubble */}
+                  <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-2xl`}>
+                    {m.role === 'assistant' && <p className="text-cyan-400 text-sm mb-2">Grok online</p>}
+                    <div className={`relative px-6 py-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-purple-900/80 to-cyan-900/80 text-white' : 'bg-gray-800/90 text-cyan-100'} backdrop-blur-md border border-cyan-500/30`}>
+                      {/* Tail */}
+                      <div className={`absolute top-0 w-0 h-0 border-8 border-transparent ${m.role === 'user' ? 'right-0 -mr-4 border-l-purple-900/80' : 'left-0 -ml-4 border-r-gray-800/90'}`} />
+                      <p className="text-lg leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {isLoading && <p className="text-center text-cyan-400 animate-pulse">Thinking...</p>}
+            </>
+          )}
         </div>
       </div>
 
       {/* Input bar — mobile-safe with safe-area */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom)] bg-gradient-to-t from-[#0a0f2c] to-transparent backdrop-blur-xl border-t border-cyan-400/30">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Paperclip className="w-6 h-6 text-cyan-300" />
-          </button>
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Image className="w-6 h-6 text-cyan-300" />
-          </button>
+        {process.env.DEMO_MODE === 'true' ? (
+          <div className="max-w-4xl mx-auto text-center text-cyan-400">
+            Real chat disabled in demo mode. Join waiting list for full access.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex items-center gap-3">
+            <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+              <Paperclip className="w-6 h-6 text-cyan-300" />
+            </button>
+            <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+              <Image className="w-6 h-6 text-cyan-300" />
+            </button>
 
-          <input
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Message..."
-            className="flex-1 bg-gray-800/70 text-white px-6 py-4 rounded-full border border-cyan-500/50 focus:outline-none focus:border-cyan-300 text-lg placeholder-cyan-400/60 backdrop-blur-md"
-            autoFocus
-          />
+            <input
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Message..."
+              className="flex-1 bg-gray-800/70 text-white px-6 py-4 rounded-full border border-cyan-500/50 focus:outline-none focus:border-cyan-300 text-lg placeholder-cyan-400/60 backdrop-blur-md"
+              autoFocus
+            />
 
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
-            <Smile className="w-6 h-6 text-cyan-300" />
-          </button>
-          <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition rotate-180">
-            <Smile className="w-6 h-6 text-cyan-300" />
-          </button>
+            <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition">
+              <Smile className="w-6 h-6 text-cyan-300" />
+            </button>
+            <button type="button" className="p-3 rounded-full bg-gray-800/50 border border-cyan-500/40 hover:bg-gray-700/50 transition rotate-180">
+              <Smile className="w-6 h-6 text-cyan-300" />
+            </button>
 
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full font-bold text-black flex items-center gap-2 shadow-lg shadow-cyan-500/50 hover:scale-105 transition disabled:opacity-50"
-          >
-            Send
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full font-bold text-black flex items-center gap-2 shadow-lg shadow-cyan-500/50 hover:scale-105 transition disabled:opacity-50"
+            >
+              Send
+              <Send className="w-5 h-5" />
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
 }
-
