@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import getStripe from '@/lib/getStripe';
 
@@ -42,21 +42,22 @@ export default function LandingPage() {
       setMessage('Please sign in to continue');
     }
 
-    // Auto-redirect to dashboard if already logged in (disabled for demo)
-    // const checkSession = async () => {
-    //   try {
-    //     const res = await fetch('/api/refresh', {
-    //       method: 'POST',
-    //       credentials: 'include',
-    //     });
-    //     if (res.ok) {
-    //       window.location.href = '/dashboard';
-    //     }
-    //   } catch (err) {
-    //     // Silent fail — stay on landing
-    //   }
-    // };
-    // checkSession();
+    // Auto-redirect to dashboard if already logged in
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          window.location.href = '/dashboard';
+        }
+      } catch (err) {
+        // Silent fail — stay on landing
+      }
+    };
+
+    checkSession();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,36 +146,40 @@ export default function LandingPage() {
           Connect your Shopify store and get real-time insights on revenue, churn, acquisition, retention — with an AI Growth Coach that reads your data and tells you exactly what to fix to make more money.
         </p>
 
-        {/* CTA Form – disabled for demo */}
-        <div className="max-w-2xl mx-auto mb-12 md:mb-20 relative opacity-60 pointer-events-none group">
+        {/* CTA Form */}
+        <div className="max-w-2xl mx-auto mb-12 md:mb-20">
           <h2 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-6 md:mb-8">
             {mode === 'signup' ? 'Start Your 7-Day Free Trial' : 'Welcome Back'}
           </h2>
 
-          <form className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
+          <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
             <input
               type="email"
               placeholder="your@email.com"
-              disabled
-              className="flex-1 w-full px-6 md:px-10 py-4 md:py-6 text-xl md:text-2xl bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none cursor-not-allowed opacity-50"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 w-full px-6 md:px-10 py-4 md:py-6 text-xl md:text-2xl bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 transition"
             />
             <button
-              type="button"
-              disabled
-              className="w-full md:w-auto px-12 md:px-16 py-4 md:py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-2xl font-black rounded-full opacity-50 cursor-not-allowed"
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-auto px-12 md:px-16 py-4 md:py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-2xl font-black rounded-full hover:scale-105 transition shadow-2xl shadow-cyan-500/50 disabled:opacity-70"
             >
-              {mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
+              {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
             </button>
           </form>
 
           {/* Marketing Consent Checkbox (only on signup) */}
           {mode === 'signup' && (
-            <div className="mt-6 text-left max-w-2xl mx-auto text-cyan-300 text-sm opacity-70">
-              <label className="flex items-center gap-2 cursor-not-allowed">
+            <div className="mt-6 text-left max-w-2xl mx-auto text-cyan-300 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  disabled
-                  className="w-5 h-5 accent-cyan-400 opacity-50"
+                  name="marketing_consent"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="w-5 h-5 accent-cyan-400"
                 />
                 <span>
                   I agree to receive marketing emails from GrowthEasy AI (tips, updates, offers — unsubscribe anytime).
@@ -184,21 +189,19 @@ export default function LandingPage() {
             </div>
           )}
 
-          {/* Toggle Link – disabled */}
+          {/* Toggle Link */}
           <button
             type="button"
-            disabled
-            className="mt-6 md:mt-8 text-cyan-300 opacity-70 text-xl cursor-not-allowed"
+            onClick={() => {
+              setMode(mode === 'signup' ? 'signin' : 'signup');
+              setMessage('');
+              setEmail('');
+              setMarketingConsent(false); // Reset consent when toggling
+            }}
+            className="mt-6 md:mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
           >
             {mode === 'signup' ? 'Already have an account? Sign in' : 'New here? Sign up for free trial'}
           </button>
-
-          {/* Tooltip on hover */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-xl">
-            <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-              Demo mode – coming soon
-            </span>
-          </div>
         </div>
 
         {/* Urgency */}
