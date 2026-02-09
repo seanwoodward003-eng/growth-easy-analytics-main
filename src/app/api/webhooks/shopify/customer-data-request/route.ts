@@ -7,8 +7,14 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     return false;
   }
 
+  const secret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!secret) {
+    console.error('[CUSTOMERS-DATA-REQUEST] SHOPIFY_CLIENT_SECRET is not set');
+    return false;
+  }
+
   const calculated = crypto
-    .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
+    .createHmac('sha256', secret)
     .update(rawBody, 'utf8')
     .digest('base64');
 
@@ -19,24 +25,29 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
   if (!isValid) {
     console.error('[CUSTOMERS-DATA-REQUEST] HMAC mismatch');
+    console.error('Calculated HMAC:', calculated);
+    console.error('Received HMAC:  ', hmacHeader);
   }
 
   return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[CUSTOMERS-DATA-REQUEST] Incoming POST request');
-  console.log('[DEBUG] Headers:', Object.fromEntries(request.headers));
+  const topic = request.headers.get('X-Shopify-Topic') || 'customers/data_request';
+  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown';
+
+  console.log(`[CUSTOMERS-DATA-REQUEST] Incoming webhook from ${shop} at ${new Date().toISOString()}`);
 
   const rawBody = await request.text();
-  console.log('[DEBUG] Raw body length:', rawBody.length);
-  console.log('[DEBUG] Raw body (first 500 chars):', rawBody.substring(0, 500));
+
+  console.log(`[CUSTOMERS-DATA-REQUEST] Raw body length: ${rawBody.length}`);
+  if (rawBody.length > 0 && rawBody.length < 10000) {
+    console.log(`[CUSTOMERS-DATA-REQUEST] Raw body preview:`, rawBody.substring(0, 500));
+  }
 
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
-  console.log('[DEBUG] HMAC header present:', !!hmac);
 
   if (!verifyWebhookHMAC(rawBody, hmac)) {
-    console.error('[CUSTOMERS-DATA-REQUEST] HMAC verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -45,13 +56,19 @@ export async function POST(request: NextRequest) {
   let payload;
   try {
     payload = JSON.parse(rawBody);
-    console.log('[DEBUG] Payload parsed:', JSON.stringify(payload, null, 2));
-  } catch (e) {
-    console.error('[CUSTOMERS-DATA-REQUEST] JSON parse error:', e);
+    console.log('[CUSTOMERS-DATA-REQUEST] Valid payload:', {
+      topic: payload.topic,
+      shop_domain: payload.shop_domain,
+      customer: payload.customer ? { id: payload.customer.id } : null,
+    });
+  } catch (err) {
+    console.error('[CUSTOMERS-DATA-REQUEST] JSON parse error:', err);
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
   }
 
-  console.log('[CUSTOMERS-DATA-REQUEST] Webhook received and verified');
-  console.log('[DEBUG] Returning 200 OK');
+  // TODO: Implement actual GDPR data request logic here
+  // e.g. queue job to export customer data, email admin, etc.
 
-  return NextResponse.json({ received: true });
+  console.log('[CUSTOMERS-DATA-REQUEST] Webhook processed');
+  return NextResponse.json({ received: true }, { status: 200 });
 }
