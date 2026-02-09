@@ -7,8 +7,14 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     return false;
   }
 
+  const secret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!secret) {
+    console.error('[SHOP-REDACT] SHOPIFY_CLIENT_SECRET is not set');
+    return false;
+  }
+
   const calculated = crypto
-    .createHmac('sha256', process.env.SHOPIFY_CLIENT_SECRET!)
+    .createHmac('sha256', secret)
     .update(rawBody, 'utf8')
     .digest('base64');
 
@@ -19,24 +25,29 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
   if (!isValid) {
     console.error('[SHOP-REDACT] HMAC mismatch');
+    console.error('Calculated HMAC:', calculated);
+    console.error('Received HMAC:  ', hmacHeader);
   }
 
   return isValid;
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[SHOP-REDACT] Incoming POST request');
-  console.log('[DEBUG] Headers:', Object.fromEntries(request.headers));
+  const topic = request.headers.get('X-Shopify-Topic') || 'shop/redact';
+  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown';
+
+  console.log(`[SHOP-REDACT] Incoming webhook from ${shop} at ${new Date().toISOString()}`);
 
   const rawBody = await request.text();
-  console.log('[DEBUG] Raw body length:', rawBody.length);
-  console.log('[DEBUG] Raw body (first 500 chars):', rawBody.substring(0, 500));
+
+  console.log(`[SHOP-REDACT] Raw body length: ${rawBody.length}`);
+  if (rawBody.length > 0 && rawBody.length < 10000) {
+    console.log(`[SHOP-REDACT] Raw body preview:`, rawBody.substring(0, 500));
+  }
 
   const hmac = request.headers.get('X-Shopify-Hmac-Sha256');
-  console.log('[DEBUG] HMAC header present:', !!hmac);
 
   if (!verifyWebhookHMAC(rawBody, hmac)) {
-    console.error('[SHOP-REDACT] HMAC verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -45,13 +56,18 @@ export async function POST(request: NextRequest) {
   let payload;
   try {
     payload = JSON.parse(rawBody);
-    console.log('[DEBUG] Payload parsed:', JSON.stringify(payload, null, 2));
-  } catch (e) {
-    console.error('[SHOP-REDACT] JSON parse error:', e);
+    console.log('[SHOP-REDACT] Valid payload:', {
+      topic: payload.topic,
+      shop_domain: payload.shop_domain,
+    });
+  } catch (err) {
+    console.error('[SHOP-REDACT] JSON parse error:', err);
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
   }
 
-  console.log('[SHOP-REDACT] Webhook received and verified');
-  console.log('[DEBUG] Returning 200 OK');
+  // TODO: Implement actual shop-level data redaction logic here
+  // e.g. delete all store-related data, queue permanent removal
 
-  return NextResponse.json({ received: true });
+  console.log('[SHOP-REDACT] Webhook processed');
+  return NextResponse.json({ received: true }, { status: 200 });
 }
