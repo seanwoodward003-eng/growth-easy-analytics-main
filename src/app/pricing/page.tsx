@@ -142,20 +142,13 @@ export default function Pricing() {
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
               <p className="text-sm md:text-base text-red-400 mb-2">One-time • {earlyLeft} left</p>
             </div>
-            {/* Disabled Early Bird Button */}
-            <div className="relative opacity-60 pointer-events-none group">
-              <button
-                disabled
-                className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed"
-              >
-                Grab Early Bird
-              </button>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                  Demo mode – coming soon
-                </span>
-              </div>
-            </div>
+            <button
+              onClick={() => handleCheckout('early_ltd')}
+              disabled={loading === 'early_ltd'}
+              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+            >
+              {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
+            </button>
           </div>
         )}
 
@@ -166,20 +159,13 @@ export default function Pricing() {
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£79</p>
               <p className="text-sm md:text-base text-purple-400 mb-2">One-time • Closes at 150</p>
             </div>
-            {/* Disabled Lifetime Button */}
-            <div className="relative opacity-60 pointer-events-none group">
-              <button
-                disabled
-                className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed"
-              >
-                Secure Lifetime
-              </button>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                  Demo mode – coming soon
-                </span>
-              </div>
-            </div>
+            <button
+              onClick={() => handleCheckout('standard_ltd')}
+              disabled={loading === 'standard_ltd'}
+              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+            >
+              {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
+            </button>
           </div>
         )}
 
@@ -188,20 +174,13 @@ export default function Pricing() {
             <h2 className="text-xl md:text-2xl font-bold mb-2">Monthly</h2>
             <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
           </div>
-          {/* Disabled Monthly Button */}
-          <div className="relative opacity-60 pointer-events-none group">
-            <button
-              disabled
-              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed"
-            >
-              Start Monthly
-            </button>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-              <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                Demo mode – coming soon
-              </span>
-            </div>
-          </div>
+          <button
+            onClick={() => handleCheckout('monthly')}
+            disabled={loading === 'monthly'}
+            className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+          >
+            {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
+          </button>
         </div>
 
         <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
@@ -213,20 +192,13 @@ export default function Pricing() {
             <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£490</p>
             <p className="text-sm md:text-base text-green-400 mb-2">= £41/mo</p>
           </div>
-          {/* Disabled Annual Button */}
-          <div className="relative opacity-60 pointer-events-none group">
-            <button
-              disabled
-              className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed"
-            >
-              Go Annual & Save
-            </button>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-xl">
-              <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                Demo mode – coming soon
-              </span>
-            </div>
-          </div>
+          <button
+            onClick={() => handleCheckout('annual')}
+            disabled={loading === 'annual'}
+            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-lg md:text-xl px-6 py-3 mt-2 w-full"
+          >
+            {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
+          </button>
         </div>
       </div>
 
