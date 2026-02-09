@@ -1,42 +1,63 @@
+// app/api/refresh/route.ts   (or wherever this file lives)
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTokens, generateCsrfToken, setAuthCookies, verifyRefreshToken } from '@/lib/auth';
+import { getRow } from '@/lib/db';  // import directly — cleaner than dynamic import
 
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get('refresh_token')?.value;
 
   if (!refreshToken) {
-    return NextResponse.json({ error: 'No refresh token' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'No refresh token provided' },
+      { status: 401 }
+    );
   }
 
-  // ← Add await here
+  // Verify the refresh token
   const payload = await verifyRefreshToken(refreshToken);
 
-  if (!payload) {
-    const response = NextResponse.json({ error: 'Invalid refresh token' }, { status: 401 });
-    response.cookies.delete('access_token');
-    response.cookies.delete('refresh_token');
-    response.cookies.delete('csrf_token');
+  if (!payload || !payload.sub) {
+    // Token invalid/expired → clear cookies and reject
+    const response = NextResponse.json(
+      { error: 'Invalid or expired refresh token' },
+      { status: 401 }
+    );
+    response.cookies.delete('access_token', { path: '/' });
+    response.cookies.delete('refresh_token', { path: '/' });
+    response.cookies.delete('csrf_token', { path: '/' });
     return response;
   }
 
-  // Fetch email for access token (optional but recommended)
-  // You could also store email in refresh token if you prefer
-  const user = await import('@/lib/db').then(mod => mod.getRow<{ email: string }>(
+  // Get user data (only what's needed — email here)
+  const user = await getRow<{ email: string }>(
     'SELECT email FROM users WHERE id = ?',
     [payload.sub]
-  ));
+  );
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    // Rare case — user deleted but token still exists
+    const response = NextResponse.json(
+      { error: 'User not found' },
+      { status: 404 }
+    );
+    response.cookies.delete('access_token', { path: '/' });
+    response.cookies.delete('refresh_token', { path: '/' });
+    response.cookies.delete('csrf_token', { path: '/' });
+    return response;
   }
 
-  // ← Add await here too
+  // Generate new tokens
   const { access, refresh: newRefresh } = await generateTokens(payload.sub, user.email);
 
+  // Generate fresh CSRF token
   const csrf = generateCsrfToken();
 
+  // Prepare response
   const response = NextResponse.json({ success: true });
+
+  // Set new cookies (httpOnly, secure, etc.)
   await setAuthCookies(access, newRefresh, csrf);
+
   return response;
 }
 
