@@ -182,12 +182,12 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const clearCookie = (name: string) => {
-          document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
-        };
+  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+};
 
-        clearCookie('access_token');
-        clearCookie('refresh_token');
-        clearCookie('csrf_token');
+clearCookie('access_token');
+clearCookie('refresh_token');
+clearCookie('csrf_token');
         alert('Account deleted');
         router.push('/');
       } else {
@@ -229,38 +229,33 @@ export default function SettingsPage() {
             {shopifyConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <div className="relative opacity-60 pointer-events-none group">
-                  <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
-                    Disconnect
-                  </button>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                      Coming soon
-                    </span>
-                  </div>
-                </div>
+                <button 
+                  onClick={() => handleDisconnect('shopify')} 
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                >
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
+                </button>
               </>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="relative opacity-60 pointer-events-none group">
-                  <input
-                    type="text"
-                    placeholder="your-store.myshopify.com"
-                    disabled
-                    className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none text-xl opacity-50 cursor-not-allowed"
-                  />
-                  <button
-                    disabled
-                    className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed"
-                  >
-                    Connect Shopify
-                  </button>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                      Coming soon
-                    </span>
-                  </div>
-                </div>
+                <input
+                  type="text"
+                  placeholder="your-store.myshopify.com"
+                  value={shopDomain}
+                  onChange={(e) => setShopDomain(e.target.value.trim())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
+                  disabled={isConnecting}
+                  className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
+                />
+                <button
+                  onClick={handleShopifyConnect}
+                  disabled={isConnecting || !shopDomain}
+                  className="cyber-btn text-xl px-10 py-5 w-full"
+                >
+                  {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+                </button>
+                {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
               </div>
             )}
           </div>
@@ -271,28 +266,21 @@ export default function SettingsPage() {
             {ga4Connected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <div className="relative opacity-60 pointer-events-none group">
-                  <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
-                    Disconnect
-                  </button>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                      Coming soon
-                    </span>
-                  </div>
-                </div>
+                <button 
+                  onClick={() => handleDisconnect('ga4')} 
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                >
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
+                </button>
               </>
             ) : (
-              <div className="relative opacity-60 pointer-events-none group">
-                <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
-                  Connect GA4
-                </button>
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                  <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                    Coming soon
-                  </span>
-                </div>
-              </div>
+              <button 
+                onClick={() => router.push('/api/auth/ga4')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
+              >
+                Connect GA4
+              </button>
             )}
           </div>
 
@@ -302,28 +290,21 @@ export default function SettingsPage() {
             {hubspotConnected ? (
               <>
                 <p className="text-xl text-green-400 mb-4">Connected</p>
-                <div className="relative opacity-60 pointer-events-none group">
-                  <button className="w-full p-4 bg-gray-800/50 border border-cyan-500/30 rounded-lg text-cyan-400 cursor-not-allowed">
-                    Disconnect
-                  </button>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                    <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                      Coming soon
-                    </span>
-                  </div>
-                </div>
+                <button 
+                  onClick={() => handleDisconnect('hubspot')} 
+                  disabled={deleting}
+                  className="cyber-btn text-xl px-8 py-4 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 w-full"
+                >
+                  {deleting ? 'Disconnecting...' : 'Disconnect'}
+                </button>
               </>
             ) : (
-              <div className="relative opacity-60 pointer-events-none group">
-                <button className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed">
-                  Connect HubSpot
-                </button>
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition rounded-lg">
-                  <span className="text-white text-sm font-medium px-4 py-2 bg-gray-900/80 rounded">
-                    Coming soon
-                  </span>
-                </div>
-              </div>
+              <button 
+                onClick={() => router.push('/api/auth/hubspot')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
+              >
+                Connect HubSpot
+              </button>
             )}
           </div>
         </div>
@@ -428,3 +409,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
