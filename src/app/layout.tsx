@@ -32,16 +32,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     setShowCookieBanner(false);
   };
 
-  const handleLogout = () => {
-    // Safe cookie clearing (only on logout click)
-    const clearCookie = (name: string) => {
-      document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
-    };
+  const handleLogout = async () => {
+    try {
+      // Call server-side logout to properly clear httpOnly cookies
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include', // Important: ensures cookies are sent/received
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    clearCookie('access_token');
-    clearCookie('refresh_token');
-    clearCookie('csrf_token');
+      if (!response.ok) {
+        console.error('Logout request failed:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still redirect even if fetch fails (better UX)
+    }
 
+    // Force clean redirect to home page
+    // This ensures middleware sees no valid token on next request
     window.location.href = '/';
   };
 
@@ -62,8 +73,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             fixed top-0 left-0 right-0 z-[100] 
             bg-[#0a0f2c]/95 backdrop-blur-lg 
             border-b-4 border-cyan-400/50 
-            pt-4 md:pt-4 lg:pt-4              /* normal on desktop/tablet */
-            sm:pt-[env(safe-area-inset-top,12px)] sm:pb-5  /* mobile safe-area */
+            pt-4 md:pt-4 lg:pt-4
+            sm:pt-[env(safe-area-inset-top,12px)] sm:pb-5
             px-4 pb-4
           "
         >
@@ -142,8 +153,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Upgrade
                 </Link>
                 <button
-                  onClick={handleLogout}
-                  className="w-full text-left text-2xl text-red-400 py-3"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left text-2xl text-red-400 py-3 hover:text-red-300 transition"
                 >
                   Logout
                 </button>
@@ -155,8 +169,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Main content – mobile safe-area padding only */}
         <main 
           className={`
-            pt-24 sm:pt-[calc(6rem + env(safe-area-inset-top,16px)))]  /* mobile + safe-area */
-            md:pt-32 lg:pt-36  /* normal desktop/tablet – no extra space */
+            pt-24 sm:pt-[calc(6rem + env(safe-area-inset-top,16px)))]
+            md:pt-32 lg:pt-36
             ${isCoachPage ? '' : 'pb-20'}
           `}
         >
