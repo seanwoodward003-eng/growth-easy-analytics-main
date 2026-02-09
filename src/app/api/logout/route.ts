@@ -3,34 +3,27 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();   // ← Add await here!
 
-  // Delete the auth cookies - adjust names if different
+  // Now cookieStore is the actual ReadonlyRequestCookies object
   cookieStore.delete({
     name: 'access_token',
     path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    // httpOnly, secure, sameSite are not needed for delete – they are only for set
+    // but including them is harmless
   });
 
   cookieStore.delete({
     name: 'refresh_token',
     path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
   });
 
   cookieStore.delete({
     name: 'csrf_token',
     path: '/',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
   });
 
-  // Optional: if you have a backend session to invalidate, call it here
+  // Optional: more cookies if needed
 
-  return NextResponse.json({ message: 'Logged out' }, { status: 200 });
+  return NextResponse.json({ success: true }, { status: 200 });
 }
