@@ -10,21 +10,14 @@ redirect_urls = [
 api_version = "2026-01"
 
   [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]  # or "orders/paid" if you prefer
+  topics = [ "orders/create" ]  # or add "orders/updated", "orders/paid" if needed
   uri = "/api/webhooks/shopify/orders"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
   uri = "/api/webhooks/shopify/app-uninstalled"
 
+  # Compliance (mandatory) – use compliance_topics here
   [[webhooks.subscriptions]]
-  topics = [ "customers/data_request" ]
-  uri = "/api/webhooks/shopify/customers-data-request"
-
-  [[webhooks.subscriptions]]
-  topics = [ "customers/redact" ]
-  uri = "/api/webhooks/shopify/customers-redact"
-
-  [[webhooks.subscriptions]]
-  topics = [ "shop/redact" ]
-  uri = "/api/webhooks/shopify/shop-redact"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/api/webhooks/shopify/compliance"  # Recommended: Use a SINGLE shared URI for all 3 (your code routes by topic header)
