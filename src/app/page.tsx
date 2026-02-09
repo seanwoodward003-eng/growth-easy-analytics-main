@@ -1,111 +1,280 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function LandingPage() {
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false); // New: marketing opt-in
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+
+    if (error === 'trial_expired') {
+      setMessage('Your 7-day free trial has ended — upgrade to continue');
+    } else if (error === 'session_expired') {
+      setMessage('Your session expired — please sign in again');
+    } else if (error === 'login_required') {
+      setMessage('Please sign in to continue');
+    }
+
+    // Auto-redirect to dashboard if already logged in
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          window.location.href = '/dashboard';
+        }
+      } catch (err) {
+        // Silent fail — stay on landing
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !/@.+\..+/.test(email)) {
+      setMessage('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    const endpoint = mode === 'signup' ? '/api/signup' : '/api/login';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: email.toLowerCase().trim(),
+          consent: true, // Existing GDPR consent
+          marketing_consent: marketingConsent // New: opt-in for marketing
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setMessage(mode === 'signup' 
+          ? 'Check your email to verify and start your 7-day free trial!'
+          : 'Welcome back! Redirecting to dashboard...'
+        );
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      } else {
+        setMessage(data.error || 'Something went wrong — please try again');
+      }
+    } catch {
+      setMessage('Connection error — try again');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative overflow-hidden">
-      {/* Optional subtle animated background glow (keeps cyberpunk feel) */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,#00f0ff33_0%,transparent_40%)] animate-pulse-slow"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,#c300ff33_0%,transparent_40%)] animate-pulse-slower"></div>
-      </div>
-
-      {/* Hero Section */}
-      <div className="max-w-6xl mx-auto z-10 w-full mt-12 md:mt-20">
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-6 md:mb-10 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent glow-title tracking-tight">
-          GROWTHEASY AI
-        </h1>
-        <p className="text-3xl md:text-5xl font-bold text-cyan-300 mb-6 md:mb-10">
-          AI-Powered Growth Intelligence for Your Store
-        </p>
-        <p className="text-xl md:text-2xl lg:text-3xl text-cyan-200 max-w-5xl mx-auto mb-12 md:mb-20 leading-relaxed">
-          Connect your Shopify store and get real-time insights on revenue, churn, acquisition, retention — with an AI Growth Coach that reads your actual data and tells you exactly what to fix to make more money.
-        </p>
-
-        {/* Big non-auth CTAs – very prominent */}
-        <div className="flex flex-col md:flex-row gap-8 md:gap-12 justify-center items-center mb-20 md:mb-32">
-          <Link href="/dashboard">
-            <button className="px-16 md:px-24 py-8 md:py-10 bg-gradient-to-r from-cyan-500 via-cyan-400 to-purple-600 text-black text-3xl md:text-5xl font-black rounded-full hover:scale-105 hover:shadow-[0_0_60px_#00f0ff] transition-all duration-300 shadow-2xl shadow-cyan-600/60">
-              Enter Dashboard →
-            </button>
-          </Link>
-
+    <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative">
+      {/* Trial Expired Banner */}
+      {message.includes('Your 7-day free trial has ended') && (
+        <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/50 border-4 border-red-500 rounded-3xl shadow-2xl">
+          <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
+            Your 7-day free trial has ended
+          </h2>
+          <p className="text-3xl md:text-4xl text-cyan-300 mb-8">
+            Upgrade now to keep full access to GrowthEasy AI forever
+          </p>
           <Link href="/pricing">
-            <button className="px-16 md:px-24 py-8 md:py-10 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-700 text-white text-3xl md:text-5xl font-black rounded-full hover:scale-105 hover:shadow-[0_0_60px_#c300ff] transition-all duration-300 shadow-2xl shadow-purple-600/60">
-              See Lifetime Deals
+            <button className="px-16 py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-3xl font-black rounded-full hover:scale-105 transition shadow-2xl">
+              View Plans & Upgrade
             </button>
           </Link>
         </div>
+      )}
 
-        {/* Urgency – kept very visible */}
-        <div className="space-y-6 md:space-y-8 mb-16 md:mb-24">
-          <p className="text-4xl md:text-5xl lg:text-6xl font-black text-red-400 animate-pulse tracking-wide">
+      {/* General Message Banner */}
+      {message && !message.includes('Your 7-day free trial has ended') && (
+        <div className={`max-w-2xl mx-auto mb-8 p-6 rounded-2xl text-center border-4 ${
+          message.includes('Check') || message.includes('Welcome') || message.includes('Redirecting')
+            ? 'bg-green-900/50 border-green-500 text-green-300'
+            : 'bg-red-900/50 border-red-500 text-red-300'
+        }`}>
+          <p className="text-2xl font-bold">{message}</p>
+        </div>
+      )}
+
+      {/* Hero */}
+      <div className="max-w-6xl mx-auto z-10 w-full">
+        <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-4 md:mb-8 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent glow-title">
+          GROWTHEASY AI
+        </h1>
+        <p className="text-3xl md:text-5xl font-bold text-cyan-300 mb-4 md:mb-8">
+          AI-Powered Growth Intelligence for Your Store
+        </p>
+        <p className="text-xl md:text-2xl text-cyan-200 max-w-4xl mx-auto mb-8 md:mb-16">
+          Connect your Shopify store and get real-time insights on revenue, churn, acquisition, retention — with an AI Growth Coach that reads your data and tells you exactly what to fix to make more money.
+        </p>
+
+        {/* CTA Form */}
+        <div className="max-w-2xl mx-auto mb-12 md:mb-20">
+          <h2 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-6 md:mb-8">
+            {mode === 'signup' ? 'Start Your 7-Day Free Trial' : 'Welcome Back'}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 w-full px-6 md:px-10 py-4 md:py-6 text-xl md:text-2xl bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 transition"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-auto px-12 md:px-16 py-4 md:py-6 bg-gradient-to-r from-cyan-500 to-purple-600 text-black text-2xl font-black rounded-full hover:scale-105 transition shadow-2xl shadow-cyan-500/50 disabled:opacity-70"
+            >
+              {loading ? 'Processing...' : mode === 'signup' ? 'Start Free Trial' : 'Sign In'}
+            </button>
+          </form>
+
+          {/* Marketing Consent Checkbox (only on signup) */}
+          {mode === 'signup' && (
+            <div className="mt-6 text-left max-w-2xl mx-auto text-cyan-300 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="marketing_consent"
+                  checked={marketingConsent}
+                  onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="w-5 h-5 accent-cyan-400"
+                />
+                <span>
+                  I agree to receive marketing emails from GrowthEasy AI (tips, updates, offers — unsubscribe anytime).
+                  See our <Link href="/privacy" className="underline hover:text-cyan-100">Privacy Policy</Link>.
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Toggle Link */}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'signup' ? 'signin' : 'signup');
+              setMessage('');
+              setEmail('');
+              setMarketingConsent(false); // Reset consent when toggling
+            }}
+            className="mt-6 md:mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
+          >
+            {mode === 'signup' ? 'Already have an account? Sign in' : 'New here? Sign up for free trial'}
+          </button>
+        </div>
+
+        {/* Urgency */}
+        <div className="space-y-4 md:space-y-6 mb-12 md:mb-20">
+          <p className="text-3xl md:text-4xl lg:text-5xl font-black text-red-400 animate-pulse">
             Only 200 Early Bird lifetime spots left at £49
           </p>
           <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-purple-400">
-            Lifetime access closes forever at 500 — spots disappearing fast
+            Lifetime access closes forever at 500 — 500 spots remaining
           </p>
         </div>
 
-        {/* Features Grid – unchanged, looks great */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-6xl mx-auto mb-16 md:mb-24">
-          <div className="p-8 md:p-12 rounded-3xl bg-gradient-to-br from-cyan-900/25 to-purple-900/20 border border-cyan-500/40 backdrop-blur-md hover:border-cyan-400/60 transition-all duration-300">
-            <h3 className="text-3xl font-black text-cyan-300 mb-6">Real-Time Analytics</h3>
-            <p className="text-xl text-cyan-100 leading-relaxed">
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-6xl mx-auto mb-12 md:mb-20">
+          <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
+            <h3 className="text-2xl md:text-3xl font-black text-cyan-300 mb-4 md:mb-6">Real-Time Analytics</h3>
+            <p className="text-lg md:text-xl text-cyan-200">
               Revenue, churn, acquisition, retention — all updated live from your connected stores.
             </p>
           </div>
-          <div className="p-8 md:p-12 rounded-3xl bg-gradient-to-br from-purple-900/25 to-pink-900/20 border border-purple-500/40 backdrop-blur-md hover:border-purple-400/60 transition-all duration-300">
-            <h3 className="text-3xl font-black text-purple-300 mb-6">AI Growth Coach</h3>
-            <p className="text-xl text-purple-100 leading-relaxed">
+          <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 backdrop-blur-md">
+            <h3 className="text-2xl md:text-3xl font-black text-purple-300 mb-4 md:mb-6">AI Growth Coach</h3>
+            <p className="text-lg md:text-xl text-purple-200">
               Ask anything — Grok reads your actual data and gives specific, actionable advice to grow faster.
             </p>
           </div>
-          <div className="p-8 md:p-12 rounded-3xl bg-gradient-to-br from-pink-900/25 to-cyan-900/20 border border-pink-500/40 backdrop-blur-md hover:border-pink-400/60 transition-all duration-300">
-            <h3 className="text-3xl font-black text-pink-300 mb-6">Cyberpunk Design</h3>
-            <p className="text-xl text-pink-100 leading-relaxed">
-              Beautiful neon interface that makes checking your growth feel addictive.
+          <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-pink-900/20 to-cyan-900/20 border border-pink-500/30 backdrop-blur-md">
+            <h3 className="text-2xl md:text-3xl font-black text-pink-300 mb-4 md:mb-6">Cyberpunk Design</h3>
+            <p className="text-lg md:text-xl text-pink-200">
+              Beautiful neon interface that makes checking your growth addictive.
             </p>
           </div>
         </div>
 
-        {/* Pricing Preview – kept bold and attractive */}
-        <div className="max-w-6xl mx-auto mb-16 md:mb-24">
-          <h2 className="text-5xl md:text-6xl lg:text-8xl font-black text-cyan-400 mb-10 md:mb-16 tracking-tight">
+        {/* Pricing Preview */}
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-cyan-400 mb-8 md:mb-12">
             Lock In Lifetime Access
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            <div className="p-10 rounded-3xl bg-gradient-to-br from-cyan-900/40 to-black border-4 border-cyan-500 shadow-[0_0_40px_#00f0ff33] hover:shadow-[0_0_60px_#00f0ff66] transition-all duration-300">
-              <p className="text-6xl font-black text-cyan-400 mb-4">£49</p>
-              <p className="text-2xl text-red-400 mb-6 font-bold">Early Bird • 200 left</p>
-              <p className="text-xl text-cyan-200">One-time payment</p>
+            <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-cyan-900/30 to-black border-4 border-cyan-400">
+              <p className="text-5xl md:text-6xl font-black text-cyan-400 mb-4">£49</p>
+              <p className="text-xl md:text-2xl text-red-400 mb-6 md:mb-8">Early Bird • 200 left</p>
+              <p className="text-lg md:text-xl text-cyan-200">One-time payment</p>
             </div>
-            <div className="p-10 rounded-3xl bg-gradient-to-br from-purple-900/40 to-black border-4 border-purple-500 shadow-[0_0_40px_#c300ff33] hover:shadow-[0_0_60px_#c300ff66] transition-all duration-300">
-              <p className="text-6xl font-black text-purple-400 mb-4">£79</p>
-              <p className="text-2xl text-purple-300 mb-6 font-bold">Lifetime • Closes at 500</p>
-              <p className="text-xl text-purple-200">One-time payment</p>
+            <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-purple-900/30 to-black border-4 border-purple-500">
+              <p className="text-5xl md:text-6xl font-black text-purple-400 mb-4">£79</p>
+              <p className="text-xl md:text-2xl text-purple-300 mb-6 md:mb-8">Lifetime • Closes at 500</p>
+              <p className="text-lg md:text-xl text-purple-200">One-time payment</p>
             </div>
-            <div className="p-10 rounded-3xl bg-gradient-to-br from-green-900/40 to-black border-4 border-green-500 shadow-[0_0_40px_#00ff9f33] hover:shadow-[0_0_60px_#00ff9f66] transition-all duration-300">
-              <p className="text-6xl font-black text-green-400 mb-4">£490/year</p>
-              <p className="text-2xl text-green-300 mb-6 font-bold">Annual • Save 16%</p>
-              <p className="text-xl text-green-200">≈ £41/mo</p>
+            <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-green-900/30 to-black border-4 border-green-500">
+              <p className="text-5xl md:text-6xl font-black text-green-400 mb-4">£490/year</p>
+              <p className="text-xl md:text-2xl text-green-300 mb-6 md:mb-8">Annual • Save 16%</p>
+              <p className="text-lg md:text-xl text-green-200">= £41/mo</p>
             </div>
           </div>
-          <p className="text-2xl text-cyan-300 mt-12 font-bold">
+          <p className="text-lg md:text-xl text-cyan-300 mt-8 md:mt-12">
             Instant activation — no waiting, no approval
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="absolute bottom-8 left-0 right-0 text-center text-cyan-500 text-base md:text-lg space-x-6 md:space-x-10">
-        <a href="/privacy" className="hover:text-cyan-300 hover:underline transition">Privacy Policy</a>
-        <a href="/terms" className="hover:text-cyan-300 hover:underline transition">Terms of Service</a>
-        <p className="mt-6 text-cyan-600">
-          Beta v0.1 © 2026 GrowthEasy AI
+      <footer className="absolute bottom-8 left-0 right-0 text-center text-cyan-500 text-sm space-x-4 md:space-x-8">
+        <a href="/privacy" className="hover:underline">Privacy Policy</a>
+        <a href="/terms" className="hover:underline">Terms of Service</a>
+        <p className="mt-4 text-cyan-400">
+          Beta v0.1 © 2025 GrowthEasy AI
         </p>
       </footer>
     </main>
   );
 }
+
+
+Dashboard/layout 
+
+import { getCurrentUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/');
+  }
+
+  return <>{children}</>;
+}
+
+
+
+
