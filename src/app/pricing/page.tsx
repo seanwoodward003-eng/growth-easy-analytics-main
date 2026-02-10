@@ -40,72 +40,9 @@ export default function Pricing() {
   const showStandard = totalLifetimeSold < TOTAL_CAP;
   const lifetimeSoldOut = totalLifetimeSold >= TOTAL_CAP;
 
-  const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
-    setLoading(plan);
-
-    console.log('[Checkout Debug] Button clicked - plan:', plan);
-    console.log('[Checkout Debug] Starting full checkout flow');
-
-    try {
-      console.log('[Checkout Debug] Sending POST to /api/create-checkout');
-
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
-
-      console.log('[Checkout Debug] Server response status:', res.status);
-      console.log('[Checkout Debug] Response headers:', Object.fromEntries(res.headers.entries()));
-
-      const data = await res.json();
-      console.log('[Checkout Debug] Server response data (full JSON):', JSON.stringify(data, null, 2));
-
-      if (!res.ok) {
-        console.error('[Checkout Debug] Server error response - status not OK');
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
-
-      if (!data.sessionId) {
-        console.error('[Checkout Debug] No sessionId in server response');
-        throw new Error('No sessionId returned from server');
-      }
-
-      console.log('[Checkout Debug] Session ID received successfully:', data.sessionId);
-
-      console.log('[Checkout Debug] Loading Stripe library via getStripe()');
-      const stripe = await getStripe();
-      console.log('[Checkout Debug] getStripe() result:', stripe ? 'Stripe loaded' : 'Stripe FAILED to load (null)');
-
-      if (!stripe) {
-        console.error('[Checkout Debug] Stripe library did not load - throwing error');
-        throw new Error('Failed to load Stripe');
-      }
-
-      console.log('[Checkout Debug] Stripe ready - initiating redirect to checkout');
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
-
-      if (error) {
-        console.error('[Checkout Debug] Stripe redirect error:', error.message);
-        throw error;
-      }
-
-      console.log('[Checkout Debug] Redirect succeeded - should be on Stripe page now');
-    } catch (err: any) {
-      console.error('[Checkout Debug] CRITICAL CHECKOUT FAILURE - full details:');
-      console.error('[Checkout Debug] Error message:', err.message || 'No message');
-      console.error('[Checkout Debug] Error name:', err.name || 'unknown');
-      console.error('[Checkout Debug] Full error object:', JSON.stringify(err, null, 2));
-      console.error('[Checkout Debug] Stack trace:', err.stack || 'no stack');
-
-      alert('Checkout failed: ' + (err.message || 'Unknown error - check browser console for details'));
-    } finally {
-      setLoading(null);
-      console.log('[Checkout Debug] handleCheckout finished');
-    }
+  // Disabled checkout handler
+  const handleCheckoutDisabled = (plan: string) => {
+    alert(`Pricing for ${plan} is currently disabled. This feature will be available soon.`);
   };
 
   return (
@@ -136,54 +73,57 @@ export default function Pricing() {
       {/* Pricing cards */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {showEarly && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden opacity-70">
             <div className="flex flex-col items-center">
               <h2 className="text-xl md:text-2xl font-bold mb-2">Early Bird Lifetime</h2>
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
               <p className="text-sm md:text-base text-red-400 mb-2">One-time • {earlyLeft} left</p>
             </div>
             <button
-              onClick={() => handleCheckout('early_ltd')}
-              disabled={loading === 'early_ltd'}
-              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+              onClick={() => handleCheckoutDisabled('Early Bird Lifetime')}
+              disabled={true}
+              title="Pricing temporarily disabled"
+              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed bg-gray-700"
             >
-              {loading === 'early_ltd' ? 'Loading...' : 'Grab Early Bird'}
+              Grab Early Bird (Disabled)
             </button>
           </div>
         )}
 
         {showStandard && (
-          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+          <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-purple-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden opacity-70">
             <div className="flex flex-col items-center">
               <h2 className="text-xl md:text-2xl font-bold mb-2">Lifetime Access</h2>
               <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£79</p>
               <p className="text-sm md:text-base text-purple-400 mb-2">One-time • Closes at 150</p>
             </div>
             <button
-              onClick={() => handleCheckout('standard_ltd')}
-              disabled={loading === 'standard_ltd'}
-              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+              onClick={() => handleCheckoutDisabled('Lifetime Access')}
+              disabled={true}
+              title="Pricing temporarily disabled"
+              className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed bg-gray-700"
             >
-              {loading === 'standard_ltd' ? 'Loading...' : 'Secure Lifetime'}
+              Secure Lifetime (Disabled)
             </button>
           </div>
         )}
 
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden">
+        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between max-w-[340px] mx-auto overflow-hidden opacity-70">
           <div className="flex flex-col items-center">
             <h2 className="text-xl md:text-2xl font-bold mb-2">Monthly</h2>
             <p className="text-5xl md:text-6xl font-black text-cyan-400 glow-number mb-2">£49</p>
           </div>
           <button
-            onClick={() => handleCheckout('monthly')}
-            disabled={loading === 'monthly'}
-            className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full"
+            onClick={() => handleCheckoutDisabled('Monthly')}
+            disabled={true}
+            title="Pricing temporarily disabled"
+            className="cyber-btn text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed bg-gray-700"
           >
-            {loading === 'monthly' ? 'Loading...' : 'Start Monthly'}
+            Start Monthly (Disabled)
           </button>
         </div>
 
-        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
+        <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-green-500/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden opacity-70">
           <div className="flex flex-col items-center">
             <div className="bg-green-500/20 text-green-400 text-sm md:text-base font-bold px-3 py-1 rounded-full mb-2 inline-block">
               BEST VALUE — SAVE 16%
@@ -193,11 +133,12 @@ export default function Pricing() {
             <p className="text-sm md:text-base text-green-400 mb-2">= £41/mo</p>
           </div>
           <button
-            onClick={() => handleCheckout('annual')}
-            disabled={loading === 'annual'}
-            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-lg md:text-xl px-6 py-3 mt-2 w-full"
+            onClick={() => handleCheckoutDisabled('Annual')}
+            disabled={true}
+            title="Pricing temporarily disabled"
+            className="cyber-btn bg-green-500 hover:bg-green-400 text-black text-lg md:text-xl px-6 py-3 mt-2 w-full opacity-50 cursor-not-allowed bg-gray-700"
           >
-            {loading === 'annual' ? 'Loading...' : 'Go Annual & Save'}
+            Go Annual & Save (Disabled)
           </button>
         </div>
       </div>
