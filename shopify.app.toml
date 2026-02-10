@@ -1,5 +1,5 @@
 name = "Growth Easy AI"
-client_id = "3f2fd306f2c966efd76f3c1d478e3875"
+client_id = "fb44335c9cb2b513945ed7db75ae6a07"
 application_url = "https://www.growtheasy-ai.com"
 
 redirect_urls = [
@@ -7,7 +7,7 @@ redirect_urls = [
 ]
 
 [webhooks]
-api_version = "2026-01"
+api_version = "2026-04"
 
   [[webhooks.subscriptions]]
   topics = [ "orders/create" ]  # or add "orders/updated", "orders/paid" if needed
