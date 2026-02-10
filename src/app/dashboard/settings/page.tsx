@@ -28,7 +28,7 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [changeEmailError, setChangeEmailError] = useState('');
 
-  // Shopify connect state
+  // Shopify connect state (still collected but button disabled)
   const [shopDomain, setShopDomain] = useState('');
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
@@ -155,10 +155,8 @@ export default function SettingsPage() {
       a.href = url;
       a.download = 'growth-easy-data.json';
 
-      // SAFE DOWNLOAD: click without appending to DOM
       a.click();
 
-      // Clean up
       URL.revokeObjectURL(url);
       a.remove();
 
@@ -182,12 +180,12 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const clearCookie = (name: string) => {
-  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
-};
+          document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+        };
 
-clearCookie('access_token');
-clearCookie('refresh_token');
-clearCookie('csrf_token');
+        clearCookie('access_token');
+        clearCookie('refresh_token');
+        clearCookie('csrf_token');
         alert('Account deleted');
         router.push('/');
       } else {
@@ -201,14 +199,9 @@ clearCookie('csrf_token');
     }
   };
 
-  const handleShopifyConnect = () => {
-    if (!shopDomain.endsWith('.myshopify.com')) {
-      setConnectError('Please enter a valid .myshopify.com domain');
-      return;
-    }
-    setConnectError('');
-    setIsConnecting(true);
-    window.location.href = `/api/auth/shopify?shop=${encodeURIComponent(shopDomain.trim().toLowerCase())}`;
+  // Disabled connect handler (just shows message)
+  const handleShopifyConnectDisabled = () => {
+    alert('Shopify connection is currently disabled. This feature will be available soon.');
   };
 
   if (isLoading) return <div className="text-center text-4xl text-cyan-300 mt-40">Loading settings...</div>;
@@ -223,7 +216,7 @@ clearCookie('csrf_token');
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Shopify */}
+          {/* Shopify - Disabled */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Shopify</h3>
             {shopifyConnected ? (
@@ -238,29 +231,29 @@ clearCookie('csrf_token');
                 </button>
               </>
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 opacity-60">
                 <input
                   type="text"
                   placeholder="your-store.myshopify.com"
                   value={shopDomain}
                   onChange={(e) => setShopDomain(e.target.value.trim())}
-                  onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
-                  disabled={isConnecting}
-                  className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
+                  disabled={true}
+                  className="px-6 py-4 bg-black/30 border-4 border-gray-600 rounded-full text-gray-400 placeholder-gray-500 text-xl cursor-not-allowed"
                 />
                 <button
-                  onClick={handleShopifyConnect}
-                  disabled={isConnecting || !shopDomain}
-                  className="cyber-btn text-xl px-10 py-5 w-full"
+                  onClick={handleShopifyConnectDisabled}
+                  disabled={true}
+                  title="Feature disabled - coming soon"
+                  className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
                 >
-                  {isConnecting ? 'Connecting...' : 'Connect Shopify'}
+                  Connect Shopify (Disabled)
                 </button>
                 {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
               </div>
             )}
           </div>
 
-          {/* GA4 */}
+          {/* GA4 - Disabled */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Google Analytics (GA4)</h3>
             {ga4Connected ? (
@@ -276,15 +269,16 @@ clearCookie('csrf_token');
               </>
             ) : (
               <button 
-                onClick={() => router.push('/api/auth/ga4')} 
-                className="cyber-btn text-xl px-10 py-5 w-full"
+                disabled={true}
+                title="Feature disabled - coming soon"
+                className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
               >
-                Connect GA4
+                Connect GA4 (Disabled)
               </button>
             )}
           </div>
 
-          {/* HubSpot */}
+          {/* HubSpot - Disabled */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">HubSpot</h3>
             {hubspotConnected ? (
@@ -300,17 +294,18 @@ clearCookie('csrf_token');
               </>
             ) : (
               <button 
-                onClick={() => router.push('/api/auth/hubspot')} 
-                className="cyber-btn text-xl px-10 py-5 w-full"
+                disabled={true}
+                title="Feature disabled - coming soon"
+                className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
               >
-                Connect HubSpot
+                Connect HubSpot (Disabled)
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Subscription */}
+      {/* Subscription - unchanged */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
         <div className="metric-card p-12 text-center">
@@ -335,7 +330,7 @@ clearCookie('csrf_token');
         </div>
       </div>
 
-      {/* Account – fixed email fit */}
+      {/* Account – unchanged */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
@@ -373,7 +368,7 @@ clearCookie('csrf_token');
         </div>
       </div>
 
-      {/* Data & Privacy */}
+      {/* Data & Privacy - unchanged */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
         <div className="grid md:grid-cols-2 gap-8">
@@ -409,4 +404,3 @@ clearCookie('csrf_token');
     </div>
   );
 }
-
