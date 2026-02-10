@@ -1,0 +1,29 @@
+name = "Growth Easy AI 1"
+client_id = "fb44335c9cb2b513945ed7db75ae6a07" # Your current Client ID (update if new app has a different one)
+
+application_url = "https://www.growtheasy-ai.com"
+
+embedded = false # Top-level boolean, no [embedded] section
+
+[auth]
+redirect_urls = [
+"https://www.growtheasy-ai.com/api/auth/shopify/callback"
+]
+
+[access_scopes]
+scopes = "read_all_orders,read_analytics,read_checkouts,read_customers,read_orders,read_products"
+
+[webhooks]
+api_version = "2026-01"
+
+[[webhooks.subscriptions]]
+topics = [ "orders/create" ]
+uri = "/api/webhooks/shopify/orders"
+
+[[webhooks.subscriptions]]
+topics = [ "app/uninstalled" ]
+uri = "/api/webhooks/shopify/app-uninstalled"
+
+[[webhooks.subscriptions]]
+compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+uri = "/api/webhooks/shopify/compliance"
