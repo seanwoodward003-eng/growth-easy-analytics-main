@@ -2,58 +2,58 @@ import { NextResponse } from 'next/server';
 import { render } from '@react-email/render';
 import AlertEmail from '@/app/emails/AlertEmail';
 import { Resend } from 'resend';
-
-const testUsers = [
-  {
-    id: 1,
-    email: 'your-real-email@example.com', // ← change to your email
-    name: 'Test User',
-  },
-];
+import { getUsersForAlerts, getDailyMetricsForAlert } from '@/lib/db';
+import { getGrokInsight } from '@/lib/ai';
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-export async function GET() {
-  console.log('[CRON-DAILY] Starting daily alerts job');
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
-    for (const user of testUsers) {
-      // TEMPORARY fake metric check – replace with real logic later
-      const todayChurn = 12.4;
-      const yesterdayChurn = 10.1;
-      const churnChange = ((todayChurn - yesterdayChurn) / yesterdayChurn) * 100;
+    const users = await getUsersForAlerts();
 
-      // Alert if churn increased more than 10%
-      if (churnChange > 10) {
+    for (const user of users) {
+      const metrics = await getDailyMetricsForAlert(user.id);
+
+      if (metrics.churnChange > 10) {
+        const prompt = `
+          Churn increased ${metrics.churnChange.toFixed(1)}% today.
+          Current: ${metrics.currentChurn.toFixed(1)}%, yesterday: ${metrics.previousChurn.toFixed(1)}%.
+          Give 1-2 actionable steps to address this in 50 words or less.
+        `;
+
+        const aiInsight = await getGrokInsight(prompt);
+
         const html = render(
           <AlertEmail
-            name={user.name}
+            name={user.name || 'there'}
             metricName="Churn Rate"
-            change={churnChange}
-            currentValue={todayChurn}
-            previousValue={yesterdayChurn}
+            change={metrics.churnChange}
+            currentValue={metrics.currentChurn || 0}
+            previousValue={metrics.previousChurn || 0}
+            aiInsight={aiInsight}
             dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`}
           />
         );
 
-        const { error } = await resend.emails.send({
+        await resend.emails.send({
           from: 'GrowthEasy AI <alerts@growtheasy.ai>',
           to: user.email,
-          subject: `Alert: Churn Rate Increased ${churnChange.toFixed(1)}%`,
+          subject: `Alert: Churn Rate Increased ${metrics.churnChange.toFixed(1)}%`,
           html,
         });
-
-        if (error) {
-          console.error(`Daily alert failed for ${user.email}:`, error);
-        } else {
-          console.log(`Daily alert sent successfully to ${user.email}`);
-        }
       }
+
+      // Add more thresholds here later (e.g. MRR drop >5%)
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[CRON-DAILY] Failed:', err);
-    return NextResponse.json({ error: 'Failed to send alerts' }, { status: 500 });
+    console.error('[CRON-DAILY] Error:', err);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
