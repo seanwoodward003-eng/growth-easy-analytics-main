@@ -55,8 +55,6 @@ export async function GET(request: Request) {
           console.log(`Alert sent to ${user.email}`);
         }
       }
-
-      // Add more thresholds here later (e.g. MRR drop >5%)
     }
 
     return NextResponse.json({ success: true });
@@ -64,4 +62,4 @@ export async function GET(request: Request) {
     console.error('[CRON-DAILY] Error:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
-} 
+}
