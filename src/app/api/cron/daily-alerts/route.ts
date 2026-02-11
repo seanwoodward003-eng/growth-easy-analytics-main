@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  console.log('[CRON-DAILY] Starting daily alerts');
+
   try {
     const users = await getUsersForAlerts();
 
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
 
         const aiInsight = await getGrokInsight(prompt);
 
-        const html = render(
+        const html = render((
           <AlertEmail
             name={user.name || 'there'}
             metricName="Churn Rate"
@@ -38,14 +40,20 @@ export async function GET(request: Request) {
             aiInsight={aiInsight}
             dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`}
           />
-        );
+        ));
 
-        await resend.emails.send({
+        const { error } = await resend.emails.send({
           from: 'GrowthEasy AI <alerts@growtheasy.ai>',
           to: user.email,
           subject: `Alert: Churn Rate Increased ${metrics.churnChange.toFixed(1)}%`,
           html,
         });
+
+        if (error) {
+          console.error(`Alert failed for ${user.email}:`, error);
+        } else {
+          console.log(`Alert sent to ${user.email}`);
+        }
       }
 
       // Add more thresholds here later (e.g. MRR drop >5%)
