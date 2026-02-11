@@ -151,11 +151,21 @@ export {
 
 // ────────────────────────────────────────────────────────────────
 // NEW: Export the four functions needed by the cron routes
-// (assuming these are defined somewhere in this file or imported)
-// If they are in another file, make sure to import and re-export them here
+// Replace the paths below with the ACTUAL file paths where these functions are defined
 // ────────────────────────────────────────────────────────────────
 
-export { getUsersForAlerts } from "./alerts-queries";          // ← adjust path if needed
-export { getDailyMetricsForAlert } from "./alerts-queries";    // ← adjust path if needed
-export { getUsersForWeeklyReports } from "./reports-queries";  // ← adjust path if needed
-export { getWeeklyMetricsForUser } from "./reports-queries";   // ← adjust path if needed
+// Example: if they are in src/lib/db/queries/alerts.ts
+// export { getUsersForAlerts, getDailyMetricsForAlert } from './queries/alerts';
+// export { getUsersForWeeklyReports, getWeeklyMetricsForUser } from './queries/reports';
+
+// Example: if they are in src/lib/queries.ts
+// export { getUsersForAlerts, getDailyMetricsForAlert, getUsersForWeeklyReports, getWeeklyMetricsForUser } from './queries';
+
+// Example: if they are in this same file (lib/db.ts), add 'export' to their definitions instead
+// export async function getUsersForAlerts() { ... }
+// export async function getDailyMetricsForAlert(userId: number) { ... }
+// etc.
+
+// Add the correct re-export here (one line per group of functions):
+// export { getUsersForAlerts, getDailyMetricsForAlert } from './path/to/alerts-file';
+// export { getUsersForWeeklyReports, getWeeklyMetricsForUser } from './path/to/reports-file';
