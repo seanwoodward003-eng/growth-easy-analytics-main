@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
       const aiInsight = await getGrokInsight(prompt);
 
-      const reportElement = (
+      const html = render(
         <WeeklyReport
           name={user.name || 'there'}
           churnChange={metrics.churnChange || 0}
@@ -42,8 +42,6 @@ export async function GET(request: Request) {
           dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
         />
       );
-
-      const html = render(reportElement);
 
       const { error } = await resend.emails.send({
         from: 'GrowthEasy AI <reports@growtheasy.ai>',
