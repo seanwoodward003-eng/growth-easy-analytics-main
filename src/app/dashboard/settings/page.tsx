@@ -33,6 +33,11 @@ export default function SettingsPage() {
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // NEW: Email preferences toggles
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
+  const [weeklyReportsEnabled, setWeeklyReportsEnabled] = useState(true);
+  const [loadingPrefs, setLoadingPrefs] = useState(false);
+
   // Load email
   useEffect(() => {
     const fetchEmail = async () => {
@@ -50,6 +55,23 @@ export default function SettingsPage() {
       }
     };
     fetchEmail();
+  }, []);
+
+  // NEW: Load current email preferences on mount
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      try {
+        const res = await fetch('/api/user/prefs', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setEmailAlertsEnabled(data.email_alerts_enabled ?? true);
+          setWeeklyReportsEnabled(data.weekly_reports_enabled ?? true);
+        }
+      } catch (err) {
+        console.error('Failed to load email preferences');
+      }
+    };
+    fetchPrefs();
   }, []);
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
@@ -202,6 +224,27 @@ export default function SettingsPage() {
   // Disabled connect handler (just shows message)
   const handleShopifyConnectDisabled = () => {
     alert('Shopify connection is currently disabled. This feature will be available soon.');
+  };
+
+  // NEW: Handle toggle changes for email preferences
+  const handleToggle = async (key: 'email_alerts_enabled' | 'weekly_reports_enabled', value: boolean) => {
+    setLoadingPrefs(true);
+    try {
+      const res = await fetch('/api/user/update-prefs', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (res.ok) {
+        if (key === 'email_alerts_enabled') setEmailAlertsEnabled(value);
+        if (key === 'weekly_reports_enabled') setWeeklyReportsEnabled(value);
+      }
+    } catch (err) {
+      console.error('Failed to save preference');
+    } finally {
+      setLoadingPrefs(false);
+    }
   };
 
   if (isLoading) return <div className="text-center text-4xl text-cyan-300 mt-40">Loading settings...</div>;
@@ -398,6 +441,44 @@ export default function SettingsPage() {
             >
               {deleting ? 'Deleting...' : 'Delete Account'}
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* NEW: Email Preferences Section */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Email Preferences</h2>
+        <div className="metric-card p-12">
+          <div className="space-y-8">
+            <label className="flex items-center gap-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emailAlertsEnabled}
+                onChange={(e) => handleToggle('email_alerts_enabled', e.target.checked)}
+                disabled={loadingPrefs}
+                className="w-6 h-6 accent-cyan-400"
+              />
+              <div>
+                <p className="text-xl font-bold text-cyan-200">Receive metric alerts</p>
+                <p className="text-base text-cyan-400/80">Daily notifications when key metrics change significantly (churn spikes, revenue drops, etc.)</p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={weeklyReportsEnabled}
+                onChange={(e) => handleToggle('weekly_reports_enabled', e.target.checked)}
+                disabled={loadingPrefs}
+                className="w-6 h-6 accent-cyan-400"
+              />
+              <div>
+                <p className="text-xl font-bold text-cyan-200">Receive weekly reports</p>
+                <p className="text-base text-cyan-400/80">Sunday summary with key changes and AI-powered insights</p>
+              </div>
+            </label>
+
+            {loadingPrefs && <p className="text-cyan-400 text-sm">Saving...</p>}
           </div>
         </div>
       </div>
