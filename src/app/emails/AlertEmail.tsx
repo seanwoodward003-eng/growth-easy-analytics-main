@@ -6,6 +6,7 @@ interface AlertEmailProps {
   change: number;
   currentValue: number;
   previousValue: number;
+  aiInsight: string;
   dashboardUrl: string;
 }
 
@@ -15,6 +16,7 @@ export default function AlertEmail({
   change,
   currentValue,
   previousValue,
+  aiInsight,
   dashboardUrl,
 }: AlertEmailProps) {
   const isIncrease = change > 0;
@@ -35,7 +37,7 @@ export default function AlertEmail({
           </Text>
 
           <Text style={{ fontSize: '20px', lineHeight: '1.4', margin: '16px 0', fontWeight: 'bold' }}>
-            {metricName} moved {change > 0 ? '+' : ''}{change.toFixed(1)}% today
+            {metricName} {isIncrease ? 'increased' : 'decreased'} by {change > 0 ? '+' : ''}{change.toFixed(1)}% today
           </Text>
 
           <div style={{ padding: '20px', background: '#1f2937', borderRadius: '12px', margin: '24px 0' }}>
@@ -48,9 +50,7 @@ export default function AlertEmail({
           </div>
 
           <Text style={{ fontSize: '16px', lineHeight: '1.6', margin: '24px 0' }}>
-            Recommendation: {isIncrease && metricName.includes('Churn')
-              ? 'Review recent customer activity. A targeted win-back campaign can recover lost users quickly.'
-              : 'Check recent pricing, promotions or onboarding changes — small adjustments can help reverse this.'}
+            <strong>AI Insight:</strong> {aiInsight}
           </Text>
 
           <Button
