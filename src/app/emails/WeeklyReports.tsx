@@ -5,6 +5,7 @@ interface WeeklyReportProps {
   churnChange: number;
   mrrChange: number;
   newCustomers: number;
+  aiInsight: string;
   dashboardUrl: string;
 }
 
@@ -13,6 +14,7 @@ export default function WeeklyReport({
   churnChange,
   mrrChange,
   newCustomers,
+  aiInsight,
   dashboardUrl,
 }: WeeklyReportProps) {
   return (
@@ -25,12 +27,12 @@ export default function WeeklyReport({
             Weekly Growth Report
           </Heading>
 
-          <Text style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '24px' }}>
+          <Text style={{ fontSize: '16px', lineHeight: '1.6' }}>
             Hi {name || 'there'},
           </Text>
 
           <Text style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '24px' }}>
-            Here's a snapshot of how your store performed this week:
+            Here's how your store performed this week:
           </Text>
 
           <div style={{ margin: '24px 0', padding: '20px', background: '#1f2937', borderRadius: '12px' }}>
@@ -49,7 +51,7 @@ export default function WeeklyReport({
           </div>
 
           <Text style={{ fontSize: '16px', lineHeight: '1.6', margin: '24px 0' }}>
-            <strong>Quick insight:</strong> Watch churn closely — if it's rising, a win-back campaign for inactive users can help recover lost revenue quickly.
+            <strong>AI Insight:</strong> {aiInsight}
           </Text>
 
           <Hr style={{ borderColor: '#334155', margin: '32px 0' }} />
@@ -71,7 +73,7 @@ export default function WeeklyReport({
           </Button>
 
           <Text style={{ fontSize: '14px', color: '#94a3b8', marginTop: '40px', textAlign: 'center' }}>
-            GrowthEasy AI – Helping you grow faster every week
+            GrowthEasy AI – Helping you grow smarter every week
           </Text>
         </Container>
       </Body>
