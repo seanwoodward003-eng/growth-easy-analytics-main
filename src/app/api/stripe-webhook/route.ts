@@ -1,12 +1,8 @@
-// app/api/stripe-webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 import Stripe from 'stripe';
-
-// Disable body parsing — required for Stripe raw payload + signature
-export const bodyParser = false;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
