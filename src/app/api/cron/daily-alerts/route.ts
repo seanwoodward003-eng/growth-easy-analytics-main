@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { render } from '@react-email/render';
-import AlertEmail from '@/app/emails/AlertEmail';
 import { Resend } from 'resend';
 import { getUsersForAlerts, getDailyMetricsForAlert } from '@/lib/db';
 import { getGrokInsight } from '@/lib/ai';
+import AlertEmailWrapper from '@/components/AlertEmailWrapper';  // ← new import
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -30,7 +30,17 @@ export async function GET(request: Request) {
 
         const aiInsight = await getGrokInsight(prompt);
 
-        const html = render(<AlertEmail name={user.name || 'there'} metricName="Churn Rate" change={metrics.churnChange} currentValue={metrics.currentChurn || 0} previousValue={metrics.previousChurn || 0} aiInsight={aiInsight} dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`} />);
+        const html = render(
+          <AlertEmailWrapper
+            name={user.name || 'there'}
+            metricName="Churn Rate"
+            change={metrics.churnChange}
+            currentValue={metrics.currentChurn || 0}
+            previousValue={metrics.previousChurn || 0}
+            aiInsight={aiInsight}
+            dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`}
+          />
+        );
 
         const { error } = await resend.emails.send({
           from: 'GrowthEasy AI <alerts@growtheasy.ai>',
@@ -39,11 +49,8 @@ export async function GET(request: Request) {
           html,
         });
 
-        if (error) {
-          console.error(`Alert failed for ${user.email}:`, error);
-        } else {
-          console.log(`Alert sent to ${user.email}`);
-        }
+        if (error) console.error(`Alert failed for ${user.email}:`, error);
+        else console.log(`Alert sent to ${user.email}`);
       }
     }
 
