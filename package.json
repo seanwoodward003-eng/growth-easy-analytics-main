@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^0.0.66",
-    "ai": "3.3.0",
+    "ai": "3.4.20",
     "@libsql/client": "^0.17.0",
     "drizzle-orm": "^0.35.0",
     "jsonwebtoken": "^9.0.3",
