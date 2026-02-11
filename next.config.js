@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Removed output: 'export' — we need server API routes
+  swcMinify: false,  // Disable SWC minifier to avoid JSX parsing bugs in webpack builds
 };
 
 module.exports = nextConfig;
