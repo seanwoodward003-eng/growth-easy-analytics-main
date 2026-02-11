@@ -148,3 +148,14 @@ export {
   rateLimits,
   metricsHistory,
 } from "@/src/db/schema";
+
+// ────────────────────────────────────────────────────────────────
+// NEW: Export the four functions needed by the cron routes
+// (assuming these are defined somewhere in this file or imported)
+// If they are in another file, make sure to import and re-export them here
+// ────────────────────────────────────────────────────────────────
+
+export { getUsersForAlerts } from "./alerts-queries";          // ← adjust path if needed
+export { getDailyMetricsForAlert } from "./alerts-queries";    // ← adjust path if needed
+export { getUsersForWeeklyReports } from "./reports-queries";  // ← adjust path if needed
+export { getWeeklyMetricsForUser } from "./reports-queries";   // ← adjust path if needed
