@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  console.log('[CRON-WEEKLY] Starting weekly reports');
+
   try {
     const users = await getUsersForWeeklyReports();
 
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
 
       const aiInsight = await getGrokInsight(prompt);
 
-      const html = render(
+      const html = render((
         <WeeklyReport
           name={user.name || 'there'}
           churnChange={metrics.churnChange || 0}
@@ -39,19 +41,25 @@ export async function GET(request: Request) {
           aiInsight={aiInsight}
           dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
         />
-      );
+      ));
 
-      await resend.emails.send({
+      const { error } = await resend.emails.send({
         from: 'GrowthEasy AI <reports@growtheasy.ai>',
         to: user.email,
         subject: 'Your Weekly Growth Report',
         html,
       });
+
+      if (error) {
+        console.error(`Failed to send to ${user.email}:`, error);
+      } else {
+        console.log(`Weekly report sent to ${user.email}`);
+      }
     }
 
     return NextResponse.json({ success: true, sent: users.length });
   } catch (err) {
-    console.error('[CRON-WEEKLY] Error:', err);
+    console.error('[CRON-WEEKLY] Failed:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
