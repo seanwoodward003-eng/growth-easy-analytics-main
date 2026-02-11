@@ -62,4 +62,4 @@ export async function GET(request: Request) {
     console.error('[CRON-WEEKLY] Failed:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
-}
+} 
