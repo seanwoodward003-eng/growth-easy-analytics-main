@@ -7,11 +7,6 @@ import { getGrokInsight } from '@/lib/ai';
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-// Helper function to avoid Turbopack JSX parsing bug
-function createWeeklyElement(props: any) {
-  return <WeeklyReport {...props} />;
-}
-
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -37,15 +32,16 @@ export async function GET(request: Request) {
 
       const aiInsight = await getGrokInsight(prompt);
 
-      // FIXED: create element via helper function
-      const reportElement = createWeeklyElement({
-        name: user.name || 'there',
-        churnChange: metrics.churnChange || 0,
-        mrrChange: metrics.mrrChange || 0,
-        newCustomers: metrics.newCustomers || 0,
-        aiInsight,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
-      });
+      const reportElement = (
+        <WeeklyReport
+          name={user.name || 'there'}
+          churnChange={metrics.churnChange || 0}
+          mrrChange={metrics.mrrChange || 0}
+          newCustomers={metrics.newCustomers || 0}
+          aiInsight={aiInsight}
+          dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
+        />
+      );
 
       const html = render(reportElement);
 
