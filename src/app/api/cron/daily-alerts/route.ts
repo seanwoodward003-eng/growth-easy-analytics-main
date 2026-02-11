@@ -7,6 +7,11 @@ import { getGrokInsight } from '@/lib/ai';
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+// Helper function to avoid Turbopack JSX parsing bug
+function createAlertElement(props: any) {
+  return <AlertEmail {...props} />;
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -30,18 +35,16 @@ export async function GET(request: Request) {
 
         const aiInsight = await getGrokInsight(prompt);
 
-        // FIXED: assign JSX to variable first
-        const alertElement = (
-          <AlertEmail
-            name={user.name || 'there'}
-            metricName="Churn Rate"
-            change={metrics.churnChange}
-            currentValue={metrics.currentChurn || 0}
-            previousValue={metrics.previousChurn || 0}
-            aiInsight={aiInsight}
-            dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`}
-          />
-        );
+        // FIXED: create element via helper function
+        const alertElement = createAlertElement({
+          name: user.name || 'there',
+          metricName: "Churn Rate",
+          change: metrics.churnChange,
+          currentValue: metrics.currentChurn || 0,
+          previousValue: metrics.previousChurn || 0,
+          aiInsight,
+          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`,
+        });
 
         const html = render(alertElement);
 
