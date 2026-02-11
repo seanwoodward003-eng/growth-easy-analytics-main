@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { render } from '@react-email/render';
 import { Resend } from 'resend';
 import { getUsersForWeeklyReports, getWeeklyMetricsForUser } from '@/lib/db';
 import { getGrokInsight } from '@/lib/ai';
-import WeeklyReportWrapper from '@/components/WeeklyReportWrapper';  // ← new import
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -32,16 +32,37 @@ export async function GET(request: Request) {
 
       const aiInsight = await getGrokInsight(prompt);
 
-      const html = render(
-        <WeeklyReportWrapper
-          name={user.name || 'there'}
-          churnChange={metrics.churnChange || 0}
-          mrrChange={metrics.mrrChange || 0}
-          newCustomers={metrics.newCustomers || 0}
-          aiInsight={aiInsight}
-          dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
-        />
-      );
+      const html = `
+        <html>
+          <body style="font-family: system-ui, sans-serif; background: #0a0f2c; color: #e0f8ff; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 40px; background: #0a0f2c; border-radius: 16px; border: 2px solid #ff00ff;">
+              <h1 style="text-align: center; color: #ff00ff; font-size: 32px;">
+                Your Weekly Growth Report
+              </h1>
+              <p style="font-size: 18px; line-height: 1.6; text-align: center;">
+                Hi ${user.name || 'there'},<br>
+                Here's a quick summary of your store's week.
+              </p>
+              <ul style="font-size: 16px; line-height: 1.8; color: #d8a0ef;">
+                <li>Churn change: ${metrics.churnChange.toFixed(1)}%</li>
+                <li>MRR change: ${metrics.mrrChange.toFixed(1)}%</li>
+                <li>New customers: +${metrics.newCustomers}</li>
+              </ul>
+              <p style="font-size: 16px; color: #d8a0ef; text-align: center; margin: 30px 0;">
+                ${aiInsight}
+              </p>
+              <div style="text-align: center; margin: 40px 0;">
+                <a href="${APP_URL}/dashboard" style="background: #ff00ff; color: #000; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: bold;">
+                  View Full Dashboard
+                </a>
+              </div>
+              <p style="text-align: center; font-size: 14px; color: #cc66cc;">
+                — GrowthEasy AI Team
+              </p>
+            </div>
+          </body>
+        </html>
+      `;
 
       const { error } = await resend.emails.send({
         from: 'GrowthEasy AI <reports@growtheasy.ai>',
@@ -50,8 +71,11 @@ export async function GET(request: Request) {
         html,
       });
 
-      if (error) console.error(`Failed to send to ${user.email}:`, error);
-      else console.log(`Weekly report sent to ${user.email}`);
+      if (error) {
+        console.error(`Failed to send to ${user.email}:`, error);
+      } else {
+        console.log(`Weekly report sent to ${user.email}`);
+      }
     }
 
     return NextResponse.json({ success: true, sent: users.length });
