@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { render } from '@react-email/render';
-import WeeklyReport from '@/app/emails/WeeklyReport';
 import { Resend } from 'resend';
 import { getUsersForWeeklyReports, getWeeklyMetricsForUser } from '@/lib/db';
 import { getGrokInsight } from '@/lib/ai';
+import WeeklyReportWrapper from '@/components/WeeklyReportWrapper';  // ← new import
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -32,7 +32,16 @@ export async function GET(request: Request) {
 
       const aiInsight = await getGrokInsight(prompt);
 
-      const html = render(<WeeklyReport name={user.name || 'there'} churnChange={metrics.churnChange || 0} mrrChange={metrics.mrrChange || 0} newCustomers={metrics.newCustomers || 0} aiInsight={aiInsight} dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`} />);
+      const html = render(
+        <WeeklyReportWrapper
+          name={user.name || 'there'}
+          churnChange={metrics.churnChange || 0}
+          mrrChange={metrics.mrrChange || 0}
+          newCustomers={metrics.newCustomers || 0}
+          aiInsight={aiInsight}
+          dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
+        />
+      );
 
       const { error } = await resend.emails.send({
         from: 'GrowthEasy AI <reports@growtheasy.ai>',
@@ -41,11 +50,8 @@ export async function GET(request: Request) {
         html,
       });
 
-      if (error) {
-        console.error(`Failed to send to ${user.email}:`, error);
-      } else {
-        console.log(`Weekly report sent to ${user.email}`);
-      }
+      if (error) console.error(`Failed to send to ${user.email}:`, error);
+      else console.log(`Weekly report sent to ${user.email}`);
     }
 
     return NextResponse.json({ success: true, sent: users.length });
