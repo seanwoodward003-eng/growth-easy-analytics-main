@@ -30,17 +30,7 @@ export async function GET(request: Request) {
 
         const aiInsight = await getGrokInsight(prompt);
 
-        const html = render(
-          <AlertEmail
-            name={user.name || 'there'}
-            metricName="Churn Rate"
-            change={metrics.churnChange}
-            currentValue={metrics.currentChurn || 0}
-            previousValue={metrics.previousChurn || 0}
-            aiInsight={aiInsight}
-            dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`}
-          />
-        );
+        const html = render(<AlertEmail name={user.name || 'there'} metricName="Churn Rate" change={metrics.churnChange} currentValue={metrics.currentChurn || 0} previousValue={metrics.previousChurn || 0} aiInsight={aiInsight} dashboardUrl={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/churn`} />);
 
         const { error } = await resend.emails.send({
           from: 'GrowthEasy AI <alerts@growtheasy.ai>',
