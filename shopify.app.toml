@@ -7,17 +7,16 @@ redirect_urls = [
 ]
 
 [webhooks]
-api_version = "2026-04"
+api_version = "2026-04"  # Good, assuming your CLI supports it; fallback to "2025-10" or "2025-07" if deploy complains
 
-  [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]  # or add "orders/updated", "orders/paid" if needed
-  uri = "/api/webhooks/shopify/orders"
+[[webhooks.subscriptions]]
+topics = ["orders/create"]  # Add more like "orders/updated", "orders/paid" if your app needs them
+uri = "/api/webhooks/shopify/orders"
 
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/api/webhooks/shopify/app-uninstalled"
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/api/webhooks/shopify/app-uninstalled"
 
-  # Compliance (mandatory) – use compliance_topics here
-  [[webhooks.subscriptions]]
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-  uri = "/api/webhooks/shopify/compliance"  # Recommended: Use a SINGLE shared URI for all 3 (your code routes by topic header)
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "https://www.growtheasy-ai.com/api/webhooks/shopify/compliance"  # ← Full absolute HTTPS URL here! Relative paths can cause detection issues in some cases
