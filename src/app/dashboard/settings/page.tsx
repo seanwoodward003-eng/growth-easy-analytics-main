@@ -1,5 +1,3 @@
-mode 
-
 
 'use client';
 
