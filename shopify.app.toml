@@ -2,21 +2,31 @@ name = "Growth Easy AI"
 client_id = "fb44335c9cb2b513945ed7db75ae6a07"
 application_url = "https://www.growtheasy-ai.com"
 
-redirect_urls = [
-  "https://www.growtheasy-ai.com/api/auth/shopify/callback"
-]
+# Comment out or remove redirect_urls – Shopify manages this now for most apps
+# redirect_urls = [
+#   "https://www.growtheasy-ai.com/api/auth/shopify/callback"
+# ]
 
 [webhooks]
-api_version = "2026-04"  # Good, assuming your CLI supports it; fallback to "2025-10" or "2025-07" if deploy complains
+api_version = "2026-04"
 
 [[webhooks.subscriptions]]
-topics = ["orders/create"]  # Add more like "orders/updated", "orders/paid" if your app needs them
+topics = ["orders/create"]
 uri = "/api/webhooks/shopify/orders"
 
 [[webhooks.subscriptions]]
 topics = ["app/uninstalled"]
 uri = "/api/webhooks/shopify/app-uninstalled"
 
+# Mandatory compliance – separate blocks to match your actual routes/folders
 [[webhooks.subscriptions]]
-compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
-uri = "https://www.growtheasy-ai.com/api/webhooks/shopify/compliance"  # ← Full absolute HTTPS URL here! Relative paths can cause detection issues in some cases
+compliance_topics = ["customers/data_request"]
+uri = "https://www.growtheasy-ai.com/api/webhooks/shopify/customer-data-request"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/redact"]
+uri = "https://www.growtheasy-ai.com/api/webhooks/shopify/customers-redact"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["shop/redact"]
+uri = "https://www.growtheasy-ai.com/api/webhooks/shopify/shop-redact"
