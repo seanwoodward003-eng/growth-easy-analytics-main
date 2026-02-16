@@ -1,12 +1,24 @@
+// app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import Stripe from 'stripe';
+import { buffer } from 'micro'; // Install: npm install micro
 import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
-import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20',
+});
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+export const config = {
+  api: {
+    bodyParser: false, // Required for raw body
+  },
+};
+
 export async function POST(req: NextRequest) {
+  const buf = await buffer(req);
   const sig = req.headers.get('stripe-signature');
 
   if (!sig) {
@@ -14,20 +26,11 @@ export async function POST(req: NextRequest) {
     return new Response('Missing signature', { status: 400 });
   }
 
-  // Get raw body as text (safer and simpler than arrayBuffer)
-  let rawBody: string;
-  try {
-    rawBody = await req.text();
-  } catch (err) {
-    console.error('Failed to read raw body', err);
-    return new Response('Body read error', { status: 400 });
-  }
-
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
-      rawBody,
+      buf,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
@@ -36,14 +39,16 @@ export async function POST(req: NextRequest) {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // Handle successful checkout (first payment / upgrade)
+  console.log('Webhook received:', event.type);
+
+  // Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.client_reference_id;
 
     if (!userId) {
       console.error('No userId in session metadata');
-      return NextResponse.json({ received: true }); // Don't fail webhook
+      return NextResponse.json({ received: true });
     }
 
     const plan = session.metadata?.plan || 'unknown';
@@ -99,12 +104,11 @@ export async function POST(req: NextRequest) {
         console.log('Welcome email sent to', user.email);
       } catch (emailErr) {
         console.error('Failed to send welcome email', emailErr);
-        // Don't fail the webhook — just log
       }
     }
   }
 
-  // Handle successful recurring payment (renewal)
+  // invoice.paid (recurring renewal)
   if (event.type === 'invoice.paid') {
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = invoice.subscription;
@@ -119,11 +123,11 @@ export async function POST(req: NextRequest) {
         'active',
         parseInt(userId),
       ]);
-      console.log(`Renewal success — user ${userId} status restored to active`);
+      console.log(`Renewal success — user ${userId} status restored`);
     }
   }
 
-  // Handle failed payment
+  // invoice.payment_failed
   if (event.type === 'invoice.payment_failed') {
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = invoice.subscription;
@@ -140,7 +144,6 @@ export async function POST(req: NextRequest) {
       ]);
       console.log(`Payment failed — user ${userId} access restricted`);
 
-      // Send payment failed email
       const user = await getRow<{ email: string }>(
         'SELECT email FROM users WHERE id = ?',
         [parseInt(userId)]
@@ -179,7 +182,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Handle cancellation
+  // customer.subscription.deleted
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata?.user_id;
