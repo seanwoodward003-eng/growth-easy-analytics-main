@@ -1,3 +1,6 @@
+mode 
+
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,15 +31,10 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [changeEmailError, setChangeEmailError] = useState('');
 
-  // Shopify connect state (still collected but button disabled)
+  // Shopify connect state
   const [shopDomain, setShopDomain] = useState('');
   const [connectError, setConnectError] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
-
-  // NEW: Email preferences toggles
-  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
-  const [weeklyReportsEnabled, setWeeklyReportsEnabled] = useState(true);
-  const [loadingPrefs, setLoadingPrefs] = useState(false);
 
   // Load email
   useEffect(() => {
@@ -55,23 +53,6 @@ export default function SettingsPage() {
       }
     };
     fetchEmail();
-  }, []);
-
-  // NEW: Load current email preferences on mount
-  useEffect(() => {
-    const fetchPrefs = async () => {
-      try {
-        const res = await fetch('/api/user/prefs', { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setEmailAlertsEnabled(data.email_alerts_enabled ?? true);
-          setWeeklyReportsEnabled(data.weekly_reports_enabled ?? true);
-        }
-      } catch (err) {
-        console.error('Failed to load email preferences');
-      }
-    };
-    fetchPrefs();
   }, []);
 
   const handleDisconnect = async (type: 'shopify' | 'ga4' | 'hubspot') => {
@@ -177,8 +158,10 @@ export default function SettingsPage() {
       a.href = url;
       a.download = 'growth-easy-data.json';
 
+      // SAFE DOWNLOAD: click without appending to DOM
       a.click();
 
+      // Clean up
       URL.revokeObjectURL(url);
       a.remove();
 
@@ -202,12 +185,12 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const clearCookie = (name: string) => {
-          document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
-        };
+  document.cookie = `${name}=; Max-Age=0; path=/; secure=${process.env.NODE_ENV === 'production' ? 'Secure' : ''}; samesite=strict`;
+};
 
-        clearCookie('access_token');
-        clearCookie('refresh_token');
-        clearCookie('csrf_token');
+clearCookie('access_token');
+clearCookie('refresh_token');
+clearCookie('csrf_token');
         alert('Account deleted');
         router.push('/');
       } else {
@@ -221,30 +204,14 @@ export default function SettingsPage() {
     }
   };
 
-  // Disabled connect handler (just shows message)
-  const handleShopifyConnectDisabled = () => {
-    alert('Shopify connection is currently disabled. This feature will be available soon.');
-  };
-
-  // NEW: Handle toggle changes for email preferences
-  const handleToggle = async (key: 'email_alerts_enabled' | 'weekly_reports_enabled', value: boolean) => {
-    setLoadingPrefs(true);
-    try {
-      const res = await fetch('/api/user/update-prefs', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [key]: value }),
-      });
-      if (res.ok) {
-        if (key === 'email_alerts_enabled') setEmailAlertsEnabled(value);
-        if (key === 'weekly_reports_enabled') setWeeklyReportsEnabled(value);
-      }
-    } catch (err) {
-      console.error('Failed to save preference');
-    } finally {
-      setLoadingPrefs(false);
+  const handleShopifyConnect = () => {
+    if (!shopDomain.endsWith('.myshopify.com')) {
+      setConnectError('Please enter a valid .myshopify.com domain');
+      return;
     }
+    setConnectError('');
+    setIsConnecting(true);
+    window.location.href = `/api/auth/shopify?shop=${encodeURIComponent(shopDomain.trim().toLowerCase())}`;
   };
 
   if (isLoading) return <div className="text-center text-4xl text-cyan-300 mt-40">Loading settings...</div>;
@@ -259,7 +226,7 @@ export default function SettingsPage() {
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Integrations</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Shopify - Disabled */}
+          {/* Shopify */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Shopify</h3>
             {shopifyConnected ? (
@@ -274,29 +241,29 @@ export default function SettingsPage() {
                 </button>
               </>
             ) : (
-              <div className="flex flex-col gap-4 opacity-60">
+              <div className="flex flex-col gap-4">
                 <input
                   type="text"
                   placeholder="your-store.myshopify.com"
                   value={shopDomain}
                   onChange={(e) => setShopDomain(e.target.value.trim())}
-                  disabled={true}
-                  className="px-6 py-4 bg-black/30 border-4 border-gray-600 rounded-full text-gray-400 placeholder-gray-500 text-xl cursor-not-allowed"
+                  onKeyDown={(e) => e.key === 'Enter' && handleShopifyConnect()}
+                  disabled={isConnecting}
+                  className="px-6 py-4 bg-black/50 border-4 border-cyan-400 rounded-full text-white placeholder-cyan-500 focus:outline-none focus:border-cyan-300 text-xl"
                 />
                 <button
-                  onClick={handleShopifyConnectDisabled}
-                  disabled={true}
-                  title="Feature disabled - coming soon"
-                  className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
+                  onClick={handleShopifyConnect}
+                  disabled={isConnecting || !shopDomain}
+                  className="cyber-btn text-xl px-10 py-5 w-full"
                 >
-                  Connect Shopify (Disabled)
+                  {isConnecting ? 'Connecting...' : 'Connect Shopify'}
                 </button>
                 {connectError && <p className="text-red-400 text-lg">{connectError}</p>}
               </div>
             )}
           </div>
 
-          {/* GA4 - Disabled */}
+          {/* GA4 */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">Google Analytics (GA4)</h3>
             {ga4Connected ? (
@@ -312,16 +279,15 @@ export default function SettingsPage() {
               </>
             ) : (
               <button 
-                disabled={true}
-                title="Feature disabled - coming soon"
-                className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
+                onClick={() => router.push('/api/auth/ga4')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
               >
-                Connect GA4 (Disabled)
+                Connect GA4
               </button>
             )}
           </div>
 
-          {/* HubSpot - Disabled */}
+          {/* HubSpot */}
           <div className="metric-card p-8 text-center">
             <h3 className="text-3xl font-bold text-cyan-300 mb-6">HubSpot</h3>
             {hubspotConnected ? (
@@ -337,18 +303,17 @@ export default function SettingsPage() {
               </>
             ) : (
               <button 
-                disabled={true}
-                title="Feature disabled - coming soon"
-                className="cyber-btn text-xl px-10 py-5 w-full opacity-50 cursor-not-allowed bg-gray-700"
+                onClick={() => router.push('/api/auth/hubspot')} 
+                className="cyber-btn text-xl px-10 py-5 w-full"
               >
-                Connect HubSpot (Disabled)
+                Connect HubSpot
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Subscription - unchanged */}
+      {/* Subscription */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Subscription</h2>
         <div className="metric-card p-12 text-center">
@@ -373,7 +338,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Account – unchanged */}
+      {/* Account – fixed email fit */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Account</h2>
         <div className="metric-card p-12">
@@ -411,7 +376,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Data & Privacy - unchanged */}
+      {/* Data & Privacy */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Data & Privacy</h2>
         <div className="grid md:grid-cols-2 gap-8">
@@ -441,44 +406,6 @@ export default function SettingsPage() {
             >
               {deleting ? 'Deleting...' : 'Delete Account'}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* NEW: Email Preferences Section */}
-      <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-5xl font-black text-cyan-400 mb-12 text-center">Email Preferences</h2>
-        <div className="metric-card p-12">
-          <div className="space-y-8">
-            <label className="flex items-center gap-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={emailAlertsEnabled}
-                onChange={(e) => handleToggle('email_alerts_enabled', e.target.checked)}
-                disabled={loadingPrefs}
-                className="w-6 h-6 accent-cyan-400"
-              />
-              <div>
-                <p className="text-xl font-bold text-cyan-200">Receive metric alerts</p>
-                <p className="text-base text-cyan-400/80">Daily notifications when key metrics change significantly (churn spikes, revenue drops, etc.)</p>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={weeklyReportsEnabled}
-                onChange={(e) => handleToggle('weekly_reports_enabled', e.target.checked)}
-                disabled={loadingPrefs}
-                className="w-6 h-6 accent-cyan-400"
-              />
-              <div>
-                <p className="text-xl font-bold text-cyan-200">Receive weekly reports</p>
-                <p className="text-base text-cyan-400/80">Sunday summary with key changes and AI-powered insights</p>
-              </div>
-            </label>
-
-            {loadingPrefs && <p className="text-cyan-400 text-sm">Saving...</p>}
           </div>
         </div>
       </div>
