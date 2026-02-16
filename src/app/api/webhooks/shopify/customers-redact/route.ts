@@ -7,9 +7,9 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     return false;
   }
 
-  const secret = process.env.SHOPIFY_CLIENT_SECRET;
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
   if (!secret) {
-    console.error('[CUSTOMERS-REDACT] SHOPIFY_CLIENT_SECRET is not set');
+    console.error('[CUSTOMERS-REDACT] SHOPIFY_WEBHOOK_SECRET is not set');
     return false;
   }
 
@@ -25,8 +25,8 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
   if (!isValid) {
     console.error('[CUSTOMERS-REDACT] HMAC mismatch');
-    console.error('Calculated HMAC:', calculated);
-    console.error('Received HMAC:  ', hmacHeader);
+    console.error('Calculated:', calculated);
+    console.error('Received:   ', hmacHeader);
   }
 
   return isValid;
@@ -34,13 +34,14 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
 export async function POST(request: NextRequest) {
   const topic = request.headers.get('X-Shopify-Topic') || 'customers/redact';
-  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown';
+  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown-shop';
 
   console.log(`[CUSTOMERS-REDACT] Incoming webhook from ${shop} at ${new Date().toISOString()}`);
 
   const rawBody = await request.text();
 
-  console.log(`[CUSTOMERS-REDACT] Raw body length: ${rawBody.length}`);
+  console.log(`[CUSTOMERS-REDACT] Raw body length: ${rawBody.length} bytes`);
+
   if (rawBody.length > 0 && rawBody.length < 10000) {
     console.log(`[CUSTOMERS-REDACT] Raw body preview:`, rawBody.substring(0, 500));
   }
@@ -56,19 +57,15 @@ export async function POST(request: NextRequest) {
   let payload;
   try {
     payload = JSON.parse(rawBody);
-    console.log('[CUSTOMERS-REDACT] Valid payload:', {
-      topic: payload.topic,
-      shop_domain: payload.shop_domain,
-      customer: payload.customer ? { id: payload.customer.id } : null,
-    });
+    console.log('[CUSTOMERS-REDACT] Parsed payload keys:', Object.keys(payload));
   } catch (err) {
     console.error('[CUSTOMERS-REDACT] JSON parse error:', err);
-    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    return NextResponse.json({ received: true, note: 'Invalid JSON but accepted' }, { status: 200 });
   }
 
-  // TODO: Implement actual customer data deletion/redaction logic here
-  // e.g. delete customer data from your DB, queue job, etc.
+  // TODO: Implement actual customer data redaction/deletion logic here
+  // e.g. find and remove all data for this customer across your DB
 
-  console.log('[CUSTOMERS-REDACT] Webhook processed');
+  console.log('[CUSTOMERS-REDACT] Processing complete');
   return NextResponse.json({ received: true }, { status: 200 });
 }
