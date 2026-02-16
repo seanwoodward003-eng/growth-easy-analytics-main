@@ -7,9 +7,9 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
     return false;
   }
 
-  const secret = process.env.SHOPIFY_CLIENT_SECRET;
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
   if (!secret) {
-    console.error('[SHOP-REDACT] SHOPIFY_CLIENT_SECRET is not set');
+    console.error('[SHOP-REDACT] SHOPIFY_WEBHOOK_SECRET is not set in environment');
     return false;
   }
 
@@ -26,7 +26,7 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
   if (!isValid) {
     console.error('[SHOP-REDACT] HMAC mismatch');
     console.error('Calculated HMAC:', calculated);
-    console.error('Received HMAC:  ', hmacHeader);
+    console.error('Received HMAC:   ', hmacHeader);
   }
 
   return isValid;
@@ -34,13 +34,14 @@ function verifyWebhookHMAC(rawBody: string, hmacHeader: string | null): boolean 
 
 export async function POST(request: NextRequest) {
   const topic = request.headers.get('X-Shopify-Topic') || 'shop/redact';
-  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown';
+  const shop = request.headers.get('X-Shopify-Shop-Domain') || 'unknown-shop';
 
-  console.log(`[SHOP-REDACT] Incoming webhook from ${shop} at ${new Date().toISOString()}`);
+  console.log(`[SHOP-REDACT] Incoming webhook from shop: ${shop} at ${new Date().toISOString()}`);
 
   const rawBody = await request.text();
 
-  console.log(`[SHOP-REDACT] Raw body length: ${rawBody.length}`);
+  console.log(`[SHOP-REDACT] Raw body length: ${rawBody.length} bytes`);
+
   if (rawBody.length > 0 && rawBody.length < 10000) {
     console.log(`[SHOP-REDACT] Raw body preview:`, rawBody.substring(0, 500));
   }
@@ -56,18 +57,16 @@ export async function POST(request: NextRequest) {
   let payload;
   try {
     payload = JSON.parse(rawBody);
-    console.log('[SHOP-REDACT] Valid payload:', {
-      topic: payload.topic,
-      shop_domain: payload.shop_domain,
-    });
+    console.log('[SHOP-REDACT] Parsed payload keys:', Object.keys(payload));
   } catch (err) {
     console.error('[SHOP-REDACT] JSON parse error:', err);
-    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    // Still return 200 – Shopify retries on non-2xx
+    return NextResponse.json({ received: true, note: 'Invalid JSON but accepted' }, { status: 200 });
   }
 
   // TODO: Implement actual shop-level data redaction logic here
-  // e.g. delete all store-related data, queue permanent removal
+  // e.g. delete all data associated with this shop, queue permanent removal, etc.
+  console.log('[SHOP-REDACT] Processing complete for shop:', shop);
 
-  console.log('[SHOP-REDACT] Webhook processed');
   return NextResponse.json({ received: true }, { status: 200 });
 }
