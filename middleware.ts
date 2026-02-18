@@ -19,26 +19,13 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Security headers
+  // Security headers (keep these)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // Minimal CSP focused on Stripe + basics (reduced domains to avoid blocks)
-  response.headers.set(
-    'Content-Security-Policy',
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
-      "worker-src 'self' blob:",
-      "child-src 'self' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
-      "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com",
-      "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
-      "img-src 'self' data: blob: https://*.stripe.com",
-      "style-src 'self' 'unsafe-inline'",
-      "font-src 'self' data:",
-    ].join('; ')
-  );
+  // TEMPORARILY DISABLE CSP FOR TESTING
+  // response.headers.set('Content-Security-Policy', '...');   ← COMMENTED OUT / REMOVED
 
   // CORS for API
   if (request.nextUrl.pathname.startsWith('/api')) {
