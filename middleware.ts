@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getRow } from '@/lib/db';
@@ -25,16 +24,17 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // Updated CSP – expanded for Stripe + your existing services
+  // Minimal CSP focused on Stripe + basics (reduced domains to avoid blocks)
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com https://m.stripe.network https://cdn.shopify.com https://www.googletagmanager.com https://*.google-analytics.com https://js.hs-scripts.com https://*.hubspot.com https://js.hs-banner.com https://js.hsadspixel.net https://api.x.ai https://grok.x.ai",
-      "worker-src 'self' blob: https://js.stripe.com https://*.stripe.com https://m.stripe.network",
-      "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com https://r.stripe.com https://m.stripe.com https://q.stripe.com https://api.shopify.com https://*.shopify.com https://www.google-analytics.com https://*.google-analytics.com https://api.hubapi.com https://*.hubspot.com https://api.x.ai https://grok.x.ai",
-      "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com https://*.stripe.network https://*.shopify.com https://forms.hsforms.com https://*.hubspot.com",
-      "img-src 'self' data: https://*.stripe.com https://q.stripe.com https://cdn.shopify.com https://*.hubspot.com https://*.hsadspixel.net https://*.google-analytics.com https://*.googletagmanager.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
+      "worker-src 'self' blob:",
+      "child-src 'self' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
+      "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com",
+      "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com",
+      "img-src 'self' data: blob: https://*.stripe.com",
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' data:",
     ].join('; ')
@@ -61,14 +61,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Protect dashboard routes – only login check
+  // Dashboard protection
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
-    console.log('[MIDDLEWARE] Dashboard request – access_token present?', !!accessToken, 'length:', accessToken?.length || 0);
-
     if (!accessToken) {
-      console.log('[MIDDLEWARE] No access_token — redirecting with login_required');
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'login_required');
@@ -77,25 +74,14 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
+      const userId = parseInt(payload.sub as string, 10);
 
-      const userIdStr = payload.sub;
-      if (typeof userIdStr !== 'string') throw new Error('Invalid sub claim');
-
-      const userId = parseInt(userIdStr, 10);
-      if (isNaN(userId)) throw new Error('Invalid user ID');
-
-      console.log('[MIDDLEWARE] Token verified, user ID:', userId);
-
-      const user = await getRow<{
-        trial_end: string | null;
-        subscription_status: string;
-      }>(
+      const user = await getRow<{ trial_end: string | null; subscription_status: string }>(
         'SELECT trial_end, subscription_status FROM users WHERE id = ?',
         [userId]
       );
 
       if (!user) {
-        console.log('[MIDDLEWARE] User not found in DB');
         const url = request.nextUrl.clone();
         url.pathname = '/';
         return NextResponse.redirect(url);
@@ -105,7 +91,6 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
     } catch (err) {
-      console.log('[MIDDLEWARE] Token verification failed:', (err as Error).message);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
