@@ -2,12 +2,15 @@
 
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 
-// Global declaration for window.Stripe (required for TS + manual fallback)
-declare global {
-  interface Window {
-    Stripe?: (publishableKey: string) => any;
-  }
-}
+// ────────────────────────────────────────────────
+// No longer needed — @stripe/stripe-js already declares:
+//   interface Window {
+//     Stripe?: import('@stripe/stripe-js').StripeConstructor | undefined;
+//   }
+// ────────────────────────────────────────────────
+// If you ever see "Property 'Stripe' does not exist on type 'Window'" again,
+// you can add this in a separate .d.ts file, but normally it's not required.
+// ────────────────────────────────────────────────
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
