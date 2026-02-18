@@ -24,6 +24,15 @@ function TrialExpiredBanner() {
 }
 
 export default function Pricing() {
+  // ── Added component-level key check ──
+  console.log('[Pricing Page] Component mounted - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY exists in client?', !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    console.log('[Pricing Page] Key prefix (client):', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.slice(0, 7) + '...');
+    console.log('[Pricing Page] Key length (client):', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.length);
+  } else {
+    console.error('[Pricing Page] CRITICAL: Publishable key missing on client-side render');
+  }
+
   const [loading, setLoading] = useState<string | null>(null);
 
   // TODO: Replace with real DB fetch in production
@@ -75,7 +84,18 @@ export default function Pricing() {
       console.log('[Checkout Debug] Session ID received successfully:', data.sessionId);
 
       console.log('[Checkout Debug] Loading Stripe library via getStripe()');
+
+      // ── Added timing & state check before await ──
+      console.log('[Checkout Debug] Before awaiting getStripe - current time:', new Date().toISOString());
+      console.log('[Checkout Debug] Current loading state:', loading);
+
       const stripe = await getStripe();
+
+      // ── Added timing & result check after await ──
+      console.log('[Checkout Debug] After awaiting getStripe - current time:', new Date().toISOString());
+      console.log('[Checkout Debug] stripe value type:', stripe ? typeof stripe : 'null/undefined');
+      console.log('[Checkout Debug] stripe exists?', !!stripe);
+
       console.log('[Checkout Debug] getStripe() result:', stripe ? 'Stripe loaded' : 'Stripe FAILED to load (null)');
 
       if (!stripe) {
@@ -211,5 +231,3 @@ export default function Pricing() {
     </div>
   );
 }
-
-
