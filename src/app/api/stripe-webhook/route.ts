@@ -5,7 +5,7 @@ import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',  // Your package expects this version
+  apiVersion: '2025-06-30.basil',
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -139,8 +139,8 @@ export async function POST(req: NextRequest) {
     console.log('Handling invoice.paid');
     const invoice = event.data.object as Stripe.Invoice;
 
-    // FIX HERE: safe access + type assertion
-    const subscriptionId = invoice.subscription as string | null;
+    // Safe access: subscription is optional, may be string ID or null
+    const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
@@ -168,8 +168,8 @@ export async function POST(req: NextRequest) {
     console.log('Handling invoice.payment_failed');
     const invoice = event.data.object as Stripe.Invoice;
 
-    // FIX HERE: same safe access
-    const subscriptionId = invoice.subscription as string | null;
+    // Same safe access fix
+    const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
