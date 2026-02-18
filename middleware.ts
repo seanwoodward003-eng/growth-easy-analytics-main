@@ -24,6 +24,7 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
+  // Security headers (applied to everything)
   console.log('[Middleware DEBUG] Setting security headers');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
@@ -31,7 +32,6 @@ export async function middleware(request: NextRequest) {
 
   // ────────────────────────────────────────────────────────────────
   // CSP COMMENTED OUT FOR TESTING — re-enable once Stripe works
-  // If checkout starts working after this, CSP was the blocker
   // ────────────────────────────────────────────────────────────────
   /*
   console.log('[Middleware DEBUG] Setting CSP header');
@@ -49,22 +49,36 @@ export async function middleware(request: NextRequest) {
   );
   */
 
+  // ────────────────────────────────────────────────────────────────
+  // FULL CORS HANDLING FOR ALL /api/* ROUTES
+  // ────────────────────────────────────────────────────────────────
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('[Middleware DEBUG] API route detected - handling CORS');
-    if (isAllowedOrigin) {
-      console.log('[Middleware DEBUG] Allowing origin:', origin);
-      response.headers.set('Access-Control-Allow-Origin', origin!);
+
+    // Allow origin if whitelisted, fallback to * for testing
+    if (origin && isAllowedOrigin) {
+      console.log('[Middleware DEBUG] Allowing specific origin:', origin);
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      console.log('[Middleware DEBUG] Allowing all origins (testing)');
+      response.headers.set('Access-Control-Allow-Origin', '*');
     }
+
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
+    // Handle preflight OPTIONS request (critical for POST with credentials)
     if (request.method === 'OPTIONS') {
       console.log('[Middleware DEBUG] Handling OPTIONS preflight - returning 204');
-      return new NextResponse(null, { status: 204, headers: response.headers });
+      return new Response(null, {
+        status: 204,
+        headers: response.headers,
+      });
     }
   }
 
+  // HTTPS redirect in production
   if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
     console.log('[Middleware DEBUG] HTTP in production - redirecting to HTTPS');
     const url = new URL(request.url);
@@ -72,6 +86,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  // Dashboard auth
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     console.log('[Middleware DEBUG] Dashboard route - checking authentication');
     const accessToken = request.cookies.get('access_token')?.value;
@@ -129,5 +144,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/api/:path*',  // ← Added this so OPTIONS and CORS apply to all API routes
+  ],
 };
