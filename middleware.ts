@@ -29,6 +29,11 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
+  // ────────────────────────────────────────────────────────────────
+  // CSP COMMENTED OUT FOR TESTING — re-enable once Stripe works
+  // If checkout starts working after this, CSP was the blocker
+  // ────────────────────────────────────────────────────────────────
+  /*
   console.log('[Middleware DEBUG] Setting CSP header');
   response.headers.set(
     'Content-Security-Policy',
@@ -42,6 +47,7 @@ export async function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'; " +
     "font-src 'self' data:"
   );
+  */
 
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('[Middleware DEBUG] API route detected - handling CORS');
