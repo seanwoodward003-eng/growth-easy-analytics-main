@@ -13,7 +13,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(req: NextRequest) {
   console.log('>>> STRIPE WEBHOOK ROUTE LOADED');
 
-  // Get raw payload and signature
   const payload = await req.text();
   const sig = req.headers.get('stripe-signature');
 
@@ -47,10 +46,8 @@ export async function POST(req: NextRequest) {
   console.log('Event ID:', event.id);
   console.log('Event data object keys:', Object.keys(event.data.object));
 
-  // Log full event data for debugging (remove or limit in production if too verbose)
   console.log('Full event data:', JSON.stringify(event.data.object, null, 2));
 
-  // Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     console.log('Handling checkout.session.completed');
     const session = event.data.object as Stripe.Checkout.Session;
@@ -87,7 +84,6 @@ export async function POST(req: NextRequest) {
       console.error('DB update failed for user', userId, dbErr);
     }
 
-    // Send welcome email
     const user = await getRow<{ email: string }>(
       'SELECT email FROM users WHERE id = ?',
       [parseInt(userId)]
@@ -134,13 +130,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // invoice.paid (recurring renewal)
   else if (event.type === 'invoice.paid') {
     console.log('Handling invoice.paid');
-    const invoice = event.data.object as Stripe.Invoice;
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | null };
 
-    // Safe access: subscription is optional, may be string ID or null
-    const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
+    const subscriptionId = invoice.subscription ?? null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
@@ -163,13 +157,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // invoice.payment_failed
   else if (event.type === 'invoice.payment_failed') {
     console.log('Handling invoice.payment_failed');
-    const invoice = event.data.object as Stripe.Invoice;
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | null };
 
-    // Same safe access fix
-    const subscriptionId = invoice.subscription ? String(invoice.subscription) : null;
+    const subscriptionId = invoice.subscription ?? null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
@@ -228,7 +220,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // customer.subscription.deleted
   else if (event.type === 'customer.subscription.deleted') {
     console.log('Handling customer.subscription.deleted');
     const subscription = event.data.object as Stripe.Subscription;
@@ -246,13 +237,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Log unhandled events
   else {
     console.log('Webhook: Unhandled event type:', event.type);
   }
 
   console.log('Webhook processing complete - returning 200');
 
-  // Always return 200 to Stripe (prevents retries)
   return NextResponse.json({ received: true });
 }
