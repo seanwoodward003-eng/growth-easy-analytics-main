@@ -25,7 +25,6 @@ function TrialExpiredBanner() {
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Debug: component mount
   console.log('[Pricing DEBUG] Pricing component mounted - timestamp:', new Date().toISOString());
 
   const earlyBirdSold = 0;
@@ -46,6 +45,9 @@ export default function Pricing() {
       console.log('[Pricing DEBUG] Preparing fetch request to /api/create-checkout');
       console.log('[Pricing DEBUG] Request body:', { plan });
 
+      // ADDED: Log cookies before fetch to check auth state
+      console.log('[Pricing DEBUG] Cookies before fetch:', document.cookie);
+
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
@@ -53,8 +55,7 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
-      // ────────────────────────────────────────────────
-      // ADDED DEBUG: show everything about the raw fetch response
+      // ADDED: Raw fetch response debug
       console.log('[Pricing DEBUG] === RAW FETCH RESPONSE ===', {
         status: res.status,
         statusText: res.statusText,
@@ -65,15 +66,18 @@ export default function Pricing() {
         headers: Object.fromEntries(res.headers.entries()),
       });
 
+      // ADDED: Read raw text before parsing JSON (catches non-JSON responses)
+      const rawText = await res.text();
+      console.log('[Pricing DEBUG] === RAW RESPONSE BODY TEXT ===', rawText);
+
       let data;
       try {
-        data = await res.json();
+        data = JSON.parse(rawText);
         console.log('[Pricing DEBUG] === PARSED RESPONSE JSON ===', JSON.stringify(data, null, 2));
       } catch (jsonErr) {
         console.error('[Pricing DEBUG] JSON parse failed:', jsonErr);
-        data = { error: 'Invalid or empty JSON from server' };
+        data = { error: 'Invalid or empty JSON from server', rawText };
       }
-      // ────────────────────────────────────────────────
 
       if (!res.ok) {
         console.error('[Pricing DEBUG] Fetch failed - status not OK');
