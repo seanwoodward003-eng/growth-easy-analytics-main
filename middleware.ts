@@ -1,3 +1,4 @@
+// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getRow } from '@/lib/db';
@@ -24,8 +25,20 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // CSP as SINGLE LINE to avoid middleware crash
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://cdn.shopify.com https://www.googletagmanager.com https://*.google-analytics.com https://js.hs-scripts.com https://*.hubspot.com https://js.hs-banner.com https://js.hsadspixel.net https://api.x.ai https://grok.x.ai; connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com https://api.shopify.com https://*.shopify.com https://www.google-analytics.com https://*.google-analytics.com https://api.hubapi.com https://*.hubspot.com https://api.x.ai https://grok.x.ai; frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.shopify.com https://forms.hsforms.com https://*.hubspot.com; img-src 'self' data: https://*.stripe.com https://*.google-analytics.com https://*.googletagmanager.com https://cdn.shopify.com https://*.hubspot.com https://*.hsadspixel.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:;");
+  // Updated CSP – expanded for Stripe + your existing services
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com https://m.stripe.network https://cdn.shopify.com https://www.googletagmanager.com https://*.google-analytics.com https://js.hs-scripts.com https://*.hubspot.com https://js.hs-banner.com https://js.hsadspixel.net https://api.x.ai https://grok.x.ai",
+      "worker-src 'self' blob: https://js.stripe.com https://*.stripe.com https://m.stripe.network",
+      "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com https://r.stripe.com https://m.stripe.com https://q.stripe.com https://api.shopify.com https://*.shopify.com https://www.google-analytics.com https://*.google-analytics.com https://api.hubapi.com https://*.hubspot.com https://api.x.ai https://grok.x.ai",
+      "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com https://*.stripe.network https://*.shopify.com https://forms.hsforms.com https://*.hubspot.com",
+      "img-src 'self' data: https://*.stripe.com https://q.stripe.com https://cdn.shopify.com https://*.hubspot.com https://*.hsadspixel.net https://*.google-analytics.com https://*.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self' data:",
+    ].join('; ')
+  );
 
   // CORS for API
   if (request.nextUrl.pathname.startsWith('/api')) {
@@ -111,4 +124,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/dashboard/:path*'],
 };
-
