@@ -47,7 +47,7 @@ const getStripe = async (): Promise<Stripe | null> => {
       console.timeEnd('[Stripe Debug] loadStripe execution time');
       console.log('[Stripe Debug] SUCCESS: Stripe.js fully loaded');
       console.log('[Stripe Debug] Stripe object keys:', Object.keys(stripe || {}));
-      console.log('[Stripe Debug] Stripe version (if available):', stripe?._api?.version || 'not exposed');
+      // Removed broken version check – _api is not part of public Stripe type
     } catch (err: any) {
       console.timeEnd('[Stripe Debug] loadStripe execution time');
       console.error('[Stripe Debug] loadStripe REJECTED / failed');
