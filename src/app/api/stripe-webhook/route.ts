@@ -4,9 +4,20 @@ import Stripe from 'stripe';
 import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+// Lazy Stripe instance (prevents build-time error)
+let stripeInstance: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not set');
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-06-30.basil',
+    });
+  }
+  return stripeInstance;
+}
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -28,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   try {
     console.log('Webhook: Attempting signature verification');
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       payload,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -142,7 +153,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Retrieving subscription:', subscriptionId);
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
@@ -169,7 +180,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Retrieving subscription for failed payment:', subscriptionId);
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
