@@ -1,37 +1,47 @@
 'use client';
 
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
-
-let stripePromise: Promise<Stripe | null> | null = null;
-
-const getStripe = async (): Promise<Stripe | null> => {
+const getStripe = async () => {
   if (typeof window === 'undefined') {
-    console.warn('[getStripe] Called on server - returning null');
+    console.warn('[getStripe] Server-side call - returning null');
     return null;
   }
 
-  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-    console.error('[getStripe] Publishable key missing in client bundle');
+  const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!key) {
+    console.error('[getStripe] No publishable key');
     return null;
   }
 
-  if (!stripePromise) {
-    console.log('[getStripe] Initializing Stripe with key length:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.length);
+  console.log('[getStripe] Key length:', key.length);
 
-    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).catch(err => {
-      console.error('[getStripe] loadStripe failed:', err?.message || err);
-      return null;
-    });
+  if (window.Stripe) {
+    console.log('[getStripe] window.Stripe already exists');
+    return window.Stripe(key);
   }
 
-  const stripe = await stripePromise;
-  if (!stripe) {
-    console.error('[getStripe] Stripe loaded but returned null');
-  } else {
-    console.log('[getStripe] Stripe loaded successfully');
-  }
+  console.log('[getStripe] Injecting Stripe.js script manually');
 
-  return stripe;
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.async = true;
+    script.onload = () => {
+      console.log('[getStripe] Stripe.js script loaded successfully');
+      const stripe = window.Stripe(key);
+      if (stripe) {
+        console.log('[getStripe] Stripe instance created');
+        resolve(stripe);
+      } else {
+        console.error('[getStripe] window.Stripe not available after script load');
+        resolve(null);
+      }
+    };
+    script.onerror = (err) => {
+      console.error('[getStripe] Script load failed', err);
+      resolve(null);
+    };
+    document.head.appendChild(script);
+  });
 };
 
 export default getStripe;
