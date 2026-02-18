@@ -5,7 +5,7 @@ import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',  // ← Fixed: matches the type expected by your stripe package version
+  apiVersion: '2025-06-30.basil',  // Your package expects this version
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -138,7 +138,9 @@ export async function POST(req: NextRequest) {
   else if (event.type === 'invoice.paid') {
     console.log('Handling invoice.paid');
     const invoice = event.data.object as Stripe.Invoice;
-    const subscriptionId = invoice.subscription;
+
+    // FIX HERE: safe access + type assertion
+    const subscriptionId = invoice.subscription as string | null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Retrieving subscription:', subscriptionId);
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
@@ -165,7 +167,9 @@ export async function POST(req: NextRequest) {
   else if (event.type === 'invoice.payment_failed') {
     console.log('Handling invoice.payment_failed');
     const invoice = event.data.object as Stripe.Invoice;
-    const subscriptionId = invoice.subscription;
+
+    // FIX HERE: same safe access
+    const subscriptionId = invoice.subscription as string | null;
 
     if (!subscriptionId) {
       console.log('No subscriptionId in invoice - skipping');
@@ -173,7 +177,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Retrieving subscription for failed payment:', subscriptionId);
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
