@@ -19,15 +19,23 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Security headers (keep these)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // TEMPORARILY DISABLE CSP FOR TESTING
-  // response.headers.set('Content-Security-Policy', '...');   ← COMMENTED OUT / REMOVED
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
+    "worker-src 'self' blob:; " +
+    "child-src 'self' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
+    "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
+    "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
+    "img-src 'self' data: blob: https://*.stripe.com; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "font-src 'self' data:"
+  );
 
-  // CORS for API
   if (request.nextUrl.pathname.startsWith('/api')) {
     if (isAllowedOrigin) {
       response.headers.set('Access-Control-Allow-Origin', origin!);
@@ -41,14 +49,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // HTTPS redirect
   if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
     const url = new URL(request.url);
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301);
   }
 
-  // Dashboard protection
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const accessToken = request.cookies.get('access_token')?.value;
 
@@ -95,4 +101,4 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ['/dashboard/:path*'],
-}; 
+};
