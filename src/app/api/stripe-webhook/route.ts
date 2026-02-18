@@ -5,8 +5,7 @@ import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',  // Current GA version as of Feb 2026 – fixes type error
-  // Optional: typescript: true for stricter response types if desired
+  apiVersion: '2025-06-30.basil',  // ← Fixed: matches the type expected by your stripe package version
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
