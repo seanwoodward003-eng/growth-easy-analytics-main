@@ -1,47 +1,49 @@
 'use client';
 
-const getStripe = async () => {
+import { loadStripe, type Stripe } from '@stripe/stripe-js';
+
+// Tell TypeScript that window.Stripe exists after the script loads
+declare global {
+  interface Window {
+    Stripe?: (publishableKey: string) => Stripe | null;
+  }
+}
+
+let stripePromise: Promise<Stripe | null> | null = null;
+
+const getStripe = async (): Promise<Stripe | null> => {
+  // Never run on server
   if (typeof window === 'undefined') {
-    console.warn('[getStripe] Server-side call - returning null');
+    console.warn('[getStripe] Called on server - returning null');
     return null;
   }
 
   const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
   if (!key) {
-    console.error('[getStripe] No publishable key');
+    console.error('[getStripe] Publishable key is missing in client bundle');
     return null;
   }
 
-  console.log('[getStripe] Key length:', key.length);
+  // Only initialize once
+  if (!stripePromise) {
+    console.log('[getStripe] Initializing Stripe.js with key length:', key.length);
 
-  if (window.Stripe) {
-    console.log('[getStripe] window.Stripe already exists');
-    return window.Stripe(key);
+    stripePromise = loadStripe(key).catch((err) => {
+      console.error('[getStripe] loadStripe failed:', err?.message || err);
+      return null;
+    });
   }
 
-  console.log('[getStripe] Injecting Stripe.js script manually');
+  const stripe = await stripePromise;
 
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    script.onload = () => {
-      console.log('[getStripe] Stripe.js script loaded successfully');
-      const stripe = window.Stripe(key);
-      if (stripe) {
-        console.log('[getStripe] Stripe instance created');
-        resolve(stripe);
-      } else {
-        console.error('[getStripe] window.Stripe not available after script load');
-        resolve(null);
-      }
-    };
-    script.onerror = (err) => {
-      console.error('[getStripe] Script load failed', err);
-      resolve(null);
-    };
-    document.head.appendChild(script);
-  });
+  if (!stripe) {
+    console.error('[getStripe] Stripe instance is null after load');
+  } else {
+    console.log('[getStripe] Stripe instance created successfully');
+  }
+
+  return stripe;
 };
 
 export default getStripe;
