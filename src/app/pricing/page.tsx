@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import getStripe from '@/lib/getStripe';
 
@@ -23,33 +23,6 @@ function TrialExpiredBanner() {
 }
 
 export default function Pricing() {
-  // Alert to check if the Stripe key is actually available in the browser
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-    if (!key) {
-      alert(
-        'STRIPE KEY IS MISSING IN THE BROWSER\n\n' +
-        'This means NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not available in client-side JavaScript.\n' +
-        'This is the reason loadStripe returns null and checkout fails.\n\n' +
-        'Fix: Go to Vercel dashboard → Settings → Environment Variables → make sure the variable exists, is spelled exactly NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, has a valid pk_live_ or pk_test_ value, and redeploy the site.'
-      );
-    } else if (key.length < 50) {
-      alert(
-        'STRIPE KEY IS PRESENT BUT LOOKS INVALID\n\n' +
-        'Length: ' + key.length + ' characters (should be ~100+).\n' +
-        'Starts with: ' + key.slice(0, 10) + '...\n\n' +
-        'Likely copy-paste error, trailing space/newline in Vercel, or wrong key type. Fix and redeploy.'
-      );
-    } else {
-      alert(
-        'STRIPE KEY IS PRESENT IN THE BROWSER\n\n' +
-        'Length: ' + key.length + ' characters — looks valid.\n\n' +
-        'The key is loading correctly — if checkout still fails, the issue is script loading or browser blocking. Try Private Browsing or disable "Prevent Cross-Site Tracking" in Safari settings.'
-      );
-    }
-  }, []);
-
   const [loading, setLoading] = useState<string | null>(null);
 
   const earlyBirdSold = 0;
@@ -73,15 +46,25 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
-      if (!res.ok) throw new Error('Server error');
-
       const data = await res.json();
-      if (!data.sessionId) throw new Error('No sessionId');
+
+      if (!res.ok) {
+        throw new Error(data.error || `Server returned ${res.status}`);
+      }
+
+      if (!data.sessionId) {
+        throw new Error('No sessionId returned from server');
+      }
 
       const stripe = await getStripe();
-      if (!stripe) throw new Error('Failed to load Stripe');
+      if (!stripe) {
+        throw new Error('Failed to load Stripe');
+      }
 
-      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId,
+      });
+
       if (error) throw error;
     } catch (err: any) {
       alert('Checkout failed: ' + (err.message || 'Unknown error'));
