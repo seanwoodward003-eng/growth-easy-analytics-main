@@ -38,7 +38,10 @@ export default function Pricing() {
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
     setLoading(plan);
 
+    console.log('[Pricing] Checkout started for plan:', plan);
+
     try {
+      console.log('[Pricing] Sending POST to /api/create-checkout');
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
@@ -46,30 +49,53 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
+      console.log('[Pricing] Fetch response status:', res.status);
+      console.log('[Pricing] Fetch response ok?', res.ok);
+
       const data = await res.json();
+      console.log('[Pricing] Response JSON:', JSON.stringify(data, null, 2));
 
       if (!res.ok) {
-        throw new Error(data.error || `Server returned ${res.status}`);
+        console.error('[Pricing] Server returned non-OK status:', res.status);
+        throw new Error(data.error || `Server error ${res.status}`);
       }
 
       if (!data.sessionId) {
+        console.error('[Pricing] No sessionId in response');
         throw new Error('No sessionId returned from server');
       }
 
+      console.log('[Pricing] Session ID received:', data.sessionId);
+
+      console.log('[Pricing] Calling getStripe()');
       const stripe = await getStripe();
+
+      console.log('[Pricing] getStripe result:', stripe ? 'Stripe object loaded' : 'null - FAILED');
+      console.log('[Pricing] Stripe type:', stripe ? typeof stripe : 'null');
+
       if (!stripe) {
+        console.error('[Pricing] Stripe is null - cannot redirect');
         throw new Error('Failed to load Stripe');
       }
 
+      console.log('[Pricing] Starting redirect to Stripe Checkout');
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Pricing] Redirect error from Stripe:', error.message);
+        throw error;
+      }
+
+      console.log('[Pricing] Redirect succeeded - should be on Stripe now');
     } catch (err: any) {
-      alert('Checkout failed: ' + (err.message || 'Unknown error'));
+      console.error('[Pricing] Checkout error:', err.message || err);
+      console.error('[Pricing] Full error object:', err);
+      alert('Checkout failed: ' + (err.message || 'Unknown error - check console'));
     } finally {
       setLoading(null);
+      console.log('[Pricing] handleCheckout finished');
     }
   };
 
