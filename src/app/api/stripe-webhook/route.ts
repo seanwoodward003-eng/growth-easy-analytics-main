@@ -11,54 +11,81 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
-  // Get the raw payload as text (correct for App Router)
-  const payload = await req.text();
+  console.log('>>> STRIPE WEBHOOK ROUTE LOADED');
 
-  // Get the Stripe signature from headers
+  // Get raw payload and signature
+  const payload = await req.text();
   const sig = req.headers.get('stripe-signature');
 
+  console.log('Webhook raw payload length:', payload.length);
+  console.log('Stripe-Signature header:', sig || 'MISSING');
+
   if (!sig) {
-    console.error('Missing stripe-signature header');
+    console.error('Webhook: Missing stripe-signature header');
     return new Response('Missing signature', { status: 400 });
   }
 
   let event: Stripe.Event;
 
   try {
+    console.log('Webhook: Attempting signature verification');
     event = stripe.webhooks.constructEvent(
       payload,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
+    console.log('Webhook: Signature verification SUCCESS');
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('Webhook: Signature verification FAILED');
+    console.error('Error message:', err.message);
+    console.error('Error type:', err.type);
+    console.error('Full error:', JSON.stringify(err, null, 2));
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  console.log('Webhook received:', event.type);
+  console.log('Webhook received event type:', event.type);
+  console.log('Event ID:', event.id);
+  console.log('Event data object keys:', Object.keys(event.data.object));
+
+  // Log full event data for debugging (remove or limit in production if too verbose)
+  console.log('Full event data:', JSON.stringify(event.data.object, null, 2));
 
   // Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
+    console.log('Handling checkout.session.completed');
     const session = event.data.object as Stripe.Checkout.Session;
+
+    console.log('Session ID:', session.id);
+    console.log('Session mode:', session.mode);
+    console.log('Client reference ID (userId):', session.client_reference_id);
+    console.log('Metadata:', session.metadata);
+
     const userId = session.client_reference_id;
 
     if (!userId) {
-      console.error('No userId in session client_reference_id');
+      console.error('No userId in session.client_reference_id');
       return NextResponse.json({ received: true });
     }
 
     const plan = session.metadata?.plan || 'unknown';
     const mode = session.mode;
 
+    console.log('Updating user subscription - userId:', userId, 'plan:', plan, 'mode:', mode);
+
     let newStatus = 'active';
     if (mode === 'payment') {
       newStatus = 'lifetime';
     }
 
-    await run('UPDATE users SET subscription_status = ? WHERE id = ?', [
-      newStatus,
-      parseInt(userId),
-    ]);
+    try {
+      await run('UPDATE users SET subscription_status = ? WHERE id = ?', [
+        newStatus,
+        parseInt(userId),
+      ]);
+      console.log('DB update success - new status:', newStatus);
+    } catch (dbErr) {
+      console.error('DB update failed for user', userId, dbErr);
+    }
 
     // Send welcome email
     const user = await getRow<{ email: string }>(
@@ -67,6 +94,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (user?.email) {
+      console.log('Sending welcome email to:', user.email);
       try {
         await resend.emails.send({
           from: 'GrowthEasy AI <noreply@resend.dev>',
@@ -97,48 +125,64 @@ export async function POST(req: NextRequest) {
             </html>
           `,
         });
-        console.log('Welcome email sent to', user.email);
+        console.log('Welcome email sent successfully to', user.email);
       } catch (emailErr) {
-        console.error('Failed to send welcome email', emailErr);
+        console.error('Failed to send welcome email:', emailErr);
       }
+    } else {
+      console.log('No email found for userId:', userId);
     }
   }
 
   // invoice.paid (recurring renewal)
-  if (event.type === 'invoice.paid') {
+  else if (event.type === 'invoice.paid') {
+    console.log('Handling invoice.paid');
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = invoice.subscription;
 
-    if (!subscriptionId) return NextResponse.json({ received: true });
+    if (!subscriptionId) {
+      console.log('No subscriptionId in invoice - skipping');
+      return NextResponse.json({ received: true });
+    }
 
+    console.log('Retrieving subscription:', subscriptionId);
     const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
+      console.log('Updating user status to active - userId:', userId);
       await run('UPDATE users SET subscription_status = ? WHERE id = ?', [
         'active',
         parseInt(userId),
       ]);
-      console.log(`Renewal success — user ${userId} status restored`);
+      console.log('Renewal success - user', userId, 'status restored to active');
+    } else {
+      console.log('No user_id in subscription metadata');
     }
   }
 
   // invoice.payment_failed
-  if (event.type === 'invoice.payment_failed') {
+  else if (event.type === 'invoice.payment_failed') {
+    console.log('Handling invoice.payment_failed');
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = invoice.subscription;
 
-    if (!subscriptionId) return NextResponse.json({ received: true });
+    if (!subscriptionId) {
+      console.log('No subscriptionId in invoice - skipping');
+      return NextResponse.json({ received: true });
+    }
 
+    console.log('Retrieving subscription for failed payment:', subscriptionId);
     const subscription = await stripe.subscriptions.retrieve(subscriptionId as string);
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
+      console.log('Updating user status to canceled - userId:', userId);
       await run('UPDATE users SET subscription_status = ? WHERE id = ?', [
         'canceled',
         parseInt(userId),
       ]);
-      console.log(`Payment failed — user ${userId} access restricted`);
+      console.log('Payment failed - user', userId, 'access restricted');
 
       const user = await getRow<{ email: string }>(
         'SELECT email FROM users WHERE id = ?',
@@ -146,6 +190,7 @@ export async function POST(req: NextRequest) {
       );
 
       if (user?.email) {
+        console.log('Sending payment failed email to:', user.email);
         try {
           await resend.emails.send({
             from: 'GrowthEasy AI <no-reply@growtheasy.ai>',
@@ -171,26 +216,38 @@ export async function POST(req: NextRequest) {
               </html>
             `,
           });
+          console.log('Payment failed email sent to', user.email);
         } catch (emailErr) {
-          console.error('Failed to send payment failed email', emailErr);
+          console.error('Failed to send payment failed email:', emailErr);
         }
       }
     }
   }
 
   // customer.subscription.deleted
-  if (event.type === 'customer.subscription.deleted') {
+  else if (event.type === 'customer.subscription.deleted') {
+    console.log('Handling customer.subscription.deleted');
     const subscription = event.data.object as Stripe.Subscription;
     const userId = subscription.metadata?.user_id;
 
     if (userId) {
+      console.log('Updating user status to canceled - userId:', userId);
       await run('UPDATE users SET subscription_status = ? WHERE id = ?', [
         'canceled',
         parseInt(userId),
       ]);
-      console.log(`Subscription canceled — user ${userId} access restricted`);
+      console.log('Subscription canceled - user', userId, 'access restricted');
+    } else {
+      console.log('No user_id in subscription metadata');
     }
   }
+
+  // Log unhandled events
+  else {
+    console.log('Webhook: Unhandled event type:', event.type);
+  }
+
+  console.log('Webhook processing complete - returning 200');
 
   // Always return 200 to Stripe (prevents retries)
   return NextResponse.json({ received: true });
