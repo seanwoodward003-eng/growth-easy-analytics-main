@@ -4,7 +4,6 @@ import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import getStripe from '@/lib/getStripe';
 
-// Banner component
 function TrialExpiredBanner() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
@@ -24,28 +23,41 @@ function TrialExpiredBanner() {
 }
 
 export default function Pricing() {
-  // Alert to check if key is in client bundle (remove after testing)
+  // Alert to check if the Stripe key is actually available in the browser
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
     if (!key) {
-      alert('Stripe publishable key is MISSING in the browser.\nThis means the env var is not in the client bundle.');
+      alert(
+        'STRIPE KEY IS MISSING IN THE BROWSER\n\n' +
+        'This means NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not available in client-side JavaScript.\n' +
+        'This is the reason loadStripe returns null and checkout fails.\n\n' +
+        'Fix: Go to Vercel dashboard → Settings → Environment Variables → make sure the variable exists, is spelled exactly NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, has a valid pk_live_ or pk_test_ value, and redeploy the site.'
+      );
+    } else if (key.length < 50) {
+      alert(
+        'STRIPE KEY IS PRESENT BUT LOOKS INVALID\n\n' +
+        'Length: ' + key.length + ' characters (should be ~100+).\n' +
+        'Starts with: ' + key.slice(0, 10) + '...\n\n' +
+        'Likely copy-paste error, trailing space/newline in Vercel, or wrong key type. Fix and redeploy.'
+      );
     } else {
-      console.log('[Pricing] Stripe key loaded in browser – length:', key.length);
+      alert(
+        'STRIPE KEY IS PRESENT IN THE BROWSER\n\n' +
+        'Length: ' + key.length + ' characters — looks valid.\n\n' +
+        'The key is loading correctly — if checkout still fails, the issue is script loading or browser blocking. Try Private Browsing or disable "Prevent Cross-Site Tracking" in Safari settings.'
+      );
     }
   }, []);
 
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Hardcoded counts for now (replace with real DB fetch later)
   const earlyBirdSold = 0;
   const totalLifetimeSold = 0;
-
   const EARLY_CAP = 75;
   const TOTAL_CAP = 150;
-
   const earlyLeft = EARLY_CAP - earlyBirdSold;
   const totalLeft = TOTAL_CAP - totalLifetimeSold;
-
   const showEarly = earlyBirdSold < EARLY_CAP;
   const showStandard = totalLifetimeSold < TOTAL_CAP;
   const lifetimeSoldOut = totalLifetimeSold >= TOTAL_CAP;
@@ -103,7 +115,6 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* PRICING CARDS GRID – this is what was abbreviated */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {showEarly && (
           <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
@@ -172,7 +183,6 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Guarantee */}
       <div className="max-w-4xl mx-auto mt-16 text-gray-300 text-lg md:text-xl space-y-4">
         <p className="text-2xl md:text-3xl font-bold text-cyan-400">7-day money-back guarantee — no questions asked</p>
         <p>Lifetime plans include core access + ongoing minor updates forever. Major new features available as optional paid upgrades.</p>
