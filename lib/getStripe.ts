@@ -66,4 +66,4 @@ const getStripe = async (): Promise<Stripe | null> => {
   return stripePromise;
 };
 
-export default getStripe;
+export default getStripe; 
