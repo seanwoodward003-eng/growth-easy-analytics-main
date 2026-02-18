@@ -2,13 +2,6 @@
 
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 
-// Declare window.Stripe so TypeScript doesn't complain
-declare global {
-  interface Window {
-    Stripe?: (publishableKey: string) => any;
-  }
-}
-
 let stripePromise: Promise<Stripe | null> | null = null;
 
 const getStripe = async (): Promise<Stripe | null> => {
