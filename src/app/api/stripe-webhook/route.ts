@@ -1,7 +1,6 @@
-// app/api/stripe/webhook/route.ts
+// app/api/stripe-webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { buffer } from 'micro'; // Install: npm install micro
 import { run, getRow } from '@/lib/db';
 import { Resend } from 'resend';
 
@@ -11,14 +10,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const config = {
-  api: {
-    bodyParser: false, // Required for raw body
-  },
-};
-
 export async function POST(req: NextRequest) {
-  const buf = await buffer(req);
+  // Get the raw payload as text (correct for App Router)
+  const payload = await req.text();
+
+  // Get the Stripe signature from headers
   const sig = req.headers.get('stripe-signature');
 
   if (!sig) {
@@ -30,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(
-      buf,
+      payload,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
@@ -47,7 +43,7 @@ export async function POST(req: NextRequest) {
     const userId = session.client_reference_id;
 
     if (!userId) {
-      console.error('No userId in session metadata');
+      console.error('No userId in session client_reference_id');
       return NextResponse.json({ received: true });
     }
 
@@ -196,5 +192,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Always return 200 to Stripe (prevents retries)
   return NextResponse.json({ received: true });
 }
