@@ -53,12 +53,27 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
-      console.log('[Pricing DEBUG] Fetch completed - status:', res.status);
-      console.log('[Pricing DEBUG] Response OK?', res.ok);
-      console.log('[Pricing DEBUG] Response headers:', Object.fromEntries(res.headers.entries()));
+      // ────────────────────────────────────────────────
+      // ADDED DEBUG: show everything about the raw fetch response
+      console.log('[Pricing DEBUG] === RAW FETCH RESPONSE ===', {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok,
+        url: res.url,
+        redirected: res.redirected,
+        type: res.type,
+        headers: Object.fromEntries(res.headers.entries()),
+      });
 
-      const data = await res.json();
-      console.log('[Pricing DEBUG] Response JSON (full):', JSON.stringify(data, null, 2));
+      let data;
+      try {
+        data = await res.json();
+        console.log('[Pricing DEBUG] === PARSED RESPONSE JSON ===', JSON.stringify(data, null, 2));
+      } catch (jsonErr) {
+        console.error('[Pricing DEBUG] JSON parse failed:', jsonErr);
+        data = { error: 'Invalid or empty JSON from server' };
+      }
+      // ────────────────────────────────────────────────
 
       if (!res.ok) {
         console.error('[Pricing DEBUG] Fetch failed - status not OK');
