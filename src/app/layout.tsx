@@ -1,5 +1,3 @@
-App/layout 
-
 'use client';
 
 import "./globals.css";
@@ -55,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
     // Force clean redirect to home page
     // This ensures middleware sees no valid token on next request
-    window.location.href = '/';
+    window.location.replace('/');
   };
 
   return (
