@@ -25,6 +25,9 @@ function TrialExpiredBanner() {
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
 
+  // Debug: component mount
+  console.log('[Pricing DEBUG] Pricing component mounted - timestamp:', new Date().toISOString());
+
   const earlyBirdSold = 0;
   const totalLifetimeSold = 0;
   const EARLY_CAP = 75;
@@ -36,12 +39,13 @@ export default function Pricing() {
   const lifetimeSoldOut = totalLifetimeSold >= TOTAL_CAP;
 
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
+    console.log('[Pricing DEBUG] handleCheckout ENTERED - plan:', plan);
     setLoading(plan);
 
-    console.log('[Pricing] Checkout started for plan:', plan);
-
     try {
-      console.log('[Pricing] Sending POST to /api/create-checkout');
+      console.log('[Pricing DEBUG] Preparing fetch request to /api/create-checkout');
+      console.log('[Pricing DEBUG] Request body:', { plan });
+
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
@@ -49,53 +53,57 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
-      console.log('[Pricing] Fetch response status:', res.status);
-      console.log('[Pricing] Fetch response ok?', res.ok);
+      console.log('[Pricing DEBUG] Fetch completed - status:', res.status);
+      console.log('[Pricing DEBUG] Response OK?', res.ok);
+      console.log('[Pricing DEBUG] Response headers:', Object.fromEntries(res.headers.entries()));
 
       const data = await res.json();
-      console.log('[Pricing] Response JSON:', JSON.stringify(data, null, 2));
+      console.log('[Pricing DEBUG] Response JSON (full):', JSON.stringify(data, null, 2));
 
       if (!res.ok) {
-        console.error('[Pricing] Server returned non-OK status:', res.status);
+        console.error('[Pricing DEBUG] Fetch failed - status not OK');
         throw new Error(data.error || `Server error ${res.status}`);
       }
 
       if (!data.sessionId) {
-        console.error('[Pricing] No sessionId in response');
+        console.error('[Pricing DEBUG] No sessionId in response data');
         throw new Error('No sessionId returned from server');
       }
 
-      console.log('[Pricing] Session ID received:', data.sessionId);
+      console.log('[Pricing DEBUG] Session ID extracted:', data.sessionId);
 
-      console.log('[Pricing] Calling getStripe()');
+      console.log('[Pricing DEBUG] Calling getStripe()');
       const stripe = await getStripe();
 
-      console.log('[Pricing] getStripe result:', stripe ? 'Stripe object loaded' : 'null - FAILED');
-      console.log('[Pricing] Stripe type:', stripe ? typeof stripe : 'null');
+      console.log('[Pricing DEBUG] getStripe() returned:', stripe ? 'valid Stripe object' : 'null');
+      console.log('[Pricing DEBUG] Stripe type:', stripe ? typeof stripe : 'null');
 
       if (!stripe) {
-        console.error('[Pricing] Stripe is null - cannot redirect');
+        console.error('[Pricing DEBUG] Stripe is null - cannot proceed to redirect');
         throw new Error('Failed to load Stripe');
       }
 
-      console.log('[Pricing] Starting redirect to Stripe Checkout');
+      console.log('[Pricing DEBUG] Starting Stripe redirect with sessionId:', data.sessionId);
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       });
 
       if (error) {
-        console.error('[Pricing] Redirect error from Stripe:', error.message);
+        console.error('[Pricing DEBUG] Stripe redirect failed:', error.message);
+        console.error('[Pricing DEBUG] Error type/code:', error.type, error.code);
         throw error;
       }
 
-      console.log('[Pricing] Redirect succeeded - should be on Stripe now');
+      console.log('[Pricing DEBUG] Redirect succeeded - browser should now be on Stripe');
     } catch (err: any) {
-      console.error('[Pricing] Checkout error:', err.message || err);
-      console.error('[Pricing] Full error object:', err);
-      alert('Checkout failed: ' + (err.message || 'Unknown error - check console'));
+      console.error('[Pricing DEBUG] CATCH BLOCK - Checkout error');
+      console.error('[Pricing DEBUG] Error message:', err.message || err);
+      console.error('[Pricing DEBUG] Error stack:', err.stack);
+      console.error('[Pricing DEBUG] Full error object:', JSON.stringify(err, null, 2));
+      alert('Checkout failed: ' + (err.message || 'Unknown error - check console for details'));
     } finally {
       setLoading(null);
-      console.log('[Pricing] handleCheckout finished');
+      console.log('[Pricing DEBUG] handleCheckout finished - loading reset');
     }
   };
 
