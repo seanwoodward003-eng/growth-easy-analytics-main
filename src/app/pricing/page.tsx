@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import getStripe from '@/lib/getStripe';
 
-// Small Client Component that uses useSearchParams
+// Banner component
 function TrialExpiredBanner() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
@@ -24,18 +24,19 @@ function TrialExpiredBanner() {
 }
 
 export default function Pricing() {
-  // ── Added component-level key check ──
-  console.log('[Pricing Page] Component mounted - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY exists in client?', !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-  if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-    console.log('[Pricing Page] Key prefix (client):', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.slice(0, 7) + '...');
-    console.log('[Pricing Page] Key length (client):', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.length);
-  } else {
-    console.error('[Pricing Page] CRITICAL: Publishable key missing on client-side render');
-  }
+  // Alert to check if key is in client bundle (remove after testing)
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!key) {
+      alert('Stripe publishable key is MISSING in the browser.\nThis means the env var is not in the client bundle.');
+    } else {
+      console.log('[Pricing] Stripe key loaded in browser – length:', key.length);
+    }
+  }, []);
 
   const [loading, setLoading] = useState<string | null>(null);
 
-  // TODO: Replace with real DB fetch in production
+  // Hardcoded counts for now (replace with real DB fetch later)
   const earlyBirdSold = 0;
   const totalLifetimeSold = 0;
 
@@ -52,12 +53,7 @@ export default function Pricing() {
   const handleCheckout = async (plan: 'early_ltd' | 'standard_ltd' | 'monthly' | 'annual') => {
     setLoading(plan);
 
-    console.log('[Checkout Debug] Button clicked - plan:', plan);
-    console.log('[Checkout Debug] Starting full checkout flow');
-
     try {
-      console.log('[Checkout Debug] Sending POST to /api/create-checkout');
-
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         credentials: 'include',
@@ -65,66 +61,20 @@ export default function Pricing() {
         body: JSON.stringify({ plan }),
       });
 
-      console.log('[Checkout Debug] Server response status:', res.status);
-      console.log('[Checkout Debug] Response headers:', Object.fromEntries(res.headers.entries()));
+      if (!res.ok) throw new Error('Server error');
 
       const data = await res.json();
-      console.log('[Checkout Debug] Server response data (full JSON):', JSON.stringify(data, null, 2));
-
-      if (!res.ok) {
-        console.error('[Checkout Debug] Server error response - status not OK');
-        throw new Error(data.error || `Server error ${res.status}`);
-      }
-
-      if (!data.sessionId) {
-        console.error('[Checkout Debug] No sessionId in server response');
-        throw new Error('No sessionId returned from server');
-      }
-
-      console.log('[Checkout Debug] Session ID received successfully:', data.sessionId);
-
-      console.log('[Checkout Debug] Loading Stripe library via getStripe()');
-
-      // ── Added timing & state check before await ──
-      console.log('[Checkout Debug] Before awaiting getStripe - current time:', new Date().toISOString());
-      console.log('[Checkout Debug] Current loading state:', loading);
+      if (!data.sessionId) throw new Error('No sessionId');
 
       const stripe = await getStripe();
+      if (!stripe) throw new Error('Failed to load Stripe');
 
-      // ── Added timing & result check after await ──
-      console.log('[Checkout Debug] After awaiting getStripe - current time:', new Date().toISOString());
-      console.log('[Checkout Debug] stripe value type:', stripe ? typeof stripe : 'null/undefined');
-      console.log('[Checkout Debug] stripe exists?', !!stripe);
-
-      console.log('[Checkout Debug] getStripe() result:', stripe ? 'Stripe loaded' : 'Stripe FAILED to load (null)');
-
-      if (!stripe) {
-        console.error('[Checkout Debug] Stripe library did not load - throwing error');
-        throw new Error('Failed to load Stripe');
-      }
-
-      console.log('[Checkout Debug] Stripe ready - initiating redirect to checkout');
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      });
-
-      if (error) {
-        console.error('[Checkout Debug] Stripe redirect error:', error.message);
-        throw error;
-      }
-
-      console.log('[Checkout Debug] Redirect succeeded - should be on Stripe page now');
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      if (error) throw error;
     } catch (err: any) {
-      console.error('[Checkout Debug] CRITICAL CHECKOUT FAILURE - full details:');
-      console.error('[Checkout Debug] Error message:', err.message || 'No message');
-      console.error('[Checkout Debug] Error name:', err.name || 'unknown');
-      console.error('[Checkout Debug] Full error object:', JSON.stringify(err, null, 2));
-      console.error('[Checkout Debug] Stack trace:', err.stack || 'no stack');
-
-      alert('Checkout failed: ' + (err.message || 'Unknown error - check browser console for details'));
+      alert('Checkout failed: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(null);
-      console.log('[Checkout Debug] handleCheckout finished');
     }
   };
 
@@ -153,7 +103,7 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* Pricing cards */}
+      {/* PRICING CARDS GRID – this is what was abbreviated */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {showEarly && (
           <div className="metric-card p-5 md:p-6 rounded-3xl text-center aspect-[4/7] flex flex-col justify-between border-4 border-cyan-400/80 shadow-2xl max-w-[340px] mx-auto overflow-hidden">
