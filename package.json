@@ -10,7 +10,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "shopify:dev": "npx shopify app dev",
+    "shopify:dev": "npx shopify app dev"
   },
   "dependencies": {
     "@ai-sdk/react": "0.0.66",
@@ -34,8 +34,7 @@
     "jose": "5.9.6",
     "@react-email/components": "0.0.15",
     "micro": "10.0.1",
-    "@shopify/app-bridge-react": "^4.2.10",
-    "@shopify/app-bridge-utils": "^4.2.10"
+    "@shopify/app-bridge-react": "^4.2.10"
   },
   "devDependencies": {
     "@shopify/cli": "3.63.0",
