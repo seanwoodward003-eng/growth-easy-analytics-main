@@ -2,18 +2,14 @@
 
 import { useChat } from 'ai/react';
 import { Paperclip, Image, Smile, Send } from 'lucide-react';
-import { useAppBridge } from '@shopify/app-bridge-react';
-import { authenticatedFetch } from '@shopify/app-bridge-utils';
+import { useAuthenticatedFetch } from '@/lib/authenticatedFetch';
 
 export default function AIGrowthCoachPage() {
-  const app = useAppBridge();  // From CDN init
-
-  // Create authenticated fetcher (auto-adds Bearer session token)
-  const authenticatedFetcher = authenticatedFetch(app);
+  const authenticatedFetch = useAuthenticatedFetch(); // Token wrapper
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
-    fetch: authenticatedFetcher,  // <-- This ensures every chat request sends Shopify session token
+    fetch: authenticatedFetch, // This makes every chat message POST send Bearer token
   });
 
   return (
