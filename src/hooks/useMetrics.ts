@@ -31,7 +31,7 @@ export default function useMetrics() {
 
     const json = await res.json();
 
-    // DEBUG LOG YOU ASKED FOR
+    // DEBUG LOG - added exactly as you asked
     console.log('[useMetrics] API sent this:', JSON.stringify(json));
 
     return json;
@@ -65,4 +65,4 @@ export default function useMetrics() {
     hasRealData,
     refresh,
   };
-} 
+}
