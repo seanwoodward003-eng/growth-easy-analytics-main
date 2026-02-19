@@ -26,29 +26,37 @@ const FAKE_METRICS = {
   store_health_score: 82,
   ai_insight: 'Fake data loaded for test - real data coming soon',
   connections: { shopify: true, ga4: true, hubspot: false },
-  // ADD THESE MISSING KEYS TO MATCH YOUR PAGES
+  // Added keys to match pages (Acquisition, Churn, etc.)
   traffic: { sessions: 15000, bounceRate: 45.5 },
-  // add any other keys pages expect (e.g. ltvNew, ltvReturning)
   ltvNew: 300,
   ltvReturning: 700,
+  email: { openRate: 28.7 },  // fixes Churn page build error
 };
 
 export default function useMetrics() {
   const authenticatedFetch = useAuthenticatedFetch();
 
-  // TEMP: Force fake data instead of real API call
-  const data = FAKE_METRICS;  // ← This line forces fake data
+  // TEMP: Force fake data (uncomment real fetch after test)
+  const data = FAKE_METRICS;
   const error = null;
   const isLoading = false;
 
-  /* Real fetch - comment this block out for fake test
+  /* Real fetch - comment out for fake test
   const fetcher = async (url: string) => {
     const res = await authenticatedFetch(url, {
       credentials: 'include',
     });
 
-    if (!res.ok) throw new Error('Failed to fetch metrics');
-    return res.json();
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[useMetrics] Fetch failed:', res.status, errText);
+      throw new Error('Failed to fetch metrics');
+    }
+
+    const json = await res.json();
+    console.log('[useMetrics] Raw API response:', json); // keep for debugging real API
+
+    return json;
   };
 
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
