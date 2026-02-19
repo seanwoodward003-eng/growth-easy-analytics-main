@@ -1,7 +1,15 @@
 'use client';
 
 import useSWR from 'swr';
-import { useAuthenticatedFetch } from '@/lib/authenticatedFetch';
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url, {
+    credentials: 'include',
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch metrics');
+  return res.json();
+};
 
 const EMPTY_STATE = {
   revenue: { total: 0, trend: '0%', history: { labels: [], values: [] } },
@@ -16,26 +24,16 @@ const EMPTY_STATE = {
 };
 
 export default function useMetrics() {
-  const authenticatedFetch = useAuthenticatedFetch();
-
-  const fetcher = async (url: string) => {
-    const res = await authenticatedFetch(url, {
-      credentials: 'include',
-    });
-
-    if (!res.ok) throw new Error('Failed to fetch metrics');
-    return res.json();
-  };
-
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
-    refreshInterval: 30000,
-    revalidateOnMount: true,
-    revalidateOnFocus: true,
+    refreshInterval: 30000,           // background refresh every 30s
+    revalidateOnMount: true,          // always fetch when component mounts
+    revalidateOnFocus: true,          // ← very important: refresh when user returns to tab
     revalidateOnReconnect: true,
-    dedupingInterval: 2000,
-    focusThrottleInterval: 5000,
+    dedupingInterval: 2000,           // don't duplicate requests within 2s
+    focusThrottleInterval: 5000,      // don't spam when focusing window repeatedly
   });
 
+  // Logged-in users always get real data or clean zeros — NEVER demo/fake data
   const metrics = data || EMPTY_STATE;
 
   const shopifyConnected = !!metrics.shopify?.connected;
@@ -43,6 +41,7 @@ export default function useMetrics() {
   const hubspotConnected = !!metrics.hubspot?.connected;
   const hasRealData = shopifyConnected || ga4Connected || hubspotConnected;
 
+  // More explicit refresh function (optional but clearer)
   const refresh = () => mutate(undefined, { revalidate: true });
 
   return {
