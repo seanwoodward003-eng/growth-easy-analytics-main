@@ -19,13 +19,9 @@ export default function useMetrics() {
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetcher = async (url: string) => {
-    console.log('[useMetrics] Calling /api/metrics now...');
-
     const res = await authenticatedFetch(url, {
       credentials: 'include',
     });
-
-    console.log('[useMetrics] Response status:', res.status);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -34,7 +30,9 @@ export default function useMetrics() {
     }
 
     const json = await res.json();
-    console.log('[useMetrics] Raw data from /api/metrics:', JSON.stringify(json));
+
+    // DEBUG LOG YOU ASKED FOR
+    console.log('[useMetrics] API sent this:', JSON.stringify(json));
 
     return json;
   };
