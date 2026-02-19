@@ -10,6 +10,7 @@ if (ENCRYPTION_KEY.length !== 64) {
   throw new Error("ENCRYPTION_KEY must be a 32-byte hex string (64 characters)");
 }
 
+// Use Web Crypto (global, no import, Edge-safe)
 const key = new TextEncoder().encode(ENCRYPTION_KEY.padEnd(32, ' ')); // 256-bit key
 
 export async function encrypt(value: string): Promise<string> {
@@ -28,25 +29,17 @@ export async function encrypt(value: string): Promise<string> {
   combined.set(iv);
   combined.set(new Uint8Array(encrypted), iv.length);
 
-  // Use Buffer.toString('base64') for safer base64
-  return Buffer.from(combined).toString('base64');
+  return btoa(String.fromCharCode(...combined));
 }
 
 export async function decrypt(encryptedText: string): Promise<string> {
   if (!encryptedText) return "";
 
+  const combined = Uint8Array.from(atob(encryptedText), c => c.charCodeAt(0));
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+
   try {
-    // Pre-check: must be valid base64
-    if (!/^[A-Za-z0-9+/=]+$/.test(encryptedText.trim())) {
-      console.warn('[DECRYPT] Input is not valid base64 - returning empty');
-      return "";
-    }
-
-    // Use Buffer.from(base64, 'base64') – more reliable than atob in Node/Edge
-    const combined = Buffer.from(encryptedText, 'base64');
-    const iv = combined.subarray(0, 12);
-    const encrypted = combined.subarray(12);
-
     const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       await crypto.subtle.importKey('raw', key, 'AES-GCM', true, ['decrypt']),
@@ -54,8 +47,10 @@ export async function decrypt(encryptedText: string): Promise<string> {
     );
 
     return new TextDecoder().decode(decrypted);
-  } catch (err) {
-    console.error('[DECRYPT] Failed:', err.message);
-    return ""; // Return empty instead of throwing
+  } catch (err: unknown) {
+    // Safe error handling: check if it's an Error instance
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('[DECRYPT] Failed:', errorMessage);
+    return ""; // Return empty string on failure (prevents app crash)
   }
 }
