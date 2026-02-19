@@ -13,6 +13,55 @@ export default function RetentionPage() {
     hasRealData 
   } = useMetrics();
 
+  // ────────────────────────────────────────────────
+  // DEBUG LOGS – remove after confirming the fix
+  // ────────────────────────────────────────────────
+  console.log('[RETENTION PAGE DEBUG] === Render started ===');
+  console.log('[RETENTION PAGE DEBUG] useMetrics returned:', {
+    metricsType: typeof metrics,
+    metricsIsNull: metrics === null,
+    metricsIsUndefined: metrics === undefined,
+    isLoading,
+    isError,
+    shopifyConnected,
+    hasRealData
+  });
+
+  if (metrics) {
+    console.log('[RETENTION PAGE DEBUG] metrics keys:', Object.keys(metrics));
+    console.log('[RETENTION PAGE DEBUG] has retention?', 'retention' in metrics);
+    if ('retention' in metrics) {
+      console.log('[RETENTION PAGE DEBUG] retention keys:', Object.keys(metrics.retention || {}));
+      console.log('[RETENTION PAGE DEBUG] retention.rate value:', metrics.retention?.rate);
+    } else {
+      console.warn('[RETENTION PAGE DEBUG] retention key MISSING in metrics');
+    }
+  } else {
+    console.warn('[RETENTION PAGE DEBUG] metrics is falsy – likely auth/fetch error');
+  }
+
+  // ────────────────────────────────────────────────
+  // SAFE GUARDS + EARLY RETURNS – prevent crash
+  // ────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="px-4 py-10 text-center text-cyan-300">
+        Loading retention data...
+      </div>
+    );
+  }
+
+  if (isError || !metrics) {
+    return (
+      <div className="px-4 py-10 text-center text-red-400">
+        Unable to load retention data. Please check your Shopify connection or try refreshing.
+      </div>
+    );
+  }
+
+  // Safe defaults
+  const safeRetention = metrics.retention ?? { rate: 0 };
+
   return (
     <div className="px-4 py-10 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
       {/* Retention heading – 50% smaller */}
@@ -23,8 +72,12 @@ export default function RetentionPage() {
       {/* Retention Rate – compact */}
       <div className="max-w-4xl mx-auto text-center mb-8">
         <p className="text-4xl text-cyan-300 mb-2">Retention Rate</p>
-        <p className="text-6xl md:text-7xl font-black text-purple-400 mb-2">{metrics.retention.rate}%</p>
-        <p className="text-lg text-cyan-200">Retention strong — build loyalty programs to boost further</p>
+        <p className="text-6xl md:text-7xl font-black text-purple-400 mb-2">
+          {safeRetention.rate}%
+        </p>
+        <p className="text-lg text-cyan-200">
+          Retention strong — build loyalty programs to boost further
+        </p>
       </div>
 
       {/* Cohort Table – compact */}
@@ -64,4 +117,4 @@ export default function RetentionPage() {
       </div>
     </div>
   );
-} 
+}
