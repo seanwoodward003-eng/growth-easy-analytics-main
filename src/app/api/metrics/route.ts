@@ -117,9 +117,26 @@ export async function GET(request: Request) {
 
   // ... rest of your response logic (enhancedInsight, final json)
 
-  return NextResponse.json({
-    // Your full response object with real data
+  // ────────────────────────────────────────────────────────────────
+  // TEMP DEBUG: return raw data to see what the frontend gets
+  // ────────────────────────────────────────────────────────────────
+  console.log('[METRICS DEBUG] Raw data before response:', {
+    ordersCount: orders.length,
+    firstOrder: orders[0] || 'no orders',
+    shopifyConnected,
+    userId: user.id,
+    shop: user.shopify_shop
   });
+
+  return NextResponse.json({
+    debug: 'Raw debug response - check if orders appear',
+    orders: orders,
+    connected: shopifyConnected,
+    user: { id: user.id, shop: user.shopify_shop },
+    // add any other calculated fields you have
+  });
+
+  // ... (your normal return JSON would go here - comment it out temporarily)
 }
 
 // Helper for safe empty state (prevents frontend crash on error)
