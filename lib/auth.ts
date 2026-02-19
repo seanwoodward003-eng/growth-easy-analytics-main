@@ -120,8 +120,10 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
   const legacyResult = await requireAuth();
 
   if ('error' in legacyResult) {
-    const status = legacyResult.status ?? 401; // Safe default to 401 when status is undefined
-    return { success: false, error: legacyResult.error, status };
+    // We know error is present when 'error' in legacyResult
+    const error = legacyResult.error!;                    // non-null assertion
+    const status = legacyResult.status ?? 401;            // safe default
+    return { success: false, error, status };
   }
 
   return {
