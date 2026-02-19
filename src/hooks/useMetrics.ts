@@ -19,12 +19,24 @@ export default function useMetrics() {
   const authenticatedFetch = useAuthenticatedFetch();
 
   const fetcher = async (url: string) => {
+    console.log('[useMetrics] Calling /api/metrics now...');
+
     const res = await authenticatedFetch(url, {
       credentials: 'include',
     });
 
-    if (!res.ok) throw new Error('Failed to fetch metrics');
-    return res.json();
+    console.log('[useMetrics] Response status:', res.status);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[useMetrics] Fetch failed:', res.status, errText);
+      throw new Error('Failed to fetch metrics');
+    }
+
+    const json = await res.json();
+    console.log('[useMetrics] Raw data from /api/metrics:', JSON.stringify(json));
+
+    return json;
   };
 
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
