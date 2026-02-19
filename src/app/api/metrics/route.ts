@@ -22,7 +22,6 @@ export async function GET(request: Request) {
 
   const authHeader = request.headers.get('authorization');
 
-  // Step 1: Try Shopify embedded session token (Bearer)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
 
@@ -61,20 +60,19 @@ export async function GET(request: Request) {
     }
   }
 
-  // Step 2: Fallback to old cookie-based auth if token failed or missing
   if (!user) {
     console.log('[METRICS-API] Falling back to old cookie auth');
     const oldAuth = await requireAuth();
     if ('error' in oldAuth) {
       console.log('[METRICS-API] Old auth failed:', oldAuth.error);
-      return NextResponse.json(getEmptyMetricsState('Old auth failed'));
+      return NextResponse.json({ error: oldAuth.error }, { status: oldAuth.status || 401 });
     }
     user = oldAuth.user;
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
-  // Connection flags - FIXED: allow connected even if token is null
-  const shopifyConnected = !!user.shopify_shop;  // Only needs shop domain
+  // FIXED: Connected if shop domain exists (token can be null)
+  const shopifyConnected = !!user.shopify_shop;
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
 
@@ -136,24 +134,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     // Your full response object with real data
   });
-}
-
-// Helper for safe empty state (prevents frontend crash on error)
-function getEmptyMetricsState(reason: string) {
-  return {
-    revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
-    churn: { rate: 0, at_risk: 0 },
-    performance: { ratio: '0.0', ltv: 0, cac: 0 },
-    acquisition: { top_channel: '—', acquisition_cost: 0 },
-    retention: { rate: 0, repeat_purchase_rate: 0 },
-    returning_customers_ltv: 0,
-    ltv_breakdown: { one_time: 0, returning: 0 },
-    cohort_retention: { data: [] },
-    store_health_score: 0,
-    ai_insight: `Data not available (${reason}). Connect Shopify or check logs.`,
-    connections: { shopify: false, ga4: false, hubspot: false },
-    debug: { message: 'Safe empty state - check connection/auth' }
-  };
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
