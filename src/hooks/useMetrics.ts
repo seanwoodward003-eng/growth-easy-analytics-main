@@ -30,7 +30,10 @@ const FAKE_METRICS = {
   traffic: { sessions: 15000, bounceRate: 45.5 },
   ltvNew: 300,
   ltvReturning: 700,
-  email: { openRate: 28.7 },  // fixes Churn page build error
+  email: { 
+    openRate: 28.7,
+    clickRate: 4.2   // ← ADDED THIS TO FIX CHURN PAGE BUILD ERROR
+  },
 };
 
 export default function useMetrics() {
@@ -41,7 +44,7 @@ export default function useMetrics() {
   const error = null;
   const isLoading = false;
 
-  /* Real fetch - comment out for fake test
+  /* Real fetch - comment this block out for fake test
   const fetcher = async (url: string) => {
     const res = await authenticatedFetch(url, {
       credentials: 'include',
