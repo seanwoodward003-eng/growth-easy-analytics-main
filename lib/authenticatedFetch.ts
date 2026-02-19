@@ -1,15 +1,12 @@
 'use client';
 
-import { useAppBridge } from '@shopify/app-bridge-react';
-
+// No useAppBridge needed — use global window.shopify from CDN
 export function useAuthenticatedFetch() {
-  const app = useAppBridge();
-
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     try {
-      const token = await app.getSessionToken(); // Fresh token
+      // Get fresh session token from Shopify CDN global
+      const token = await window.shopify.idToken();
 
-      // Create new init with Bearer header
       const headers = new Headers(init?.headers);
       headers.set('Authorization', `Bearer ${token}`);
 
@@ -21,7 +18,8 @@ export function useAuthenticatedFetch() {
       return fetch(input, newInit);
     } catch (error) {
       console.error('Failed to get session token:', error);
-      return fetch(input, init); // Fallback
+      // Fallback to plain fetch (for local dev or if CDN not loaded)
+      return fetch(input, init);
     }
   };
 }
