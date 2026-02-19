@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';  // You already have jose
-import { requireAuth } from '@/lib/auth';  // ← MISSING IMPORT ADDED HERE
+import { jwtVerify } from 'jose';
+import { requireAuth } from '@/lib/auth';  // ← This import is required for requireAuth
 import { getRows } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
@@ -17,13 +17,10 @@ type OrderRow = {
 export async function GET(request: Request) {
   console.log('[METRICS-API] ENDPOINT STARTED at', new Date().toISOString());
 
-  // ────────────────────────────────────────────────────────────────
-  // Step 1: Validate Shopify session token (Bearer header from frontend)
-  // ────────────────────────────────────────────────────────────────
-  const authHeader = request.headers.get('authorization');
-
   let user = null;
   let shopDomain = null;
+
+  const authHeader = request.headers.get('authorization');
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
@@ -35,13 +32,11 @@ export async function GET(request: Request) {
         { algorithms: ['HS256'] }
       );
 
-      // Validate audience (your app's API key)
       if (payload.aud !== process.env.SHOPIFY_API_KEY) {
         console.log('[METRICS-API] Invalid audience in token');
         return NextResponse.json({ error: 'Invalid token audience' }, { status: 401 });
       }
 
-      // Extract shop domain from token (dest or iss)
       shopDomain = (payload.dest as string)?.replace('https://', '') ||
                    (payload.iss as string)?.replace('https://', '') ||
                    null;
@@ -53,7 +48,6 @@ export async function GET(request: Request) {
 
       console.log('[METRICS-API] Token valid — shop domain:', shopDomain);
 
-      // Load user from DB by shop domain (instead of old auth.user)
       const users = await getRows<any>(
         'SELECT * FROM users WHERE shopify_shop = ? LIMIT 1',
         [shopDomain]
@@ -72,7 +66,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid or expired session token' }, { status: 401 });
     }
   } else {
-    // Fallback to old cookie-based auth (for non-embedded or legacy)
     const oldAuth = await requireAuth();
     if ('error' in oldAuth) {
       console.log('[METRICS-API] Old auth failed:', oldAuth.error);
@@ -82,10 +75,7 @@ export async function GET(request: Request) {
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Rest of your logic (connections, orders query, calculations, etc.)
-  // ────────────────────────────────────────────────────────────────
-  const shopifyConnected = !!(user.shopify_shop && user.shopify_access_token);
+  const shopifyConnected = !!user.shopify_shop;
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
 
@@ -112,7 +102,6 @@ export async function GET(request: Request) {
   }
 
   if (orders.length === 0) {
-    // Your empty state code (unchanged)
     const emptyState = {
       revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
       churn: { rate: 0, at_risk: 0 },
@@ -145,9 +134,17 @@ export async function GET(request: Request) {
 
   // ... rest of your response logic (enhancedInsight, final json)
 
-  return NextResponse.json({
-    // Your full response object
-  });
+  // DEBUG: Log the final JSON being sent to the frontend
+  const responseData = {
+    // ← YOUR ACTUAL CALCULATED OBJECT GOES HERE
+    // Example placeholder — replace with your real calculations
+    revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
+    // ... add your real fields
+  };
+
+  console.log('[useMetrics] API sent this:', JSON.stringify(responseData));
+
+  return NextResponse.json(responseData);
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
