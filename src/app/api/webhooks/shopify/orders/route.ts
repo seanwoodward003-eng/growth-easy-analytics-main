@@ -101,9 +101,9 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ success: true }, { status: 200 });
 }
 
-// Handle Shopify's GET verification ping (they send GET to check endpoint)
+// Handle Shopify verification ping (GET request)
 export async function GET() {
-  console.log('[WEBHOOK] Verification GET received');
+  console.log('[WEBHOOK] Verification GET received - returning 200');
   return NextResponse.json({ received: true }, { status: 200 });
 }
 
