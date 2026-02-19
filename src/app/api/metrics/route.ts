@@ -1,6 +1,6 @@
-
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';  // You already have jose
+import { requireAuth } from '@/lib/auth';  // ← MISSING IMPORT ADDED HERE
 import { getRows } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
