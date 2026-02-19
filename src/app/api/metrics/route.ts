@@ -35,7 +35,6 @@ export async function GET(request: Request) {
 
       if (payload.aud !== process.env.SHOPIFY_API_KEY) {
         console.log('[METRICS-API] Invalid audience in token');
-        // Don't return error yet - fallback to cookie
       } else {
         shopDomain = (payload.dest as string)?.replace('https://', '') ||
                      (payload.iss as string)?.replace('https://', '') ||
@@ -59,7 +58,6 @@ export async function GET(request: Request) {
       }
     } catch (err) {
       console.error('[METRICS-API] Token validation failed:', err);
-      // Don't return error - fallback to cookie
     }
   }
 
@@ -77,9 +75,9 @@ export async function GET(request: Request) {
   }
 
   // ────────────────────────────────────────────────────────────────
-  // Rest of your original logic (connections, orders query, etc.)
+  // Connection flags - FIXED: allow connected even if token is null
   // ────────────────────────────────────────────────────────────────
-  const shopifyConnected = !!(user.shopify_shop && user.shopify_access_token);
+  const shopifyConnected = !!user.shopify_shop;  // MAIN FIX - only needs shop domain
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
 
@@ -110,7 +108,7 @@ export async function GET(request: Request) {
     return NextResponse.json(getEmptyMetricsState('No orders or not connected'));
   }
 
-  // ... (keep all your calculations, GA4/HubSpot merge, insight, final json response unchanged)
+  // ... (keep all your original calculations, GA4/HubSpot merge, insight, final json response unchanged)
 
   return NextResponse.json({
     // Your full response object with real data
