@@ -71,7 +71,6 @@ export async function GET(request: Request) {
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
-  // FIXED: Connected if shop domain exists (token can be null)
   const shopifyConnected = !!user.shopify_shop;
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
@@ -131,9 +130,35 @@ export async function GET(request: Request) {
 
   // ... rest of your response logic (enhancedInsight, final json)
 
-  return NextResponse.json({
-    // Your full response object with real data
-  });
+  // DEBUG: Log the final JSON being sent to the frontend
+  const responseData = {
+    // REPLACE THIS WITH YOUR ACTUAL CALCULATED OBJECT
+    // Example placeholder — use your real calculations here
+    revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
+    // ... add your real fields (churn, performance, acquisition, retention, etc.)
+  };
+
+  console.log('[useMetrics] API sent this:', JSON.stringify(responseData));
+
+  return NextResponse.json(responseData);
+}
+
+// Helper for safe empty state
+function getEmptyMetricsState(reason: string) {
+  return {
+    revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
+    churn: { rate: 0, at_risk: 0 },
+    performance: { ratio: '0.0', ltv: 0, cac: 0 },
+    acquisition: { top_channel: '—', acquisition_cost: 0 },
+    retention: { rate: 0, repeat_purchase_rate: 0 },
+    returning_customers_ltv: 0,
+    ltv_breakdown: { one_time: 0, returning: 0 },
+    cohort_retention: { data: [] },
+    store_health_score: 0,
+    ai_insight: `Data not available (${reason}). Connect Shopify or check logs.`,
+    connections: { shopify: false, ga4: false, hubspot: false },
+    debug: { message: 'Safe empty state - check connection/auth' }
+  };
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
