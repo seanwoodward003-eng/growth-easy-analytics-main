@@ -16,11 +16,11 @@ const EMPTY_STATE = {
 };
 
 export default function useMetrics() {
-  const authenticatedFetch = useAuthenticatedFetch(); // Token wrapper
+  const authenticatedFetch = useAuthenticatedFetch();
 
   const fetcher = async (url: string) => {
     const res = await authenticatedFetch(url, {
-      credentials: 'include', // Keep if needed for other cookies
+      credentials: 'include',
     });
 
     if (!res.ok) throw new Error('Failed to fetch metrics');
