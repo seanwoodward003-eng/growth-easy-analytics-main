@@ -3,8 +3,13 @@
 import useMetrics from "@/hooks/useMetrics";
 import { AcquisitionChart } from "@/components/charts/AcquisitionChart";
 import { CostTrendChart } from "@/components/charts/CostTrendChart";
+import { useAppBridge } from '@shopify/app-bridge-react';
+import { authenticatedFetch } from '@shopify/app-bridge-utils';
+import { useEffect, useState } from 'react';  // Add if needed for manual control
 
 export default function AcquisitionPage() {
+  const app = useAppBridge();  // Get App Bridge instance (CDN init makes this work)
+  
   const { 
     metrics, 
     isLoading, 
@@ -13,7 +18,19 @@ export default function AcquisitionPage() {
     ga4Connected, 
     hubspotConnected,
     hasRealData 
-  } = useMetrics();
+  } = useMetrics();  // Assuming this hook fetches internally
+
+  // Optional: If useMetrics doesn't handle tokens yet, wrap calls here
+  // Example: Manual fetch wrapper for any additional calls
+  const fetchWithToken = authenticatedFetch(app);  // Auto-adds Bearer session token
+
+  // Use this for any extra fetches (or pass to hook if it accepts custom fetcher)
+  useEffect(() => {
+    if (!metrics && !isLoading) {
+      // Example: If hook doesn't fetch automatically, trigger here
+      // fetchWithToken('/api/acquisition-data').then(res => res.json()).then(setMetrics);
+    }
+  }, [metrics, isLoading, fetchWithToken]);
 
   return (
     <div className="px-4 py-10 md:px-8 lg:px-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1a2e]">
