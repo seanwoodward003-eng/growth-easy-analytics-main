@@ -67,17 +67,14 @@ export async function GET(request: Request) {
     const oldAuth = await requireAuth();
     if ('error' in oldAuth) {
       console.log('[METRICS-API] Old auth failed:', oldAuth.error);
-      // Return safe fallback data instead of error (prevents frontend crash)
       return NextResponse.json(getEmptyMetricsState('Old auth failed'));
     }
     user = oldAuth.user;
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
-  // ────────────────────────────────────────────────────────────────
   // Connection flags - FIXED: allow connected even if token is null
-  // ────────────────────────────────────────────────────────────────
-  const shopifyConnected = !!user.shopify_shop;  // MAIN FIX - only needs shop domain
+  const shopifyConnected = !!user.shopify_shop;  // Only needs shop domain
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
 
@@ -103,9 +100,28 @@ export async function GET(request: Request) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
   }
 
-  // If no orders or not connected, return safe empty state
-  if (orders.length === 0 || !shopifyConnected) {
-    return NextResponse.json(getEmptyMetricsState('No orders or not connected'));
+  if (orders.length === 0) {
+    const emptyState = {
+      revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
+      churn: { rate: 0, at_risk: 0 },
+      performance: { ratio: '0.0', ltv: 0, cac: 0 },
+      acquisition: { top_channel: '—', acquisition_cost: 0 },
+      retention: { rate: 0, repeat_purchase_rate: 0 },
+      returning_customers_ltv: 0,
+      ltv_breakdown: { one_time: 0, returning: 0 },
+      cohort_retention: { data: [] },
+      store_health_score: 0,
+      ai_insight: shopifyConnected 
+        ? 'Shopify connected, but no paid orders yet. Place a test order or check webhook sync.'
+        : 'Connect Shopify to activate full analytics.',
+      connections: { shopify: shopifyConnected, ga4: ga4Connected, hubspot: hubspotConnected },
+      debug: { 
+        message: 'No orders found — likely webhook sync issue or empty table',
+        userId: user.id,
+        shopifyShop: user.shopify_shop || 'not set'
+      },
+    };
+    return NextResponse.json(emptyState);
   }
 
   // Your full calculations (revenue, AOV, history, customers, LTV, churn, top channel, cohort, health score, insight)
@@ -117,26 +133,9 @@ export async function GET(request: Request) {
 
   // ... rest of your response logic (enhancedInsight, final json)
 
-  // ────────────────────────────────────────────────────────────────
-  // TEMP DEBUG: return raw data to see what the frontend gets
-  // ────────────────────────────────────────────────────────────────
-  console.log('[METRICS DEBUG] Raw data before response:', {
-    ordersCount: orders.length,
-    firstOrder: orders[0] || 'no orders',
-    shopifyConnected,
-    userId: user.id,
-    shop: user.shopify_shop
-  });
-
   return NextResponse.json({
-    debug: 'Raw debug response - check if orders appear',
-    orders: orders,
-    connected: shopifyConnected,
-    user: { id: user.id, shop: user.shopify_shop },
-    // add any other calculated fields you have
+    // Your full response object with real data
   });
-
-  // ... (your normal return JSON would go here - comment it out temporarily)
 }
 
 // Helper for safe empty state (prevents frontend crash on error)
