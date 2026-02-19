@@ -2,18 +2,12 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 const JWT_SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || process.env.SECRET_KEY!
 );
 const REFRESH_SECRET_KEY = new TextEncoder().encode(process.env.REFRESH_SECRET!);
-
-// ────────────────────────────────────────────────
-// Shopify embedded session token vars (add these to .env if missing)
-// ────────────────────────────────────────────────
-// SHOPIFY_API_KEY      = your app's Client ID / API key
-// SHOPIFY_API_SECRET   = your app's shared secret (used for HMAC + session tokens)
 
 export interface AuthUser {
   id: number;
@@ -126,7 +120,8 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
   const legacyResult = await requireAuth();
 
   if ('error' in legacyResult) {
-    return { success: false, error: legacyResult.error, status: legacyResult.status || 401 };
+    const status = legacyResult.status ?? 401; // Safe default to 401 when status is undefined
+    return { success: false, error: legacyResult.error, status };
   }
 
   return {
