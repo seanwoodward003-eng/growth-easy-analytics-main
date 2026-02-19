@@ -98,5 +98,13 @@ export async function POST(request: NextRequest) {
     console.error('[ORDERS/WEBHOOK] Database insert failed:', err);
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true }, { status: 200 });
 }
+
+// Handle Shopify's GET verification ping (they send GET to check endpoint)
+export async function GET() {
+  console.log('[WEBHOOK] Verification GET received');
+  return NextResponse.json({ received: true }, { status: 200 });
+}
+
+export const OPTIONS = () => new Response(null, { status: 204 });
