@@ -52,13 +52,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     }
 
     // Force clean redirect to home page
-    // This ensures middleware sees no valid token on next request
     window.location.replace('/');
   };
 
   return (
     <html lang="en">
       <head>
+        {/* Shopify Embedded App Bridge – required for checks; place early */}
+        <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
+        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
+
         <meta 
           name="viewport" 
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" 
