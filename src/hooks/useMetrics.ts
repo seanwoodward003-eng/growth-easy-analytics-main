@@ -23,8 +23,15 @@ export default function useMetrics() {
       credentials: 'include',
     });
 
-    if (!res.ok) throw new Error('Failed to fetch metrics');
-    return res.json();
+    if (!res.ok) {
+      console.error('[useMetrics] Fetch failed:', res.status, await res.text());
+      throw new Error('Failed to fetch metrics');
+    }
+
+    const json = await res.json();
+    console.log('[useMetrics] Raw API response:', json); // DEBUG: see what API sends
+
+    return json;
   };
 
   const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher, {
@@ -36,19 +43,25 @@ export default function useMetrics() {
     focusThrottleInterval: 5000,
   });
 
-  const metrics = data || EMPTY_STATE;
+  // Use real data if available, fallback to empty
+  const metrics = data && !('error' in data) ? data : EMPTY_STATE;
 
-  const shopifyConnected = !!metrics.shopify?.connected;
-  const ga4Connected = !!metrics.ga4?.connected;
-  const hubspotConnected = !!metrics.hubspot?.connected;
-  const hasRealData = shopifyConnected || ga4Connected || hubspotConnected;
+  // Derive connected flags from the actual API response shape
+  // Your API returns 'connections' object with shopify/ga4/hubspot
+  const connections = metrics.connections || EMPTY_STATE;
+  const shopifyConnected = !!connections.shopify;
+  const ga4Connected = !!connections.ga4;
+  const hubspotConnected = !!connections.hubspot;
+
+  // hasRealData: use real logic based on data presence
+  const hasRealData = !!metrics.revenue?.total || !!metrics.orders?.length || shopifyConnected;
 
   const refresh = () => mutate(undefined, { revalidate: true });
 
   return {
     metrics,
     isLoading,
-    isError: !!error,
+    isError: !!error || ('error' in metrics),
     shopifyConnected,
     ga4Connected,
     hubspotConnected,
