@@ -1,17 +1,27 @@
 'use client';
 
+import { useAppBridge } from '@shopify/app-bridge-react';
+
 export function useAuthenticatedFetch() {
-  return async (url: string, options: RequestInit = {}) => {
+  const app = useAppBridge();
+
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     try {
-      const token = await window.shopify.idToken();  // Current CDN way for session token
-      const headers = {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
+      const token = await app.getSessionToken(); // Fresh token
+
+      // Create new init with Bearer header
+      const headers = new Headers(init?.headers);
+      headers.set('Authorization', `Bearer ${token}`);
+
+      const newInit = {
+        ...init,
+        headers,
       };
-      return fetch(url, { ...options, headers });
+
+      return fetch(input, newInit);
     } catch (error) {
       console.error('Failed to get session token:', error);
-      throw error;
+      return fetch(input, init); // Fallback
     }
   };
 }
