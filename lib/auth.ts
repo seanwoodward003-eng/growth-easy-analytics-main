@@ -202,4 +202,3 @@ export async function verifyRefreshToken(token: string): Promise<{ sub: number }
     return null;
   }
 }
-
