@@ -26,14 +26,18 @@ const FAKE_METRICS = {
   store_health_score: 82,
   ai_insight: 'Fake data loaded for test - real data coming soon',
   connections: { shopify: true, ga4: true, hubspot: false },
+  // ADD THESE MISSING KEYS TO MATCH YOUR PAGES
+  traffic: { sessions: 15000, bounceRate: 45.5 },
+  // add any other keys pages expect (e.g. ltvNew, ltvReturning)
+  ltvNew: 300,
+  ltvReturning: 700,
 };
 
 export default function useMetrics() {
   const authenticatedFetch = useAuthenticatedFetch();
 
-  // TEMP: Use fake data instead of real API call
-  // Comment out the real fetch block below and uncomment this to test
-  const data = FAKE_METRICS;  // ← FORCE fake data here
+  // TEMP: Force fake data instead of real API call
+  const data = FAKE_METRICS;  // ← This line forces fake data
   const error = null;
   const isLoading = false;
 
