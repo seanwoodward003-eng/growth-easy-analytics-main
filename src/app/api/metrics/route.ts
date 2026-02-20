@@ -93,29 +93,22 @@ export async function GET(request: Request) {
       [user.id]
     );
     console.log('[METRICS-API] ORDERS QUERY SUCCESS — found', orders.length, 'rows');
-
-    console.log('[METRICS-API] Raw orders count:', orders.length);
-    if (orders.length > 0) {
-      console.log('[METRICS-API] First order full object:', JSON.stringify(orders[0], null, 2));
-      console.log('[METRICS-API] First order total_price value:', orders[0].total_price);
-      console.log('[METRICS-API] First order total_price type:', typeof orders[0].total_price);
-      console.log('[METRICS-API] All financial_status values:', orders.map(o => o.financial_status));
-    }
   } catch (queryErr) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
   }
 
   if (orders.length === 0) {
     const emptyState = {
-      revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
-      churn: { rate: 0, at_risk: 0 },
-      performance: { ratio: '0.0', ltv: 0, cac: 0 },
-      acquisition: { top_channel: '—', acquisition_cost: 0 },
-      retention: { rate: 0, repeat_purchase_rate: 0 },
+      revenue: { total: 0, average_order_value: 0, trend_7d: '0%', trend_30d: '0%', trend_90d: '0%', forecast_12m: 0, history: { labels: [], values: [] } },
+      churn: { rate: 0, at_risk: 0, trend_7d: '0%', trend_30d: '0%', trend_90d: '0%' },
+      performance: { ratio: '0.0', ltv: 0, cac: 0, health_score: 0, monthly_profit: 0 },
+      acquisition: { top_channel: '—', acquisition_cost: 0, cost_trend_30d: 'N/A', cost_trend_90d: 'N/A', sessions: 0, bounce_rate: '0%', channel: '—' },
+      retention: { rate: 0, repeat_rate: 0, loyal_count: 0, cohort_retention: { data: [] }, thirty_day: 0 },
       returning_customers_ltv: 0,
       ltv_breakdown: { one_time: 0, returning: 0 },
-      cohort_retention: { data: [] },
-      store_health_score: 0,
+      new_customers_ltv: 0,
+      email_open_rate: null,
+      email_click_rate: null,
       ai_insight: shopifyConnected 
         ? 'Shopify connected, but no paid orders yet. Place a test order or check webhook sync.'
         : 'Connect Shopify to activate full analytics.',
@@ -130,70 +123,73 @@ export async function GET(request: Request) {
   }
 
   // ────────────────────────────────────────────────
-  // PRODUCTION CALCULATIONS + GA4 + HubSpot INTEGRATION
+  // HELPERS
   // ────────────────────────────────────────────────
 
   const safeNum = (v: number | string) => Number(v) || 0;
   const now = new Date();
 
   const periods = {
-    d7:   new Date(now.getTime() -  7 * 86400000),
-    d30:  new Date(now.getTime() - 30 * 86400000),
-    d90:  new Date(now.getTime() - 90 * 86400000),
-    prev30: new Date(now.getTime() - 60 * 86400000),
-    prev90: new Date(now.getTime() - 180 * 86400000),
+    d7:    new Date(now.getTime() -  7 * 86400000),
+    d14:   new Date(now.getTime() - 14 * 86400000),
+    d30:   new Date(now.getTime() - 30 * 86400000),
+    d60:   new Date(now.getTime() - 60 * 86400000),
+    d90:   new Date(now.getTime() - 90 * 86400000),
+    d180:  new Date(now.getTime() - 180 * 86400000),
   };
 
-  const inPeriod = (orders: OrderRow[], start: Date, end = now) => orders.filter(o => {
-    const d = new Date(o.created_at);
-    return d >= start && d < end;
-  });
+  const inPeriod = (ords: OrderRow[], start: Date, end = now) =>
+    ords.filter(o => {
+      const d = new Date(o.created_at);
+      return d >= start && d < end;
+    });
 
   const rev = (ords: OrderRow[]) => {
     const total = ords.reduce((s, o) => s + safeNum(o.total_price), 0);
     return {
       total: Math.round(total * 100) / 100,
       count: ords.length,
-      aov: ords.length > 0 ? Math.round((total / ords.length) * 100) / 100 : 0
+      aov: ords.length > 0 ? Math.round((total / ords.length) * 100) / 100 : 0,
     };
   };
+
+  // ────────────────────────────────────────────────
+  // REVENUE CALCULATIONS
+  // ────────────────────────────────────────────────
 
   const rev7   = rev(inPeriod(orders, periods.d7));
   const rev30  = rev(inPeriod(orders, periods.d30));
   const rev90  = rev(inPeriod(orders, periods.d90));
 
-  const prevRev30 = rev(inPeriod(orders, periods.prev30, periods.d30));
-  const prevRev90 = rev(inPeriod(orders, periods.prev90, periods.d90));
+  const prevRev7  = rev(inPeriod(orders, periods.d14, periods.d7));
+  const prevRev30 = rev(inPeriod(orders, periods.d60, periods.d30));
+  const prevRev90 = rev(inPeriod(orders, periods.d180, periods.d90));
 
-  const revenueTrend = (curr: ReturnType<typeof rev>, prev: ReturnType<typeof rev>) => {
+  const revenueTrend = (curr: { total: number }, prev: { total: number }) => {
     if (prev.total === 0) return curr.total > 0 ? "+∞" : "0%";
     const pct = ((curr.total - prev.total) / prev.total) * 100;
     return pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
   };
 
-  const revenue = {
-    total: rev30.total,
-    aov: rev30.aov,
-    trend_7d:   revenueTrend(rev7, rev(inPeriod(orders, new Date(now.getTime() - 14*86400000), periods.d7))),
-    trend_30d:  revenueTrend(rev30, prevRev30),
-    trend_90d:  revenueTrend(rev90, prevRev90),
-    forecast_12m: Math.round(rev30.total * 12 * 1.1 * 100) / 100,
-    history: (() => {
-      const map = new Map<string, number>();
-      for (let i = 89; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0,10);
-        map.set(key, 0);
-      }
-      inPeriod(orders, periods.d90).forEach(o => {
-        const key = new Date(o.created_at).toISOString().slice(0,10);
-        if (map.has(key)) map.set(key, (map.get(key) || 0) + safeNum(o.total_price));
-      });
-      const labels = Array.from(map.keys());
-      return { labels, values: labels.map(k => map.get(k) || 0) };
-    })()
-  };
+  const revenueHistory = (() => {
+    const map = new Map<string, number>();
+    for (let i = 89; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+      map.set(key, 0);
+    }
+    inPeriod(orders, periods.d90).forEach(o => {
+      const key = new Date(o.created_at).toISOString().slice(0,10);
+      if (map.has(key)) map.set(key, (map.get(key) || 0) + safeNum(o.total_price));
+    });
+    const labels = Array.from(map.keys());
+    return { labels, values: labels.map(k => map.get(k) || 0) };
+  })();
+
+  // ────────────────────────────────────────────────
+  // CUSTOMER & RETENTION CALCULATIONS
+  // ────────────────────────────────────────────────
 
   const customerMap = new Map<string | number, { date: Date; price: number }[]>();
   orders.forEach(o => {
@@ -216,6 +212,7 @@ export async function GET(request: Request) {
   });
   const retention30 = customerMap.size > 0 ? Math.round((retained30 / customerMap.size) * 100) : 0;
 
+  // Cohort retention
   const cohorts = new Map<string, { size: number; retained: Map<number, number> }>();
   customerMap.forEach(arr => {
     if (!arr.length) return;
@@ -238,6 +235,7 @@ export async function GET(request: Request) {
     })
   }));
 
+  // LTV breakdown
   const newCustCount = Array.from(customerMap.values()).filter(a => a.length === 1).length;
   const returningCustCount = repeatCount;
   const newCustRevenue = Array.from(customerMap.values())
@@ -249,22 +247,43 @@ export async function GET(request: Request) {
   const ltvReturning = returningCustCount > 0 ? Math.round((returningRevenue / returningCustCount) * 100) / 100 : 0;
   const ltvOverall = customerMap.size > 0 ? Math.round((rev30.total / customerMap.size) * 100) / 100 : 0;
 
-  const prev90Customers = new Set(
-    inPeriod(orders, periods.prev90, periods.d90)
-      .map(o => o.customer_id)
-      .filter((cid): cid is string | number => cid != null)
-  );
+  // ────────────────────────────────────────────────
+  // CHURN CALCULATIONS + TRENDS
+  // ────────────────────────────────────────────────
 
-  const atRisk = Array.from(prev90Customers).filter(cid => {
-    const ordersForCid = customerMap.get(cid);
-    if (!ordersForCid || ordersForCid.length === 0) return false;
-    const lastDate = ordersForCid[ordersForCid.length - 1].date;
-    return lastDate.getTime() < now.getTime() - 45 * 86400000;
-  }).length;
+  const getChurnForPeriod = (lookbackStart: Date, lookbackEnd: Date, silentPeriodDays = 45) => {
+    const prevCustomers = new Set(
+      inPeriod(orders, lookbackStart, lookbackEnd)
+        .map(o => o.customer_id)
+        .filter((cid): cid is string | number => cid != null)
+    );
+    let atRisk = 0;
+    prevCustomers.forEach(cid => {
+      const ordersForCid = customerMap.get(cid);
+      if (!ordersForCid || ordersForCid.length === 0) return;
+      const lastDate = ordersForCid[ordersForCid.length - 1].date;
+      if (lastDate.getTime() < now.getTime() - silentPeriodDays * 86400000) atRisk++;
+    });
+    return {
+      rate: prevCustomers.size > 0 ? Math.round((atRisk / prevCustomers.size) * 100 * 10) / 10 : 0,
+      atRisk,
+    };
+  };
 
-  const churnRate = prev90Customers.size > 0 
-    ? Math.round((atRisk / prev90Customers.size) * 100 * 10) / 10 
-    : 0;
+  const currentChurn = getChurnForPeriod(periods.d90, periods.d180);
+  const churn7d  = getChurnForPeriod(new Date(now.getTime() - 14*86400000), periods.d7);
+  const churn30d = getChurnForPeriod(periods.d60, periods.d30);
+  const churn90d = getChurnForPeriod(periods.d180, periods.d90);
+
+  const churnTrend = (curr: number, prev: number) => {
+    if (prev === 0) return curr > 0 ? "+∞" : "0%";
+    const pct = ((curr - prev) / prev) * 100;
+    return pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
+  };
+
+  // ────────────────────────────────────────────────
+  // ACQUISITION + SOURCE
+  // ────────────────────────────────────────────────
 
   const sourceRevenue = new Map<string, number>();
   orders.forEach(o => {
@@ -273,41 +292,10 @@ export async function GET(request: Request) {
   });
   const topChannel = [...sourceRevenue.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] || "—";
 
-  const newCustomers = customerMap.size;
-  let cac = 87;
-
-  const ltvCacRatioNum = cac > 0 ? ltvOverall / cac : 0;
-
-  const healthScore = Math.min(100, Math.max(0, Math.round(
-    (rev30.total > 0 ? 30 : 0) +
-    (repeatRate > 30 ? repeatRate * 0.8 : repeatRate * 0.4) +
-    (churnRate < 6 ? 25 - churnRate * 2 : 10) +
-    (ltvCacRatioNum > 3 ? 25 : ltvCacRatioNum > 1 ? 15 : 5)
-  )));
-
-  let aiInsight = "Connect GA4 & HubSpot for advanced insights.";
-
-  // Declare objects before blending
-  let acquisition = {
-    top_channel: topChannel,
-    cac: cac,
-    cost_trend_30d: "N/A",
-    cost_trend_90d: "N/A",
-    sessions: 0,
-    bounce_rate: "0%",
-    channel: topChannel
-  };
-
-  let churn = {
-    rate: churnRate,
-    at_risk: atRisk,
-    trend_7d: "0%",
-    trend_30d: "0%",
-    trend_90d: "0%"
-  };
+  let cac = 87; // fallback
 
   // ────────────────────────────────────────────────
-  // INTEGRATE GA4 & HubSpot
+  // GA4 & HUBSPOT INTEGRATION
   // ────────────────────────────────────────────────
 
   let ga4Data: GA4Data | null = null;
@@ -315,69 +303,105 @@ export async function GET(request: Request) {
     ga4Data = await fetchGA4Data(user.id);
     if (ga4Data) {
       cac = ga4Data.estimatedCac || cac;
-      acquisition.sessions = ga4Data.sessions || 0;
-      acquisition.bounce_rate = ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%";
-      acquisition.top_channel = ga4Data.topChannels[0]?.sourceMedium || topChannel;
-      if (ga4Data.sessions > 0) {
-        aiInsight += ` GA4 shows ${ga4Data.sessions} sessions with ${ga4Data.bounceRate.toFixed(1)}% bounce.`;
-      }
     }
   }
 
   let hubspotData: HubSpotData | null = null;
+  let emailOpenRate: number | null = null;
+  let emailClickRate: number | null = null;
+
   if (hubspotConnected) {
     hubspotData = await fetchHubSpotData(user.id);
     if (hubspotData) {
-      churn.at_risk = hubspotData.atRiskContacts || churn.at_risk;
-      if (hubspotData.openRate > 0) {
-        aiInsight += ` HubSpot email open rate: ${hubspotData.openRate}%.`;
-      }
-      if (hubspotData.clickRate > 0) {
-        aiInsight += ` Click rate: ${hubspotData.clickRate}%.`;
-      }
+      currentChurn.atRisk = hubspotData.atRiskContacts || currentChurn.atRisk;
+      emailOpenRate = hubspotData.openRate || null;
+      emailClickRate = hubspotData.clickRate || null;
     }
   }
 
-  // Final response
+  // ────────────────────────────────────────────────
+  // HEALTH SCORE & INSIGHT
+  // ────────────────────────────────────────────────
+
+  const ltvCacRatioNum = cac > 0 ? ltvOverall / cac : 0;
+
+  const healthScore = Math.min(100, Math.max(0, Math.round(
+    (rev30.total > 0 ? 30 : 0) +
+    (repeatRate > 30 ? repeatRate * 0.8 : repeatRate * 0.4) +
+    (currentChurn.rate < 6 ? 25 - currentChurn.rate * 2 : 10) +
+    (ltvCacRatioNum > 3 ? 25 : ltvCacRatioNum > 1 ? 15 : 5)
+  )));
+
+  let aiInsight = "Connect GA4 & HubSpot for advanced insights.";
+  if (ga4Data?.sessions) {
+    aiInsight += ` GA4 shows ${ga4Data.sessions} sessions with ${ga4Data.bounceRate?.toFixed(1) ?? 0}% bounce.`;
+  }
+  if (emailOpenRate !== null) {
+    aiInsight += ` HubSpot email open rate: ${emailOpenRate}%.`;
+  }
+  if (emailClickRate !== null) {
+    aiInsight += ` Click rate: ${emailClickRate}%.`;
+  }
+
+  // ────────────────────────────────────────────────
+  // FINAL RESPONSE
+  // ────────────────────────────────────────────────
+
   return NextResponse.json({
     revenue: {
       total: rev30.total,
-      aov: rev30.aov,
-      trend_7d: revenueTrend(rev7, rev(inPeriod(orders, new Date(now.getTime() - 14*86400000), periods.d7))),
+      average_order_value: rev30.aov,
+      trend_7d: revenueTrend(rev7, prevRev7),
       trend_30d: revenueTrend(rev30, prevRev30),
       trend_90d: revenueTrend(rev90, prevRev90),
-      forecast_12m: revenue.forecast_12m,
-      history: revenue.history
+      forecast_12m: Math.round(rev30.total * 12 * 1.1 * 100) / 100,
+      history: revenueHistory,
     },
-    churn: churn,
+    churn: {
+      rate: currentChurn.rate,
+      at_risk: currentChurn.atRisk,
+      trend_7d: churnTrend(currentChurn.rate, churn7d.rate),
+      trend_30d: churnTrend(currentChurn.rate, churn30d.rate),
+      trend_90d: churnTrend(currentChurn.rate, churn90d.rate),
+    },
     retention: {
       rate: retention30,
       repeat_rate: repeatRate,
       loyal_count: loyalCount,
       cohort_retention: { data: cohortRetention },
-      thirty_day: retention30
+      thirty_day: retention30,
     },
-    acquisition: acquisition,
+    acquisition: {
+      top_channel: topChannel,
+      acquisition_cost: cac,
+      cost_trend_30d: "N/A – historical CAC required", // ← improve when you store historical CAC
+      cost_trend_90d: "N/A – historical CAC required",
+      sessions: ga4Data?.sessions || 0,
+      bounce_rate: ga4Data?.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%",
+      channel: topChannel,
+    },
     performance: {
       ltv: ltvOverall,
       cac: cac,
       ratio: ltvCacRatioNum.toFixed(1),
       health_score: healthScore,
-      monthly_profit: 0
+      monthly_profit: 0, // needs COGS + expenses
     },
     ltv_breakdown: {
       one_time: Math.round(newCustRevenue * 100) / 100,
-      returning: Math.round(returningRevenue * 100) / 100
+      returning: Math.round(returningRevenue * 100) / 100,
     },
     new_customers_ltv: ltvNew,
     returning_customers_ltv: ltvReturning,
+    email_open_rate: emailOpenRate,
+    email_click_rate: emailClickRate,
     ai_insight: aiInsight,
     connections: {
       shopify: shopifyConnected,
       ga4: ga4Connected,
-      hubspot: hubspotConnected
-    }
+      hubspot: hubspotConnected,
+    },
   });
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 }); 
+export const OPTIONS = () => new Response(null, { status: 200 });
