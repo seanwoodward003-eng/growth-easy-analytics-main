@@ -284,13 +284,15 @@ export async function GET(request: Request) {
   const newCustomers = customerMap.size;
   let cac = 87; // default placeholder
 
+  // FIXED LTV:CAC RATIO – keep as number for comparisons
+  const ltvCacRatioNum = cac > 0 ? ltvOverall / cac : 0;
+
   // Health score
-  const ltvCacRatio = cac > 0 ? (ltvOverall / cac).toFixed(1) : "N/A";
   const healthScore = Math.min(100, Math.max(0, Math.round(
     (rev30.total > 0 ? 30 : 0) +
     (repeatRate > 30 ? repeatRate * 0.8 : repeatRate * 0.4) +
     (churnRate < 6 ? 25 - churnRate * 2 : 10) +
-    (ltvCacRatio > 3 ? 25 : ltvCacRatio > 1 ? 15 : 5)
+    (ltvCacRatioNum > 3 ? 25 : ltvCacRatioNum > 1 ? 15 : 5)
   )));
 
   let aiInsight = "Connect GA4 & HubSpot for advanced insights.";
@@ -303,15 +305,11 @@ export async function GET(request: Request) {
   if (ga4Connected) {
     ga4Data = await fetchGA4Data(user.id);
     if (ga4Data) {
-      // Blend GA4 data
-      revenue.history.values = ga4Data.history?.values || revenue.history.values; // if GA4 has better history
-      cac = ga4Data.estimatedCac || cac; // prefer GA4 CAC if available
-      // Add sessions/bounce to acquisition
+      revenue.history.values = ga4Data.history?.values || revenue.history.values;
+      cac = ga4Data.estimatedCac || cac;
       acquisition.sessions = ga4Data.sessions || 0;
       acquisition.bounce_rate = ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%";
-      // Refine top channel with GA4 sourceMedium
       acquisition.top_channel = ga4Data.topChannels[0]?.sourceMedium || topChannel;
-      // Update AI insight with GA4 data
       if (ga4Data.sessions > 0) {
         aiInsight += ` GA4 shows ${ga4Data.sessions} sessions with ${ga4Data.bounceRate.toFixed(1)}% bounce.`;
       }
@@ -322,10 +320,7 @@ export async function GET(request: Request) {
   if (hubspotConnected) {
     hubspotData = await fetchHubSpotData(user.id);
     if (hubspotData) {
-      // Blend HubSpot data
       churn.at_risk = hubspotData.atRiskContacts || churn.at_risk;
-      // Add email metrics (you can add these to response if frontend has fields)
-      // For now, enhance AI insight
       if (hubspotData.openRate > 0) {
         aiInsight += ` HubSpot email open rate: ${hubspotData.openRate}%.`;
       }
@@ -352,7 +347,7 @@ export async function GET(request: Request) {
     churn: {
       rate: churnRate,
       at_risk: atRisk,
-      trend_7d: "0%",   // TODO: compute when more data
+      trend_7d: "0%",
       trend_30d: "0%",
       trend_90d: "0%"
     },
@@ -375,9 +370,9 @@ export async function GET(request: Request) {
     performance: {
       ltv: ltvOverall,
       cac: cac,
-      ratio: ltvCacRatio,
+      ratio: ltvCacRatioNum.toFixed(1),  // format here
       health_score: healthScore,
-      monthly_profit: 0   // needs costs/refunds
+      monthly_profit: 0
     },
     ltv_breakdown: {
       one_time: Math.round(newCustRevenue * 100) / 100,
@@ -394,4 +389,4 @@ export async function GET(request: Request) {
   });
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 }); 
+export const OPTIONS = () => new Response(null, { status: 200 });
