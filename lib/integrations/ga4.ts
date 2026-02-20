@@ -24,8 +24,13 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
       [userId]
     );
 
-    // Safe, TS-friendly check: treat anything not an array as "no data"
-    if (rawResult == null || !Array.isArray(rawResult) || rawResult.length === 0) {
+    // TS-safe guard: check if it's an array before accessing .length
+    let resultArray: unknown[] = [];
+    if (Array.isArray(rawResult)) {
+      resultArray = rawResult;
+    }
+
+    if (resultArray.length === 0) {
       console.log('[GA4] No user row found for ID', userId);
       return {
         sessions: 0,
@@ -38,8 +43,8 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
       };
     }
 
-    // Safe: rawResult is now known to be non-empty array
-    const userRow = rawResult[0] as {
+    // Safe: resultArray[0] is now known to exist
+    const userRow = resultArray[0] as {
       ga4_access_token: string | null;
       ga4_refresh_token: string | null;
       ga4_property_id: string | null;
@@ -61,7 +66,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
     const accessToken = userRow.ga4_access_token;
     const propertyId = userRow.ga4_property_id;
 
-    // Simple token check (expand with full refresh later if needed)
+    // Simple token test
     const testResp = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -104,7 +109,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
       };
     }
 
-    // Main report – last 30 days
+    // Main report
     const report = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -168,7 +173,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
 
       sessions += rowSessions;
       users += rowUsers;
-      bounceRateSum += rowBounce * rowSessions; // weighted average
+      bounceRateSum += rowBounce * rowSessions;
       revenue += rowRevenue;
       conversions += rowConversions;
 
