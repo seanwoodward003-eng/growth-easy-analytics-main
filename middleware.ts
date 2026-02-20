@@ -30,10 +30,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // REMOVE HTTPS REDIRECT - Vercel handles it; this causes 308s
-  // if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') { ... } // COMMENTED OUT
-
-  // CORS for API routes (unchanged)
+  // CORS for API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('[MW DEBUG] API route - setting CORS');
     const origin = request.headers.get('origin');
@@ -52,7 +49,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Embedded check: Catch root with embedded param OR dashboard
+  // Embedded check: Catch root with embedded param OR dashboard OR root with query
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -68,7 +65,7 @@ export async function middleware(request: NextRequest) {
     if (!accessToken) {
       console.log('[MW DEBUG] No token - redirect to login');
       const url = request.nextUrl.clone();
-      url.pathname = '/'; // or '/login'
+      url.pathname = '/';
       url.searchParams.set('error', 'login_required');
       return NextResponse.redirect(url);
     }
@@ -102,7 +99,7 @@ export async function middleware(request: NextRequest) {
         frameAncestors += ` https://${shop};`;
         console.log('[MW DEBUG] Added exact shop:', shop);
       } else {
-        frameAncestors += ' https://*.myshopify.com;'; // safe fallback
+        frameAncestors += ' https://*.myshopify.com;';
         console.log('[MW DEBUG] No shop param - using wildcard fallback');
       }
 
@@ -120,7 +117,9 @@ export async function middleware(request: NextRequest) {
       response.headers.set('Content-Security-Policy', cspValue);
 
     } catch (err) {
-      console.error('[MW DEBUG] Auth/CSP error:', err.message);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[MW DEBUG] Auth/CSP error:', errorMessage);
+
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
@@ -140,7 +139,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Catch everything except static/assets (includes root + query params)
     '/((?!_next/static|_next/image|favicon.ico|api).*)',
     '/dashboard/:path*',
     '/api/:path*',
