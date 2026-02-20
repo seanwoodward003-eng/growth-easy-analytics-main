@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
-import { fetchGA4Data } from '@/lib/integrations/ga4';
-import { fetchHubSpotData } from '@/lib/integrations/hubspot';
+import { fetchGA4Data, GA4Data } from '@/lib/integrations/ga4';
+import { fetchHubSpotData, HubSpotData } from '@/lib/integrations/hubspot';
 import { GA4Data } from '@/lib/integrations/ga4';
 import { HubSpotData } from '@/lib/integrations/hubspot';
 
@@ -24,7 +24,6 @@ export async function GET(request: Request) {
 
   const authHeader = request.headers.get('authorization');
 
-  // Step 1: Validate Shopify embedded session token (Bearer header)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
 
@@ -63,7 +62,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Step 2: Fallback to old cookie-based auth
   if (!user) {
     console.log('[METRICS-API] Falling back to old cookie auth');
     const oldAuth = await requireAuth();
@@ -75,7 +73,6 @@ export async function GET(request: Request) {
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
-  // Connection flags
   const shopifyConnected = !!user.shopify_shop;
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
@@ -99,7 +96,6 @@ export async function GET(request: Request) {
     );
     console.log('[METRICS-API] ORDERS QUERY SUCCESS — found', orders.length, 'rows');
 
-    // Debug logs
     console.log('[METRICS-API] Raw orders count:', orders.length);
     if (orders.length > 0) {
       console.log('[METRICS-API] First order full object:', JSON.stringify(orders[0], null, 2));
@@ -111,7 +107,6 @@ export async function GET(request: Request) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
   }
 
-  // Empty state if no orders
   if (orders.length === 0) {
     const emptyState = {
       revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
@@ -202,7 +197,6 @@ export async function GET(request: Request) {
     })()
   };
 
-  // Customer-level logic (repeat, LTV, cohorts, churn)
   const customerMap = new Map<string | number, { date: Date; price: number }[]>();
   orders.forEach(o => {
     const cid = o.customer_id;
@@ -224,7 +218,6 @@ export async function GET(request: Request) {
   });
   const retention30 = customerMap.size > 0 ? Math.round((retained30 / customerMap.size) * 100) : 0;
 
-  // Cohorts...
   const cohorts = new Map<string, { size: number; retained: Map<number, number> }>();
   customerMap.forEach(arr => {
     if (!arr.length) return;
@@ -283,7 +276,7 @@ export async function GET(request: Request) {
   const topChannel = [...sourceRevenue.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] || "—";
 
   const newCustomers = customerMap.size;
-  let cac = 87; // default placeholder
+  let cac = 87;
 
   const ltvCacRatioNum = cac > 0 ? ltvOverall / cac : 0;
 
@@ -297,7 +290,7 @@ export async function GET(request: Request) {
   let aiInsight = "Connect GA4 & HubSpot for advanced insights.";
 
   // ────────────────────────────────────────────────
-  // INTEGRATE GA4 & HubSpot (when connected)
+  // INTEGRATE GA4 & HubSpot
   // ────────────────────────────────────────────────
 
   let ga4Data: GA4Data | null = null;
@@ -305,9 +298,16 @@ export async function GET(request: Request) {
     ga4Data = await fetchGA4Data(user.id);
     if (ga4Data) {
       cac = ga4Data.estimatedCac || cac;
-      acquisition.sessions = ga4Data.sessions || 0;
-      acquisition.bounce_rate = ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%";
-      acquisition.top_channel = ga4Data.topChannels[0]?.sourceMedium || topChannel;
+      // Create acquisition object if not already
+      let acquisition = {
+        top_channel: topChannel,
+        cac: cac,
+        cost_trend_30d: "N/A",
+        cost_trend_90d: "N/A",
+        sessions: ga4Data.sessions || 0,
+        bounce_rate: ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%",
+        channel: ga4Data.topChannels[0]?.sourceMedium || topChannel
+      };
       if (ga4Data.sessions > 0) {
         aiInsight += ` GA4 shows ${ga4Data.sessions} sessions with ${ga4Data.bounceRate.toFixed(1)}% bounce.`;
       }
@@ -328,10 +328,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ────────────────────────────────────────────────
-  // FINAL RESPONSE – all metrics served
-  // ────────────────────────────────────────────────
-
+  // Final response
   return NextResponse.json({
     revenue: {
       total: rev30.total,
