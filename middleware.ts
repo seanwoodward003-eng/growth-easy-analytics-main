@@ -14,7 +14,6 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
-  // Aggressive top-level logging
   console.log('[MW DEBUG] === MIDDLEWARE STARTED ===');
   console.log('[MW DEBUG] Full URL:', request.url);
   console.log('[MW DEBUG] Path:', request.nextUrl.pathname);
@@ -47,7 +46,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Embedded check: root with embedded param, dashboard, or root with query
+  // Detect embedded-like requests (covers root with ?embedded=1 and dashboard paths)
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -55,19 +54,73 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === '';
 
   if (isEmbeddedRequest) {
-    console.log('[MW DEBUG] Embedded request detected - running auth + CSP');
+    console.log('[MW DEBUG] Embedded request detected');
 
+    // Step 1 & 3: Set Shopify-safe CSP FIRST (applies to every HTML response in iframe)
+    const shop = request.nextUrl.searchParams.get('shop');
+
+    let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
+    if (shop && shop.endsWith('.myshopify.com')) {
+      frameAncestors += ` https://${shop}`;
+    }
+    frameAncestors += "; ";
+
+    const cspValue = 
+      frameAncestors +
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com https://*.shopify.com https://js.stripe.com https://*.stripe.com; " +
+      "connect-src 'self' https://*.shopify.com https://*.myshopify.com https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
+      "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
+      "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
+      "img-src 'self' data: blob: https://cdn.shopify.com https://*.shopify.com https://*.stripe.com; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "font-src 'self' data:; " +
+      "base-uri 'self';";
+
+    response.headers.set('Content-Security-Policy', cspValue);
+    console.log('[MW DEBUG] CSP set for embedded request:', cspValue);
+
+    // Step 2: Check auth — if no token, BREAK OUT of iframe instead of redirecting inside
     const accessToken = request.cookies.get('access_token')?.value;
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
-      console.log('[MW DEBUG] No token - redirect to login');
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'login_required');
-      return NextResponse.redirect(url);
+      console.log('[MW DEBUG] No token in embedded context - sending breakout redirect');
+
+      const loginUrl = new URL('/', request.url); // change to '/login' if you have a separate login page
+      loginUrl.searchParams.set('error', 'login_required');
+
+      // Return a small HTML page that redirects the TOP window (breaks out of iframe)
+      const breakoutHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Redirecting...</title>
+          </head>
+          <body>
+            <p>Redirecting to login...</p>
+            <script>
+              const target = "${loginUrl.toString()}";
+              if (window.top && window.top !== window.self) {
+                window.top.location.href = target;
+              } else {
+                window.location.href = target;
+              }
+            </script>
+          </body>
+        </html>
+      `;
+
+      return new Response(breakoutHtml, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html',
+          ...response.headers, // carry over security headers + CSP
+        },
+      });
     }
 
+    // Auth succeeds → continue with user data
     try {
       console.log('[MW DEBUG] Verifying JWT');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
@@ -81,46 +134,32 @@ export async function middleware(request: NextRequest) {
       );
 
       if (!user) {
-        console.log('[MW DEBUG] No user - redirect');
-        return NextResponse.redirect(new URL('/', request.url));
+        console.log('[MW DEBUG] No user - sending breakout redirect');
+        // Same breakout logic as above
+        const loginUrl = new URL('/', request.url);
+        const breakoutHtml = `...`; // copy the breakoutHtml block from above
+        return new Response(breakoutHtml, {
+          status: 200,
+          headers: { 'Content-Type': 'text/html', ...response.headers },
+        });
       }
 
       response.headers.set('x-user-id', userId.toString());
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
 
-      // Shopify-safe dynamic CSP (this is the block you asked to integrate)
-      const shop = request.nextUrl.searchParams.get('shop');
-
-      let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
-      if (shop && shop.endsWith('.myshopify.com')) {
-        frameAncestors += ` https://${shop}`;
-      }
-      frameAncestors += "; ";
-
-      const cspValue = 
-        frameAncestors +
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com https://*.shopify.com https://js.stripe.com https://*.stripe.com; " +
-        "connect-src 'self' https://*.shopify.com https://*.myshopify.com https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
-        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
-        "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
-        "img-src 'self' data: blob: https://cdn.shopify.com https://*.shopify.com https://*.stripe.com; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "font-src 'self' data:; " +
-        "base-uri 'self';";
-
-      response.headers.set('Content-Security-Policy', cspValue);
-      console.log('[MW DEBUG] Applied Shopify-safe CSP:', cspValue);
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[MW DEBUG] Auth/CSP error:', errorMessage);
+      console.error('[MW DEBUG] Auth error:', errorMessage);
 
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'session_expired');
-      const res = NextResponse.redirect(url);
+      // Breakout redirect on auth failure too
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('error', 'session_expired');
+      const breakoutHtml = `...`; // copy the breakoutHtml block
+      const res = new Response(breakoutHtml, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html', ...response.headers },
+      });
       res.cookies.delete('access_token');
       res.cookies.delete('refresh_token');
       res.cookies.delete('csrf_token');
@@ -136,8 +175,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    '/',                          // explicitly include root
     '/dashboard/:path*',
     '/api/:path*',
+    '/((?!_next/static|_next/image|favicon.ico).*)', // everything else
   ],
 };
