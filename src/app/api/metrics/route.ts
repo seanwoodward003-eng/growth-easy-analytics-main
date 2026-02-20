@@ -380,4 +380,4 @@ export async function GET(request: Request) {
   });
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 });
+export const OPTIONS = () => new Response(null, { status: 200 }); 
