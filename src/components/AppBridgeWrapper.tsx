@@ -1,6 +1,6 @@
 'use client';
 
-import { AppProvider } from '@shopify/app-bridge-react';
+import { Provider } from '@shopify/app-bridge-react';  // ← FIXED: use Provider
 import { NavigationMenu } from '@shopify/app-bridge-react';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -33,7 +33,7 @@ export function AppBridgeWrapper({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <AppProvider config={{ apiKey: process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '', host }}>
+    <Provider config={{ apiKey: process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '', host }}>
       <NavigationMenu
         navigationItems={navigationItems.map(item => ({
           label: item.label,
@@ -42,6 +42,6 @@ export function AppBridgeWrapper({ children }: { children: React.ReactNode }) {
         }))}
       />
       {children}
-    </AppProvider>
+    </Provider>
   );
 }
