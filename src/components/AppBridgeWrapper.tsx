@@ -11,46 +11,58 @@ export function AppBridgeWrapper({ children }: AppBridgeWrapperProps) {
   const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const embedded = !!window.shopify;  // App Bridge only exists in iframe
-      setIsEmbedded(embedded);
+    if (typeof window === 'undefined') return;
 
-      if (!embedded) {
-        // Standalone: render immediately (no need to wait for Shopify scripts)
-        console.log('Standalone mode detected – rendering directly');
-        setReady(true);
-        return;
-      }
+    // Quick check: Shopify App Bridge only exists in embedded iframe
+    const embedded = !!window.shopify;
+    setIsEmbedded(embedded);
 
-      // Embedded: poll for ready
-      const checkReady = () => {
-        if (window.shopify && document.querySelector('s-app-nav')) {
-          console.log('Embedded: Polaris & App Bridge ready');
-          setReady(true);
-        }
-      };
-
-      checkReady();
-      const interval = setInterval(checkReady, 500);
-
-      const timeout = setTimeout(() => {
-        console.warn('Embedded timeout – forcing render');
-        setReady(true);
-      }, 15000);
-
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
+    if (!embedded) {
+      // Standalone browser: no need to wait — render right away
+      console.log('Standalone mode: Rendering immediately (no Shopify context)');
+      setReady(true);
+      return;
     }
+
+    // Embedded: Poll for full readiness (polaris.js + App Bridge)
+    const checkReady = () => {
+      if (window.shopify && document.querySelector('s-app-nav')) {
+        console.log('Embedded ready: Polaris registered, App Bridge active');
+        setReady(true);
+      }
+    };
+
+    checkReady(); // Check once immediately
+    const interval = setInterval(checkReady, 500);
+
+    const timeout = setTimeout(() => {
+      console.warn('Embedded timeout: Forcing render anyway');
+      setReady(true);
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, []);
 
   if (!ready) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>Loading Shopify Admin integration...</div>;
+    return (
+      <div style={{ 
+        padding: '2rem', 
+        textAlign: 'center', 
+        color: 'white', 
+        background: '#0a0f2c', 
+        minHeight: '100vh' 
+      }}>
+        Loading Shopify Admin integration...
+      </div>
+    );
   }
 
   return (
     <>
+      {/* Only render Shopify-specific nav in embedded mode */}
       {isEmbedded && (
         <s-app-nav>
           <s-link href="/dashboard" rel="home">Dashboard</s-link>
