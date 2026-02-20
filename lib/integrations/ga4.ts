@@ -19,22 +19,23 @@ export interface GA4Data {
 
 export async function fetchGA4Data(userId: number): Promise<GA4Data> {
   try {
-    // Type assertion to narrow return type
     const rawResult = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
-    ) as Array<{
-      ga4_access_token: string | null;
-      ga4_refresh_token: string | null;
-      ga4_property_id: string | null;
-    }> | null;
+    );
 
-    if (!rawResult || rawResult.length === 0) {
+    // Safe check without type assertion
+    if (!rawResult || !Array.isArray(rawResult) || rawResult.length === 0) {
       console.log('[GA4] No user row found for ID', userId);
       return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0 };
     }
 
-    const userRow = rawResult[0];
+    // Now TS knows rawResult is array with length > 0
+    const userRow = rawResult[0] as {
+      ga4_access_token: string | null;
+      ga4_refresh_token: string | null;
+      ga4_property_id: string | null;
+    };
 
     if (!userRow.ga4_property_id || !userRow.ga4_access_token) {
       console.log('[GA4] Missing property ID or access token for user', userId);
@@ -44,11 +45,9 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
     const accessToken = userRow.ga4_access_token;
     const propertyId = userRow.ga4_property_id;
 
-    // ... rest of your original code remains unchanged ...
-    // (the fetch calls, parsing, etc.)
+    // ... rest of your original fetch / parsing code here unchanged ...
 
-    // Return your parsed data
-    // ... your existing parsing logic ...
+    // (the testResp, reportResp, row parsing, topChannels, etc.)
 
     return {
       sessions,
