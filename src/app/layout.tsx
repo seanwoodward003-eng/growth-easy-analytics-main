@@ -1,4 +1,4 @@
-'use client';
+'use client';  // ← Make root layout client-side (helps with web components + hooks in embedded context)
 
 import "./globals.css";
 import { Orbitron } from 'next/font/google';
@@ -58,7 +58,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Shopify Embedded App Bridge – required */}
         <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
+        
+        {/* Core App Bridge script */}
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
+        
+        {/* Critical: Polaris web components (for s-app-nav, s-link, etc.) */}
+        <script
+          src="https://cdn.shopify.com/shopifycloud/polaris.js"
+          async
+          crossOrigin="anonymous"
+        />
 
         <meta 
           name="viewport" 
@@ -86,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </Link>
 
-            {/* Desktop Menu Button – text "Menu" */}
+            {/* Desktop Menu Button */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="hidden lg:flex z-[200] px-6 py-3 rounded-full bg-gray-800/80 border border-cyan-500/60 hover:bg-gray-700/80 transition items-center justify-center shadow-xl text-cyan-400 font-bold text-lg"
@@ -95,7 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Menu
             </button>
 
-            {/* Mobile Menu Button – 3 lines icon */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="lg:hidden z-[200] p-3 -mr-3 rounded-full bg-gray-800/80 border border-cyan-500/60 hover:bg-gray-700/80 transition flex items-center justify-center shadow-xl"
@@ -106,7 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        {/* Side Menu – opens from either button (your custom responsive nav) */}
+        {/* Custom Side Menu (fallback for non-embedded or mobile) */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[150]" onClick={() => setMenuOpen(false)} />
@@ -129,30 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/dashboard/revenue" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard/revenue') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
                   Revenue
                 </Link>
-                <Link href="/dashboard/acquisition" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard/acquisition') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Acquisition
-                </Link>
-                <Link href="/dashboard/retention" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard/retention') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Retention
-                </Link>
-                <Link href="/dashboard/performance" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard/performance') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Performance
-                </Link>
-                <Link href="/dashboard/ai-growth-coach" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${isActive('/dashboard/ai-growth-coach') ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  AI Growth Coach
-                </Link>
-                <Link href="/dashboard/settings" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${pathname === '/dashboard/settings' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Settings
-                </Link>
-                <Link href="/about" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${pathname === '/about' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  About
-                </Link>
-                <Link href="/privacy" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${pathname === '/privacy' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Privacy
-                </Link>
-                <Link href="/pricing" onClick={() => setMenuOpen(false)} className={`block text-2xl py-3 border-b border-cyan-600/50 ${pathname === '/pricing' ? 'text-cyan-400 font-bold' : 'text-cyan-300'}`}>
-                  Upgrade
-                </Link>
+                {/* ... keep all your other links ... */}
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -167,9 +153,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* WRAP MAIN CONTENT WITH APP BRIDGE – now includes <s-app-nav> */}
+        {/* App Bridge Wrapper – contains <s-app-nav> for Shopify Admin sidebar */}
         <AppBridgeWrapper>
-          {/* Main content – mobile safe-area padding only */}
           <main 
             className={`
               pt-24 sm:pt-[calc(6rem + env(safe-area-inset-top,16px)))]
@@ -178,6 +163,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `}
           >
             <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Quick test content – remove later if you want */}
+              <h2 className="text-3xl text-white mb-6">Embedded App Test</h2>
               {children}
             </div>
           </main>
