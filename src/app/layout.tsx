@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { AppBridgeWrapper } from '@/components/AppBridgeWrapper'; // ← Import the new wrapper
+import { AppBridgeWrapper } from '@/components/AppBridgeWrapper';
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Shopify Embedded App Bridge – required for checks; place early */}
+        {/* Shopify Embedded App Bridge – required */}
         <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
 
@@ -106,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        {/* Side Menu – opens from either button */}
+        {/* Side Menu – opens from either button (your custom responsive nav) */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[150]" onClick={() => setMenuOpen(false)} />
@@ -167,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* WRAP MAIN CONTENT WITH APP BRIDGE */}
+        {/* WRAP MAIN CONTENT WITH APP BRIDGE – now includes <s-app-nav> */}
         <AppBridgeWrapper>
           {/* Main content – mobile safe-area padding only */}
           <main 
