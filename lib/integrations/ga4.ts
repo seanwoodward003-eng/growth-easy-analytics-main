@@ -24,8 +24,8 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
       [userId]
     );
 
-    // Safe check without assuming type – prevents truthiness error
-    if (!rawResult || typeof rawResult !== 'object' || rawResult === null || !Array.isArray(rawResult) || rawResult.length === 0) {
+    // Safe, TS-friendly check: treat anything not an array as "no data"
+    if (rawResult == null || !Array.isArray(rawResult) || rawResult.length === 0) {
       console.log('[GA4] No user row found for ID', userId);
       return {
         sessions: 0,
@@ -38,7 +38,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
       };
     }
 
-    // Now safe to access first row
+    // Safe: rawResult is now known to be non-empty array
     const userRow = rawResult[0] as {
       ga4_access_token: string | null;
       ga4_refresh_token: string | null;
@@ -61,7 +61,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
     const accessToken = userRow.ga4_access_token;
     const propertyId = userRow.ga4_property_id;
 
-    // Simple token check (expand with refresh later)
+    // Simple token check (expand with full refresh later if needed)
     const testResp = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
       {
@@ -168,7 +168,7 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data> {
 
       sessions += rowSessions;
       users += rowUsers;
-      bounceRateSum += rowBounce * rowSessions; // weighted
+      bounceRateSum += rowBounce * rowSessions; // weighted average
       revenue += rowRevenue;
       conversions += rowConversions;
 
