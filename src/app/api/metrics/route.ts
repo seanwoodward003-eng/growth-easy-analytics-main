@@ -138,7 +138,6 @@ export async function GET(request: Request) {
   // PRODUCTION CALCULATIONS + GA4 + HubSpot INTEGRATION
   // ────────────────────────────────────────────────
 
-  // Helpers
   const safeNum = (v: number | string) => Number(v) || 0;
   const now = new Date();
 
@@ -155,7 +154,6 @@ export async function GET(request: Request) {
     return d >= start && d < end;
   });
 
-  // ── Shopify-only calculations (same as before) ──
   const rev = (ords: OrderRow[]) => {
     const total = ords.reduce((s, o) => s + safeNum(o.total_price), 0);
     return {
@@ -258,13 +256,23 @@ export async function GET(request: Request) {
   const ltvReturning = returningCustCount > 0 ? Math.round((returningRevenue / returningCustCount) * 100) / 100 : 0;
   const ltvOverall = customerMap.size > 0 ? Math.round((rev30.total / customerMap.size) * 100) / 100 : 0;
 
-  const prev90Customers = new Set(inPeriod(orders, periods.prev90, periods.d90).map(o => o.customer_id));
+  // FIXED CHURN SECTION
+  const prev90Customers = new Set(
+    inPeriod(orders, periods.prev90, periods.d90)
+      .map(o => o.customer_id)
+      .filter((cid): cid is string | number => cid != null)
+  );
+
   const atRisk = Array.from(prev90Customers).filter(cid => {
-    const lastDate = customerMap.get(cid)?.slice(-1)[0]?.date;
-    return lastDate && lastDate.getTime() < now.getTime() - 45 * 86400000;
+    const ordersForCid = customerMap.get(cid);
+    if (!ordersForCid || ordersForCid.length === 0) return false;
+    const lastDate = ordersForCid[ordersForCid.length - 1].date;
+    return lastDate.getTime() < now.getTime() - 45 * 86400000;
   }).length;
 
-  const churnRate = prev90Customers.size > 0 ? Math.round((atRisk / prev90Customers.size) * 100 * 10) / 10 : 0;
+  const churnRate = prev90Customers.size > 0 
+    ? Math.round((atRisk / prev90Customers.size) * 100 * 10) / 10 
+    : 0;
 
   const sourceRevenue = new Map<string, number>();
   orders.forEach(o => {
@@ -344,7 +352,7 @@ export async function GET(request: Request) {
     churn: {
       rate: churnRate,
       at_risk: atRisk,
-      trend_7d: "0%",   // TODO: compute with more data
+      trend_7d: "0%",   // TODO: compute when more data
       trend_30d: "0%",
       trend_90d: "0%"
     },
