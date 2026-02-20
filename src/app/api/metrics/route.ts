@@ -273,11 +273,11 @@ export async function GET(request: Request) {
   const newCustRevenue = Array.from(customerMap.values())
     .filter(a => a.length === 1)
     .reduce((s, a) => s + a[0].price, 0);
-  const returningRevenue = rev.total - newCustRevenue;
+  const returningRevenue = rev30.total - newCustRevenue;  // ← FIXED HERE: rev30.total instead of rev.total
 
   const ltvNew = newCustCount > 0 ? Math.round((newCustRevenue / newCustCount) * 100) / 100 : 0;
   const ltvReturning = returningCustCount > 0 ? Math.round((returningRevenue / returningCustCount) * 100) / 100 : 0;
-  const ltvOverall = customerMap.size > 0 ? Math.round((rev.total / customerMap.size) * 100) / 100 : 0;
+  const ltvOverall = customerMap.size > 0 ? Math.round((rev30.total / customerMap.size) * 100) / 100 : 0;
 
   // ── 3. Churn ────────────────────────────────────────────────────
   const prev90Customers = new Set(inPeriod(orders, periods.prev90, periods.d90).map(o => o.customer_id));
