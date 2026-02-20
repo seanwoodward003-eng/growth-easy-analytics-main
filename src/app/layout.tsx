@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { AppBridgeWrapper } from '@/components/AppBridgeWrapper'; // ← Import the new wrapper
 
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Shopify Embedded App Bridge – required for checks; place early */}
         <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
 
@@ -66,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Your header – no logo, menu button responsive */}
+        {/* Header – no logo, menu button responsive */}
         <header 
           className="
             fixed top-0 left-0 right-0 z-[100] 
@@ -165,18 +167,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* Main content – mobile safe-area padding only */}
-        <main 
-          className={`
-            pt-24 sm:pt-[calc(6rem + env(safe-area-inset-top,16px)))]
-            md:pt-32 lg:pt-36
-            ${isCoachPage ? '' : 'pb-20'}
-          `}
-        >
-          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
+        {/* WRAP MAIN CONTENT WITH APP BRIDGE */}
+        <AppBridgeWrapper>
+          {/* Main content – mobile safe-area padding only */}
+          <main 
+            className={`
+              pt-24 sm:pt-[calc(6rem + env(safe-area-inset-top,16px)))]
+              md:pt-32 lg:pt-36
+              ${isCoachPage ? '' : 'pb-20'}
+            `}
+          >
+            <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+              {children}
+            </div>
+          </main>
+        </AppBridgeWrapper>
 
         {/* Cookie Banner */}
         {showCookieBanner && (
