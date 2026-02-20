@@ -18,13 +18,18 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
       [userId]
     );
 
-    // Safe check without type assertion
-    if (!rawResult || typeof rawResult !== 'object' || rawResult === null || !Array.isArray(rawResult) || rawResult.length === 0) {
+    // Safe, TS-friendly check
+    let resultArray: unknown[] = [];
+    if (Array.isArray(rawResult)) {
+      resultArray = rawResult;
+    }
+
+    if (resultArray.length === 0) {
       console.log('[HubSpot] No user row found for ID', userId);
       return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0 };
     }
 
-    const userRow = rawResult[0] as { hubspot_access_token: string | null };
+    const userRow = resultArray[0] as { hubspot_access_token: string | null };
 
     if (!userRow.hubspot_access_token) {
       console.log('[HubSpot] Missing access token for user', userId);
