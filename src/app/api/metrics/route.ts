@@ -103,6 +103,22 @@ export async function GET(request: Request) {
       [user.id]
     );
     console.log('[METRICS-API] ORDERS QUERY SUCCESS — found', orders.length, 'rows');
+
+    // ────────────────────────────────────────────────
+    // NEW DEBUG LOGS ADDED HERE
+    // ────────────────────────────────────────────────
+    console.log('[METRICS-API] Raw orders count:', orders.length);
+
+    if (orders.length > 0) {
+      console.log('[METRICS-API] First order full object:', JSON.stringify(orders[0], null, 2));
+      console.log('[METRICS-API] First order total_price value:', orders[0].total_price);
+      console.log('[METRICS-API] First order total_price type:', typeof orders[0].total_price);
+      console.log('[METRICS-API] All financial_status values:', orders.map(o => o.financial_status));
+    } else {
+      console.log('[METRICS-API] No orders returned — check financial_status filter or test order status in Shopify admin');
+    }
+    // ────────────────────────────────────────────────
+
   } catch (queryErr) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
   }
@@ -132,6 +148,15 @@ export async function GET(request: Request) {
     return NextResponse.json(emptyState);
   }
 
+  // ────────────────────────────────────────────────
+  // If you want even more debug — temporarily return raw data here
+  // Uncomment the next 4 lines to test if frontend can see the orders
+  // return NextResponse.json({
+  //   rawOrders: orders,
+  //   debug: { userId: user.id, rowCount: orders.length, firstTotal: orders[0]?.total_price }
+  // });
+  // ────────────────────────────────────────────────
+
   // Your full calculations (revenue, AOV, history, customers, LTV, churn, top channel, cohort, health score, insight)
   // ... (keep all your existing code here unchanged)
 
@@ -143,6 +168,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     // Your full response object with real data
+    // For now — make sure this includes revenue.total etc. calculated from orders
   });
 }
 
