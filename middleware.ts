@@ -24,30 +24,10 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Security headers (applied to everything)
+  // Security headers (applied to everything) - removed X-Frame-Options
   console.log('[Middleware DEBUG] Setting security headers');
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-
-  // ────────────────────────────────────────────────────────────────
-  // CSP COMMENTED OUT FOR TESTING — re-enable once Stripe works
-  // ────────────────────────────────────────────────────────────────
-  /*
-  console.log('[Middleware DEBUG] Setting CSP header');
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
-    "worker-src 'self' blob:; " +
-    "child-src 'self' blob: https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
-    "connect-src 'self' https://api.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
-    "frame-src 'self' https://js.stripe.com https://*.stripe.com https://checkout.stripe.com; " +
-    "img-src 'self' data: blob: https://*.stripe.com; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "font-src 'self' data:"
-  );
-  */
 
   // ────────────────────────────────────────────────────────────────
   // FULL CORS HANDLING FOR ALL /api/* ROUTES
@@ -86,7 +66,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Dashboard auth
+  // Dashboard auth + dynamic CSP for embedded Shopify + Stripe
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     console.log('[Middleware DEBUG] Dashboard route - checking authentication');
     const accessToken = request.cookies.get('access_token')?.value;
@@ -123,6 +103,40 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-user-id', userId.toString());
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
+
+      // ────────────────────────────────────────────────────────────────
+      // DYNAMIC CSP for Shopify embedded + Stripe Checkout
+      // ────────────────────────────────────────────────────────────────
+      console.log('[Middleware DEBUG] Setting dynamic CSP for dashboard');
+
+      const shop = request.nextUrl.searchParams.get('shop');
+      let shopDomain = '';
+      if (shop && shop.endsWith('.myshopify.com')) {
+        shopDomain = `https://${shop}`;
+      } else {
+        console.warn('[Middleware DEBUG] No valid shop param found for CSP - using strict fallback');
+      }
+
+      const frameAncestors = shopDomain
+        ? `frame-ancestors 'self' https://admin.shopify.com ${shopDomain};`
+        : "frame-ancestors 'none';";  // Block if no valid shop (security fallback)
+
+      const stripeAndBaseDirectives = [
+        "default-src 'self';",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com;",
+        "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.stripe.com;",
+        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com;",
+        "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com;",
+        "img-src 'self' data: blob: https://*.stripe.com;",
+        "style-src 'self' 'unsafe-inline';",
+        "font-src 'self' data:;"
+      ].join(' ');
+
+      const fullCsp = `${frameAncestors} ${stripeAndBaseDirectives}`;
+
+      console.log('[Middleware DEBUG] Setting CSP:', fullCsp);
+      response.headers.set('Content-Security-Policy', fullCsp);
+
     } catch (err) {
       console.error('[Middleware DEBUG] JWT or DB error - redirecting to login');
       console.error('[Middleware DEBUG] Error:', err);
@@ -146,6 +160,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/api/:path*',  // ← Added this so OPTIONS and CORS apply to all API routes
+    '/api/:path*',
   ],
 };
