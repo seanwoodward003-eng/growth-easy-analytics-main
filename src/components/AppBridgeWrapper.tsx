@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// The handler component
+// The handler component (listens for shopify:navigate events from s-link clicks)
 function EmbeddedNavHandler() {
   const router = useRouter();
 
@@ -13,8 +13,8 @@ function EmbeddedNavHandler() {
       const href = target.getAttribute('href');
       if (href) {
         console.log('Shopify navigate event:', href);
-        router.push(href);
-        event.preventDefault();
+        router.push(href);           // Navigate client-side with Next.js
+        event.preventDefault();      // Prevent default full page reload
       }
     };
 
@@ -25,7 +25,7 @@ function EmbeddedNavHandler() {
     };
   }, [router]);
 
-  return null;  // Invisible
+  return null;  // Invisible — no UI output
 }
 
 export function AppBridgeWrapper({ children }: { children: ReactNode }) {
@@ -54,7 +54,7 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
         </s-app-nav>
       )}
 
-      {/* Add the nav handler here – it listens for clicks on s-link */}
+      {/* Add the nav handler here – it catches clicks on the s-links */}
       <EmbeddedNavHandler />
 
       {children}
