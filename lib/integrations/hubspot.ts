@@ -18,19 +18,21 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
       [userId]
     );
 
-    if (!rawResult || !Array.isArray(rawResult) || rawResult.length === 0) {
-      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: 'No user data' };
+    // Safe check without type assertion
+    if (!rawResult || typeof rawResult !== 'object' || rawResult === null || !Array.isArray(rawResult) || rawResult.length === 0) {
+      console.log('[HubSpot] No user row found for ID', userId);
+      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0 };
     }
 
     const userRow = rawResult[0] as { hubspot_access_token: string | null };
 
     if (!userRow.hubspot_access_token) {
-      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: 'Missing access token' };
+      console.log('[HubSpot] Missing access token for user', userId);
+      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0 };
     }
 
     const accessToken = userRow.hubspot_access_token;
 
-    // Get recent contacts (increase limit when needed)
     const contactsResp = await fetch(
       'https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=lastmodifieddate,createdate,lifecyclestage,email,hs_lastactivitydate',
       {
@@ -46,7 +48,6 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
 
     const { results, total } = await contactsResp.json();
 
-    // At-risk / inactive: no activity in last 60 days
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
@@ -55,7 +56,6 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
       return lastActivity && new Date(lastActivity) < sixtyDaysAgo;
     });
 
-    // Sample contacts
     const sampleContacts = results
       .slice(0, 5)
       .map((c: any) => ({
@@ -63,23 +63,8 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
         lastActivity: c.properties.hs_lastactivitydate || c.properties.lastmodifieddate || 'unknown',
       }));
 
-    // Email stats — HubSpot Marketing API (requires scope & setup)
-    // For now placeholder — real call example below (uncomment when ready)
     let openRate = 28;
     let clickRate = 4;
-
-    /*
-    // Real call example (add marketing scope to OAuth)
-    const analyticsResp = await fetch(
-      'https://api.hubapi.com/analytics/v3/performance/email?limit=10',
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    if (analyticsResp.ok) {
-      const stats = await analyticsResp.json();
-      openRate = stats.overall?.openRate || 28;
-      clickRate = stats.overall?.clickRate || 4;
-    }
-    */
 
     return {
       atRiskContacts: inactive.length,
@@ -89,8 +74,8 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
       sampleContacts,
       totalContacts: total || results.length,
     };
-  } catch (err: any) {
-    console.error('[HubSpot Fetch Error]', err?.message || err);
-    return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: err?.message || 'Unknown error' };
+  } catch (err) {
+    console.error('[HubSpot Fetch Error]', err);
+    return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: String(err) };
   }
 }
