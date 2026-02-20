@@ -5,7 +5,6 @@ import { getRows } from '@/lib/db';
 import { fetchGA4Data, GA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData, HubSpotData } from '@/lib/integrations/hubspot';
 
-
 // Define OrderRow type
 type OrderRow = {
   total_price: number | string;
@@ -288,6 +287,25 @@ export async function GET(request: Request) {
 
   let aiInsight = "Connect GA4 & HubSpot for advanced insights.";
 
+  // Declare objects before blending
+  let acquisition = {
+    top_channel: topChannel,
+    cac: cac,
+    cost_trend_30d: "N/A",
+    cost_trend_90d: "N/A",
+    sessions: 0,
+    bounce_rate: "0%",
+    channel: topChannel
+  };
+
+  let churn = {
+    rate: churnRate,
+    at_risk: atRisk,
+    trend_7d: "0%",
+    trend_30d: "0%",
+    trend_90d: "0%"
+  };
+
   // ────────────────────────────────────────────────
   // INTEGRATE GA4 & HubSpot
   // ────────────────────────────────────────────────
@@ -297,16 +315,9 @@ export async function GET(request: Request) {
     ga4Data = await fetchGA4Data(user.id);
     if (ga4Data) {
       cac = ga4Data.estimatedCac || cac;
-      // Create acquisition object if not already
-      let acquisition = {
-        top_channel: topChannel,
-        cac: cac,
-        cost_trend_30d: "N/A",
-        cost_trend_90d: "N/A",
-        sessions: ga4Data.sessions || 0,
-        bounce_rate: ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%",
-        channel: ga4Data.topChannels[0]?.sourceMedium || topChannel
-      };
+      acquisition.sessions = ga4Data.sessions || 0;
+      acquisition.bounce_rate = ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%";
+      acquisition.top_channel = ga4Data.topChannels[0]?.sourceMedium || topChannel;
       if (ga4Data.sessions > 0) {
         aiInsight += ` GA4 shows ${ga4Data.sessions} sessions with ${ga4Data.bounceRate.toFixed(1)}% bounce.`;
       }
@@ -338,13 +349,7 @@ export async function GET(request: Request) {
       forecast_12m: revenue.forecast_12m,
       history: revenue.history
     },
-    churn: {
-      rate: churnRate,
-      at_risk: atRisk,
-      trend_7d: "0%",
-      trend_30d: "0%",
-      trend_90d: "0%"
-    },
+    churn: churn,
     retention: {
       rate: retention30,
       repeat_rate: repeatRate,
@@ -352,15 +357,7 @@ export async function GET(request: Request) {
       cohort_retention: { data: cohortRetention },
       thirty_day: retention30
     },
-    acquisition: {
-      top_channel: topChannel,
-      cac: cac,
-      cost_trend_30d: "N/A",
-      cost_trend_90d: "N/A",
-      sessions: ga4Data?.sessions || 0,
-      bounce_rate: ga4Data ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%",
-      channel: topChannel
-    },
+    acquisition: acquisition,
     performance: {
       ltv: ltvOverall,
       cac: cac,
