@@ -56,18 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Shopify Embedded App Bridge – required for embedded mode */}
+        {/* Shopify Embedded App Bridge – required */}
         <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
-        
-        {/* Core App Bridge script */}
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
-        
-        {/* Polaris web components – only needed for <s-app-nav> in embedded */}
-        <script
-          src="https://cdn.shopify.com/shopifycloud/polaris.js"
-          async
-          crossOrigin="anonymous"
-        />
+        <script src="https://cdn.shopify.com/shopifycloud/polaris.js" async crossOrigin="anonymous" />
 
         <meta 
           name="viewport" 
@@ -77,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
-        {/* Header */}
+        {/* Header – no logo, menu button responsive */}
         <header 
           className="
             fixed top-0 left-0 right-0 z-[100] 
@@ -95,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </h1>
             </Link>
 
-            {/* Desktop Menu Button */}
+            {/* Desktop Menu Button – text "Menu" */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="hidden lg:flex z-[200] px-6 py-3 rounded-full bg-gray-800/80 border border-cyan-500/60 hover:bg-gray-700/80 transition items-center justify-center shadow-xl text-cyan-400 font-bold text-lg"
@@ -104,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Menu
             </button>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button – 3 lines icon */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="lg:hidden z-[200] p-3 -mr-3 rounded-full bg-gray-800/80 border border-cyan-500/60 hover:bg-gray-700/80 transition flex items-center justify-center shadow-xl"
@@ -115,7 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        {/* Custom Side Menu – this is your standalone nav, always renders */}
+        {/* Custom Side Menu – opens from either button (your responsive nav) */}
         {menuOpen && (
           <>
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[150]" onClick={() => setMenuOpen(false)} />
@@ -176,7 +168,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        {/* App Bridge Wrapper – now minimal, won't block standalone */}
+        {/* App Bridge Wrapper – contains <s-app-nav> for Shopify Admin sidebar */}
         <AppBridgeWrapper>
           <main 
             className={`
