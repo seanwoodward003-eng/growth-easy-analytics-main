@@ -6,8 +6,9 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
   const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.shopify) {
-      setIsEmbedded(true);
+    if (typeof window !== 'undefined') {
+      console.log('Is Shopify embedded?', !!window.shopify);  // ← Debug log added here
+      setIsEmbedded(!!window.shopify);
     }
   }, []);
 
