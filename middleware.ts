@@ -14,144 +14,128 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
-  // ── TOP-LEVEL DEBUG: Confirm middleware even runs ──
-  console.log('[Middleware DEBUG] INVOKED for full URL:', request.url);
-  console.log('[Middleware DEBUG] Pathname only:', request.nextUrl.pathname);
-  console.log('[Middleware DEBUG] Query params object:', Object.fromEntries(request.nextUrl.searchParams.entries()));
-  console.log('[Middleware DEBUG] Has embedded param?', request.nextUrl.searchParams.has('embedded'));
-  console.log('[Middleware DEBUG] Shop param value:', request.nextUrl.searchParams.get('shop') || 'MISSING');
-
-  const origin = request.headers.get('origin');
-  console.log('[Middleware DEBUG] Origin:', origin || 'none');
+  console.log('[MW] INVOKED - Full URL:', request.url);
+  console.log('[MW] Path:', request.nextUrl.pathname);
+  console.log('[MW] Query:', Object.fromEntries(request.nextUrl.searchParams));
+  console.log('[MW] Embedded?', request.nextUrl.searchParams.has('embedded'));
+  console.log('[MW] Shop:', request.nextUrl.searchParams.get('shop'));
 
   let response = NextResponse.next();
 
-  // Global security headers
-  console.log('[Middleware DEBUG] Setting global security headers');
+  // Global security (no X-Frame-Options!)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // Your CORS block for /api (unchanged)
+  // Skip HTTPS redirect in prod - Vercel handles it
+  // Comment out or remove this block entirely for now
+  // if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') { ... }
+
+  // CORS for API (unchanged)
   if (request.nextUrl.pathname.startsWith('/api')) {
-    console.log('[Middleware DEBUG] API route - handling CORS');
+    const origin = request.headers.get('origin');
     if (origin && ALLOWED_ORIGINS.includes(origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin);
     } else {
-      response.headers.set('Access-Control-Allow-Origin', '*'); // testing
+      response.headers.set('Access-Control-Allow-Origin', '*');
     }
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
     if (request.method === 'OPTIONS') {
-      console.log('[Middleware DEBUG] OPTIONS preflight - 204');
       return new Response(null, { status: 204, headers: response.headers });
     }
   }
 
-  // HTTPS redirect (unchanged)
-  if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
-    console.log('[Middleware DEBUG] Redirecting HTTP to HTTPS');
-    const url = request.nextUrl.clone();
-    url.protocol = 'https:';
-    return NextResponse.redirect(url, 301);
-  }
-
-  // ── Broader embedded check ──
-  const isEmbeddedLike =
+  // Embedded logic: Run if ?embedded=1 OR /dashboard OR root
+  const isEmbedded = 
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname === '/' ||
-    request.nextUrl.pathname === '' ||
-    request.nextUrl.pathname === '/index'; // add if you have /index
+    request.nextUrl.pathname === '';
 
-  if (isEmbeddedLike) {
-    console.log('[Middleware DEBUG] Treating as potential embedded - starting auth + CSP');
+  if (isEmbedded) {
+    console.log('[MW] Embedded-like request - processing');
 
     const accessToken = request.cookies.get('access_token')?.value;
-    console.log('[Middleware DEBUG] Access token present?', !!accessToken);
-
     if (!accessToken) {
-      console.log('[Middleware DEBUG] No token → redirect to login');
+      console.log('[MW] No token - redirect login');
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/login'; // or '/' with error
       url.searchParams.set('error', 'login_required');
       return NextResponse.redirect(url);
     }
 
     try {
-      console.log('[Middleware DEBUG] JWT verify start');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
       const userId = parseInt(payload.sub as string, 10);
-      console.log('[Middleware DEBUG] JWT OK - userId:', userId);
 
-      console.log('[Middleware DEBUG] DB lookup');
       const user = await getRow<{ trial_end: string | null; subscription_status: string }>(
         'SELECT trial_end, subscription_status FROM users WHERE id = ?',
         [userId]
       );
 
       if (!user) {
-        console.log('[Middleware DEBUG] No user in DB → redirect');
-        const url = request.nextUrl.clone();
-        url.pathname = '/';
-        return NextResponse.redirect(url);
+        return NextResponse.redirect(new URL('/', request.url));
       }
 
       response.headers.set('x-user-id', userId.toString());
-      response.headers.set('x-subscription-status', user.subscription_status);
-      response.headers.set('x-trial-end', user.trial_end || '');
+      // ... other headers
 
-      // CSP logic
-      console.log('[Middleware DEBUG] Building CSP');
+      // CSP - force it here
+      console.log('[MW] Setting CSP');
       const shop = request.nextUrl.searchParams.get('shop');
-      let shopDomain = '';
+      let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com;";
       if (shop && shop.endsWith('.myshopify.com')) {
-        shopDomain = `https://${shop}`;
-        console.log('[Middleware DEBUG] Shop valid:', shop);
+        frameAncestors += ` https://${shop};`;
+        console.log('[MW] Added shop domain:', shop);
       } else {
-        console.warn('[Middleware DEBUG] Shop missing/invalid - fallback');
+        console.log('[MW] No shop - fallback only admin');
       }
 
-      const frameAncestors = shopDomain
-        ? `frame-ancestors 'self' https://admin.shopify.com ${shopDomain};`
-        : "frame-ancestors 'self' https://admin.shopify.com https://*.myshopify.com;";
+      const csp = `${frameAncestors} ` +
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com; " +
+        "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
+        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
+        "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
+        "img-src 'self' data: blob: https://*.stripe.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self' data:;";
 
-      const stripeDirectives = [
-        "default-src 'self';",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com;",
-        "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.stripe.com;",
-        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com;",
-        "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com;",
-        "img-src 'self' data: blob: https://*.stripe.com;",
-        "style-src 'self' 'unsafe-inline';",
-        "font-src 'self' data:;"
-      ].join(' ');
-
-      const fullCsp = frameAncestors + ' ' + stripeDirectives;
-      console.log('[Middleware DEBUG] CSP final:', fullCsp);
-      response.headers.set('Content-Security-Policy', fullCsp);
+      console.log('[MW] CSP:', csp);
+      response.headers.set('Content-Security-Policy', csp);
 
     } catch (err) {
-      console.error('[Middleware DEBUG] Auth/CSP error:', err);
+      console.error('[MW] Error:', err);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
-      const redirect = NextResponse.redirect(url);
-      redirect.cookies.delete('access_token');
-      redirect.cookies.delete('refresh_token');
-      redirect.cookies.delete('csrf_token');
-      return redirect;
+      const res = NextResponse.redirect(url);
+      res.cookies.delete('access_token');
+      // ... delete others
+      return res;
     }
   }
 
-  console.log('[Middleware DEBUG] Complete - returning response');
+  console.log('[MW] Done');
   return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)', // catch-all except static
+    // Catch root + any path with embedded query
+    {
+      source: '/:path*',
+      missing: [
+        { type: 'regex', key: 'path', regex: '^/api|^/_next|^/static|^/favicon.ico' }
+      ]
+    },
+    // Or more precise for root with embedded
+    {
+      source: '/',
+      has: [{ type: 'query', key: 'embedded' }]
+    },
     '/dashboard/:path*',
     '/api/:path*',
   ],
