@@ -1,6 +1,6 @@
 'use client';
 
-import { Provider } from '@shopify/app-bridge-react';  // ← FIXED: use Provider
+import { Provider } from '@shopify/app-bridge-react';
 import { NavigationMenu } from '@shopify/app-bridge-react';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
