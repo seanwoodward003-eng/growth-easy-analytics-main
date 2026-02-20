@@ -8,28 +8,41 @@ interface AppBridgeWrapperProps {
 
 export function AppBridgeWrapper({ children }: AppBridgeWrapperProps) {
   const [ready, setReady] = useState(false);
+  const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
-    const checkReady = () => {
-      if (window.shopify && document.querySelector('s-app-nav')) {  // polaris.js registers elements
-        console.log('Polaris & App Bridge ready – rendering nav');
+    if (typeof window !== 'undefined') {
+      const embedded = !!window.shopify;  // App Bridge only exists in iframe
+      setIsEmbedded(embedded);
+
+      if (!embedded) {
+        // Standalone: render immediately (no need to wait for Shopify scripts)
+        console.log('Standalone mode detected – rendering directly');
         setReady(true);
+        return;
       }
-    };
 
-    checkReady();  // immediate check
-    const interval = setInterval(checkReady, 500);  // poll every 0.5s (up to ~10s)
+      // Embedded: poll for ready
+      const checkReady = () => {
+        if (window.shopify && document.querySelector('s-app-nav')) {
+          console.log('Embedded: Polaris & App Bridge ready');
+          setReady(true);
+        }
+      };
 
-    // Timeout after 15s to avoid infinite wait
-    const timeout = setTimeout(() => {
-      console.warn('Polaris/App Bridge not ready after 15s – rendering anyway');
-      setReady(true);
-    }, 15000);
+      checkReady();
+      const interval = setInterval(checkReady, 500);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
+      const timeout = setTimeout(() => {
+        console.warn('Embedded timeout – forcing render');
+        setReady(true);
+      }, 15000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
   }, []);
 
   if (!ready) {
@@ -38,16 +51,18 @@ export function AppBridgeWrapper({ children }: AppBridgeWrapperProps) {
 
   return (
     <>
-      <s-app-nav>
-        <s-link href="/dashboard" rel="home">Dashboard</s-link>
-        <s-link href="/dashboard/churn">Churn</s-link>
-        <s-link href="/dashboard/revenue">Revenue</s-link>
-        <s-link href="/dashboard/acquisition">Acquisition</s-link>
-        <s-link href="/dashboard/retention">Retention</s-link>
-        <s-link href="/dashboard/performance">Performance</s-link>
-        <s-link href="/dashboard/ai-growth-coach">AI Growth Coach</s-link>
-        <s-link href="/dashboard/settings">Settings</s-link>
-      </s-app-nav>
+      {isEmbedded && (
+        <s-app-nav>
+          <s-link href="/dashboard" rel="home">Dashboard</s-link>
+          <s-link href="/dashboard/churn">Churn</s-link>
+          <s-link href="/dashboard/revenue">Revenue</s-link>
+          <s-link href="/dashboard/acquisition">Acquisition</s-link>
+          <s-link href="/dashboard/retention">Retention</s-link>
+          <s-link href="/dashboard/performance">Performance</s-link>
+          <s-link href="/dashboard/ai-growth-coach">AI Growth Coach</s-link>
+          <s-link href="/dashboard/settings">Settings</s-link>
+        </s-app-nav>
+      )}
 
       {children}
     </>
