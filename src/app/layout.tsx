@@ -12,8 +12,8 @@ import { Menu, X } from 'lucide-react';
 const orbitron = Orbitron({ subsets: ['latin'], weight: ['400', '700', '900'] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [host, setHost] = useState<string | null>(null);
 
@@ -110,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }))}
           />
 
-          {/* Your original header – kept as fallback for mobile/non-embedded */}
+          {/* Your original header – kept as fallback */}
           <header 
             className="
               fixed top-0 left-0 right-0 z-[100] 
@@ -241,4 +241,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </body>
       </html>
     );
-  } 
+  }
