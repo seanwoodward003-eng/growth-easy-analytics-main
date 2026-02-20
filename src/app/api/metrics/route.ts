@@ -4,8 +4,8 @@ import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
-import { fetchHubSpotData } from '@/lib/integrations/hubspot';
 import { GA4Data } from '@/lib/integrations/ga4';
+import { HubSpotData } from '@/lib/integrations/hubspot';
 
 // Define OrderRow type
 type OrderRow = {
