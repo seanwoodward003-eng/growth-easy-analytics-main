@@ -7,7 +7,7 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('Is Shopify embedded?', !!window.shopify);  // ← Debug log added here
+      console.log('Is Shopify embedded?', !!window.shopify);  // Debug: this will print true/false
       setIsEmbedded(!!window.shopify);
     }
   }, []);
@@ -24,7 +24,7 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
           <s-link href="/dashboard/performance">Performance</s-link>
           <s-link href="/dashboard/ai-growth-coach">AI Growth Coach</s-link>
           <s-link href="/dashboard/settings">Settings</s-link>
-          {/* Add About/Privacy/Upgrade if you want them in sidebar */}
+          {/* Add About/Privacy/Upgrade if needed */}
         </s-app-nav>
       )}
 
