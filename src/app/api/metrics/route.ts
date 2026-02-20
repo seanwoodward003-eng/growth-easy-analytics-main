@@ -4,8 +4,8 @@ import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
+import { fetchHubSpotData } from '@/lib/integrations/hubspot';
 import { GA4Data } from '@/lib/integrations/ga4';
-import { HubSpotData } from '@/lib/integrations/hubspot';
 
 // Define OrderRow type
 type OrderRow = {
@@ -258,7 +258,6 @@ export async function GET(request: Request) {
   const ltvReturning = returningCustCount > 0 ? Math.round((returningRevenue / returningCustCount) * 100) / 100 : 0;
   const ltvOverall = customerMap.size > 0 ? Math.round((rev30.total / customerMap.size) * 100) / 100 : 0;
 
-  // FIXED CHURN SECTION
   const prev90Customers = new Set(
     inPeriod(orders, periods.prev90, periods.d90)
       .map(o => o.customer_id)
@@ -286,10 +285,8 @@ export async function GET(request: Request) {
   const newCustomers = customerMap.size;
   let cac = 87; // default placeholder
 
-  // FIXED LTV:CAC RATIO – keep as number for comparisons
   const ltvCacRatioNum = cac > 0 ? ltvOverall / cac : 0;
 
-  // Health score
   const healthScore = Math.min(100, Math.max(0, Math.round(
     (rev30.total > 0 ? 30 : 0) +
     (repeatRate > 30 ? repeatRate * 0.8 : repeatRate * 0.4) +
@@ -307,7 +304,6 @@ export async function GET(request: Request) {
   if (ga4Connected) {
     ga4Data = await fetchGA4Data(user.id);
     if (ga4Data) {
-      revenue.history.values = ga4Data.history?.values || revenue.history.values;
       cac = ga4Data.estimatedCac || cac;
       acquisition.sessions = ga4Data.sessions || 0;
       acquisition.bounce_rate = ga4Data.bounceRate ? `${(ga4Data.bounceRate * 100).toFixed(1)}%` : "0%";
@@ -372,7 +368,7 @@ export async function GET(request: Request) {
     performance: {
       ltv: ltvOverall,
       cac: cac,
-      ratio: ltvCacRatioNum.toFixed(1),  // format here
+      ratio: ltvCacRatioNum.toFixed(1),
       health_score: healthScore,
       monthly_profit: 0
     },
