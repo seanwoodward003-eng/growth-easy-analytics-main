@@ -104,9 +104,7 @@ export async function GET(request: Request) {
     );
     console.log('[METRICS-API] ORDERS QUERY SUCCESS — found', orders.length, 'rows');
 
-    // ────────────────────────────────────────────────
-    // NEW DEBUG LOGS ADDED HERE
-    // ────────────────────────────────────────────────
+    // Debug logs from previous step (keep these for now)
     console.log('[METRICS-API] Raw orders count:', orders.length);
 
     if (orders.length > 0) {
@@ -117,7 +115,6 @@ export async function GET(request: Request) {
     } else {
       console.log('[METRICS-API] No orders returned — check financial_status filter or test order status in Shopify admin');
     }
-    // ────────────────────────────────────────────────
 
   } catch (queryErr) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
@@ -149,27 +146,52 @@ export async function GET(request: Request) {
   }
 
   // ────────────────────────────────────────────────
-  // If you want even more debug — temporarily return raw data here
-  // Uncomment the next 4 lines to test if frontend can see the orders
-  // return NextResponse.json({
-  //   rawOrders: orders,
-  //   debug: { userId: user.id, rowCount: orders.length, firstTotal: orders[0]?.total_price }
-  // });
-  // ────────────────────────────────────────────────
-
-  // Your full calculations (revenue, AOV, history, customers, LTV, churn, top channel, cohort, health score, insight)
-  // ... (keep all your existing code here unchanged)
-
-  // Merge GA4/HubSpot (unchanged)
-  const ga4Data = ga4Connected ? await fetchGA4Data(user.id) : null;
-  const hubspotData = hubspotConnected ? await fetchHubSpotData(user.id) : null;
-
-  // ... rest of your response logic (enhancedInsight, final json)
+  // TEMP DEBUG RESPONSE: Bypass original calculations and return simple computed metrics
+  // This confirms if frontend can display real numbers from orders
+  const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+  const aov = orders.length > 0 ? totalRevenue / orders.length : 0;
 
   return NextResponse.json({
-    // Your full response object with real data
-    // For now — make sure this includes revenue.total etc. calculated from orders
+    debug: {
+      message: 'DEBUG MODE ACTIVE: Bypassing full calcs — raw orders + basic metrics',
+      userId: user.id,
+      rowCount: orders.length,
+      sampleOrder: orders[0] || null,
+      allTotalPrices: orders.map(o => Number(o.total_price) || 0),
+      sumCheck: totalRevenue
+    },
+    revenue: {
+      total: totalRevenue,
+      average_order_value: aov,
+      trend: '+DEBUG',  // placeholder
+      history: {
+        labels: orders.map(o => new Date(o.created_at).toLocaleDateString()),
+        values: orders.map(o => Number(o.total_price) || 0)
+      }
+    },
+    connections: { 
+      shopify: shopifyConnected, 
+      ga4: ga4Connected, 
+      hubspot: hubspotConnected 
+    },
+    ai_insight: 'DEBUG: Data loaded from DB successfully. Check if Revenue card shows real £ value (should be around 29.7 if all ~9.9).',
+    // Add minimal other fields to avoid frontend crashes
+    churn: { rate: 0, at_risk: 0 },
+    performance: { ratio: '0.0', ltv: 0, cac: 0 },
+    acquisition: { top_channel: '—', acquisition_cost: 0 },
+    retention: { rate: 0 },
+    returning_customers_ltv: 0,
+    ltv_breakdown: { one_time: 0, returning: 0 },
+    cohort_retention: { data: [] },
+    store_health_score: 0
   });
+
+  // ────────────────────────────────────────────────
+  // Your original full calculations and return would go here (commented out for debug)
+  // const ga4Data = ga4Connected ? await fetchGA4Data(user.id) : null;
+  // const hubspotData = hubspotConnected ? await fetchHubSpotData(user.id) : null;
+  // ... calculations ...
+  // return NextResponse.json({ ...full object... });
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
