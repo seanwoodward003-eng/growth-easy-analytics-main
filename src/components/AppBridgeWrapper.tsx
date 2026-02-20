@@ -13,7 +13,6 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {/* Only render Shopify sidebar when inside Admin iframe */}
       {isEmbedded && (
         <s-app-nav>
           <s-link href="/dashboard">Dashboard</s-link>
@@ -24,10 +23,10 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
           <s-link href="/dashboard/performance">Performance</s-link>
           <s-link href="/dashboard/ai-growth-coach">AI Growth Coach</s-link>
           <s-link href="/dashboard/settings">Settings</s-link>
+          {/* Add About/Privacy/Upgrade if you want them in sidebar */}
         </s-app-nav>
       )}
 
-      {/* Always render your actual content */}
       {children}
     </>
   );
