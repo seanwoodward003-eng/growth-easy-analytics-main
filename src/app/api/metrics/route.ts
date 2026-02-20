@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
-import { requireAuth } from '@/lib/auth';  // ← This import is required for requireAuth
+import { requireAuth } from '@/lib/auth';
 import { getRows } from '@/lib/db';
 import { fetchGA4Data } from '@/lib/integrations/ga4';
 import { fetchHubSpotData } from '@/lib/integrations/hubspot';
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
 
   const authHeader = request.headers.get('authorization');
 
+  // Step 1: Validate Shopify embedded session token (Bearer header)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
 
@@ -32,40 +33,44 @@ export async function GET(request: Request) {
         { algorithms: ['HS256'] }
       );
 
+      // Validate audience (your app's API key)
       if (payload.aud !== process.env.SHOPIFY_API_KEY) {
         console.log('[METRICS-API] Invalid audience in token');
-        return NextResponse.json({ error: 'Invalid token audience' }, { status: 401 });
+        // Continue to fallback instead of failing hard
+      } else {
+        // Extract shop domain from token (dest or iss)
+        shopDomain = (payload.dest as string)?.replace('https://', '') ||
+                     (payload.iss as string)?.replace('https://', '') ||
+                     null;
+
+        if (!shopDomain) {
+          console.log('[METRICS-API] No shop domain in token');
+        } else {
+          console.log('[METRICS-API] Token valid — shop domain:', shopDomain);
+
+          // Load user from DB by shop domain
+          const users = await getRows<any>(
+            'SELECT * FROM users WHERE shopify_shop = ? LIMIT 1',
+            [shopDomain]
+          );
+
+          if (users.length > 0) {
+            user = users[0];
+            console.log('[METRICS-API] User loaded via shop domain — ID:', user.id);
+          } else {
+            console.log('[METRICS-API] No user found for shop:', shopDomain);
+          }
+        }
       }
-
-      shopDomain = (payload.dest as string)?.replace('https://', '') ||
-                   (payload.iss as string)?.replace('https://', '') ||
-                   null;
-
-      if (!shopDomain) {
-        console.log('[METRICS-API] No shop domain in token');
-        return NextResponse.json({ error: 'Missing shop domain in token' }, { status: 401 });
-      }
-
-      console.log('[METRICS-API] Token valid — shop domain:', shopDomain);
-
-      const users = await getRows<any>(
-        'SELECT * FROM users WHERE shopify_shop = ? LIMIT 1',
-        [shopDomain]
-      );
-
-      if (users.length === 0) {
-        console.log('[METRICS-API] No user found for shop:', shopDomain);
-        return NextResponse.json({ error: 'User not found for shop' }, { status: 404 });
-      }
-
-      user = users[0];
-      console.log('[METRICS-API] User loaded via shop domain — ID:', user.id);
-
     } catch (err) {
       console.error('[METRICS-API] Token validation failed:', err);
-      return NextResponse.json({ error: 'Invalid or expired session token' }, { status: 401 });
+      // Continue to fallback instead of failing hard
     }
-  } else {
+  }
+
+  // Step 2: Fallback to old cookie-based auth
+  if (!user) {
+    console.log('[METRICS-API] Falling back to old cookie auth');
     const oldAuth = await requireAuth();
     if ('error' in oldAuth) {
       console.log('[METRICS-API] Old auth failed:', oldAuth.error);
@@ -75,6 +80,7 @@ export async function GET(request: Request) {
     console.log('[METRICS-API] Fallback to old auth — user ID:', user.id);
   }
 
+  // Connection flags - forgiving: connected if shop domain exists (token can be null)
   const shopifyConnected = !!user.shopify_shop;
   const ga4Connected = !!user.ga4_connected;
   const hubspotConnected = !!user.hubspot_connected;
@@ -101,6 +107,7 @@ export async function GET(request: Request) {
     console.error('[METRICS-API] ORDERS QUERY CRASHED:', queryErr);
   }
 
+  // Empty state only if truly no orders
   if (orders.length === 0) {
     const emptyState = {
       revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
@@ -134,17 +141,9 @@ export async function GET(request: Request) {
 
   // ... rest of your response logic (enhancedInsight, final json)
 
-  // DEBUG: Log the final JSON being sent to the frontend
-  const responseData = {
-    // ← YOUR ACTUAL CALCULATED OBJECT GOES HERE
-    // Example placeholder — replace with your real calculations
-    revenue: { total: 0, average_order_value: 0, trend: '0%', history: { labels: [], values: [] } },
-    // ... add your real fields
-  };
-
-  console.log('[useMetrics] API sent this:', JSON.stringify(responseData));
-
-  return NextResponse.json(responseData);
+  return NextResponse.json({
+    // Your full response object with real data
+  });
 }
 
 export const OPTIONS = () => new Response(null, { status: 200 });
