@@ -14,66 +14,65 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
-  console.log('[Middleware DEBUG] Middleware invoked - path:', request.nextUrl.pathname);
-  console.log('[Middleware DEBUG] Request method:', request.method);
+  // ── TOP-LEVEL DEBUG: Confirm middleware even runs ──
+  console.log('[Middleware DEBUG] INVOKED for full URL:', request.url);
+  console.log('[Middleware DEBUG] Pathname only:', request.nextUrl.pathname);
+  console.log('[Middleware DEBUG] Query params object:', Object.fromEntries(request.nextUrl.searchParams.entries()));
+  console.log('[Middleware DEBUG] Has embedded param?', request.nextUrl.searchParams.has('embedded'));
+  console.log('[Middleware DEBUG] Shop param value:', request.nextUrl.searchParams.get('shop') || 'MISSING');
 
   const origin = request.headers.get('origin');
-  console.log('[Middleware DEBUG] Origin header:', origin || 'none');
-  const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
-  console.log('[Middleware DEBUG] Is origin allowed?', isAllowedOrigin);
+  console.log('[Middleware DEBUG] Origin:', origin || 'none');
 
   let response = NextResponse.next();
 
-  // Security headers (applied to everything) - removed X-Frame-Options
-  console.log('[Middleware DEBUG] Setting security headers');
+  // Global security headers
+  console.log('[Middleware DEBUG] Setting global security headers');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // ────────────────────────────────────────────────────────────────
-  // FULL CORS HANDLING FOR ALL /api/* ROUTES
-  // ────────────────────────────────────────────────────────────────
+  // Your CORS block for /api (unchanged)
   if (request.nextUrl.pathname.startsWith('/api')) {
-    console.log('[Middleware DEBUG] API route detected - handling CORS');
-
-    // Allow origin if whitelisted, fallback to * for testing
-    if (origin && isAllowedOrigin) {
-      console.log('[Middleware DEBUG] Allowing specific origin:', origin);
+    console.log('[Middleware DEBUG] API route - handling CORS');
+    if (origin && ALLOWED_ORIGINS.includes(origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin);
     } else {
-      console.log('[Middleware DEBUG] Allowing all origins (testing)');
-      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Origin', '*'); // testing
     }
-
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
-    // Handle preflight OPTIONS request (critical for POST with credentials)
     if (request.method === 'OPTIONS') {
-      console.log('[Middleware DEBUG] Handling OPTIONS preflight - returning 204');
-      return new Response(null, {
-        status: 204,
-        headers: response.headers,
-      });
+      console.log('[Middleware DEBUG] OPTIONS preflight - 204');
+      return new Response(null, { status: 204, headers: response.headers });
     }
   }
 
-  // HTTPS redirect in production
+  // HTTPS redirect (unchanged)
   if (request.headers.get('x-forwarded-proto') === 'http' && process.env.NODE_ENV === 'production') {
-    console.log('[Middleware DEBUG] HTTP in production - redirecting to HTTPS');
-    const url = new URL(request.url);
+    console.log('[Middleware DEBUG] Redirecting HTTP to HTTPS');
+    const url = request.nextUrl.clone();
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301);
   }
 
-  // Dashboard auth + dynamic CSP for embedded Shopify + Stripe
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    console.log('[Middleware DEBUG] Dashboard route - checking authentication');
+  // ── Broader embedded check ──
+  const isEmbeddedLike =
+    request.nextUrl.searchParams.has('embedded') ||
+    request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname === '/' ||
+    request.nextUrl.pathname === '' ||
+    request.nextUrl.pathname === '/index'; // add if you have /index
+
+  if (isEmbeddedLike) {
+    console.log('[Middleware DEBUG] Treating as potential embedded - starting auth + CSP');
+
     const accessToken = request.cookies.get('access_token')?.value;
-    console.log('[Middleware DEBUG] Access token cookie exists?', !!accessToken);
+    console.log('[Middleware DEBUG] Access token present?', !!accessToken);
 
     if (!accessToken) {
-      console.log('[Middleware DEBUG] No access token - redirecting to login');
+      console.log('[Middleware DEBUG] No token → redirect to login');
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'login_required');
@@ -81,47 +80,44 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      console.log('[Middleware DEBUG] Verifying JWT');
+      console.log('[Middleware DEBUG] JWT verify start');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
       const userId = parseInt(payload.sub as string, 10);
-      console.log('[Middleware DEBUG] JWT verified - userId:', userId);
+      console.log('[Middleware DEBUG] JWT OK - userId:', userId);
 
-      console.log('[Middleware DEBUG] Fetching user from DB');
+      console.log('[Middleware DEBUG] DB lookup');
       const user = await getRow<{ trial_end: string | null; subscription_status: string }>(
         'SELECT trial_end, subscription_status FROM users WHERE id = ?',
         [userId]
       );
 
       if (!user) {
-        console.log('[Middleware DEBUG] User not found in DB - redirecting');
+        console.log('[Middleware DEBUG] No user in DB → redirect');
         const url = request.nextUrl.clone();
         url.pathname = '/';
         return NextResponse.redirect(url);
       }
 
-      console.log('[Middleware DEBUG] User found - setting headers');
       response.headers.set('x-user-id', userId.toString());
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
 
-      // ────────────────────────────────────────────────────────────────
-      // DYNAMIC CSP for Shopify embedded + Stripe Checkout
-      // ────────────────────────────────────────────────────────────────
-      console.log('[Middleware DEBUG] Setting dynamic CSP for dashboard');
-
+      // CSP logic
+      console.log('[Middleware DEBUG] Building CSP');
       const shop = request.nextUrl.searchParams.get('shop');
       let shopDomain = '';
       if (shop && shop.endsWith('.myshopify.com')) {
         shopDomain = `https://${shop}`;
+        console.log('[Middleware DEBUG] Shop valid:', shop);
       } else {
-        console.warn('[Middleware DEBUG] No valid shop param found for CSP - using strict fallback');
+        console.warn('[Middleware DEBUG] Shop missing/invalid - fallback');
       }
 
       const frameAncestors = shopDomain
         ? `frame-ancestors 'self' https://admin.shopify.com ${shopDomain};`
-        : "frame-ancestors 'none';";  // Block if no valid shop (security fallback)
+        : "frame-ancestors 'self' https://admin.shopify.com https://*.myshopify.com;";
 
-      const stripeAndBaseDirectives = [
+      const stripeDirectives = [
         "default-src 'self';",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com;",
         "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.stripe.com;",
@@ -132,33 +128,30 @@ export async function middleware(request: NextRequest) {
         "font-src 'self' data:;"
       ].join(' ');
 
-      const fullCsp = `${frameAncestors} ${stripeAndBaseDirectives}`;
-
-      console.log('[Middleware DEBUG] Setting CSP:', fullCsp);
+      const fullCsp = frameAncestors + ' ' + stripeDirectives;
+      console.log('[Middleware DEBUG] CSP final:', fullCsp);
       response.headers.set('Content-Security-Policy', fullCsp);
 
     } catch (err) {
-      console.error('[Middleware DEBUG] JWT or DB error - redirecting to login');
-      console.error('[Middleware DEBUG] Error:', err);
-
+      console.error('[Middleware DEBUG] Auth/CSP error:', err);
       const url = request.nextUrl.clone();
       url.pathname = '/';
       url.searchParams.set('error', 'session_expired');
-
-      const redirectResponse = NextResponse.redirect(url);
-      redirectResponse.cookies.delete('access_token');
-      redirectResponse.cookies.delete('refresh_token');
-      redirectResponse.cookies.delete('csrf_token');
-      return redirectResponse;
+      const redirect = NextResponse.redirect(url);
+      redirect.cookies.delete('access_token');
+      redirect.cookies.delete('refresh_token');
+      redirect.cookies.delete('csrf_token');
+      return redirect;
     }
   }
 
-  console.log('[Middleware DEBUG] Middleware complete - passing through');
+  console.log('[Middleware DEBUG] Complete - returning response');
   return response;
 }
 
 export const config = {
   matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)', // catch-all except static
     '/dashboard/:path*',
     '/api/:path*',
   ],
