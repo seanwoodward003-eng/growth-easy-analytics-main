@@ -7,70 +7,79 @@ export interface HubSpotData {
   clickRate: number;
   inactiveContacts: number;
   sampleContacts: Array<{ email: string; lastActivity: string; lastPurchase?: string }>;
+  totalContacts: number;
+  error?: string;
 }
 
-export async function fetchHubSpotData(userId: number): Promise<HubSpotData | null> {
+export async function fetchHubSpotData(userId: number): Promise<HubSpotData> {
   try {
-    // Get stored token – run returns any | null
     const rawResult = await run(
       'SELECT hubspot_access_token FROM users WHERE id = ?',
       [userId]
     );
 
-    // Safe guard: check if result is null/undefined first
-    if (rawResult == null) {  // == null catches both null and undefined
-      console.log('[HubSpot] No user row found for ID', userId);
-      return null;
+    if (!rawResult || !Array.isArray(rawResult) || rawResult.length === 0) {
+      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: 'No user data' };
     }
 
-    // Now TS knows rawResult is not null/undefined – cast to expected shape
-    const userRow = rawResult as {
-      hubspot_access_token: string | null;
-    };
+    const userRow = rawResult[0] as { hubspot_access_token: string | null };
 
-    // Second check for required field
     if (!userRow.hubspot_access_token) {
-      console.log('[HubSpot] Missing access token for user', userId);
-      return null;
+      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: 'Missing access token' };
     }
 
     const accessToken = userRow.hubspot_access_token;
 
-    // Get recent contacts (limit 100 for demo – increase later)
+    // Get recent contacts (increase limit when needed)
     const contactsResp = await fetch(
-      'https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=lastmodifieddate,createdate,lifecyclestage,email',
+      'https://api.hubapi.com/crm/v3/objects/contacts?limit=100&properties=lastmodifieddate,createdate,lifecyclestage,email,hs_lastactivitydate',
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
 
     if (!contactsResp.ok) {
-      console.error('[HubSpot] Contacts fetch failed:', await contactsResp.text());
-      return null;
+      const errText = await contactsResp.text();
+      console.error('[HubSpot] Contacts fetch failed:', errText);
+      return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: errText.slice(0, 200) };
     }
 
-    const { results } = await contactsResp.json();
+    const { results, total } = await contactsResp.json();
 
-    // Rough at-risk: no activity in last 60 days (simplified)
+    // At-risk / inactive: no activity in last 60 days
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     const inactive = results.filter((c: any) => {
-      const lastMod = new Date(c.properties.lastmodifieddate);
-      return lastMod < sixtyDaysAgo;
+      const lastActivity = c.properties.hs_lastactivitydate || c.properties.lastmodifieddate;
+      return lastActivity && new Date(lastActivity) < sixtyDaysAgo;
     });
 
-    // Mock open/click rates (real HubSpot analytics API requires more setup)
-    const openRate = 28; // Placeholder – replace with real /analytics/v3/... call later
-    const clickRate = 4;
-
-    // Sample 3 contacts for win-back personalization
+    // Sample contacts
     const sampleContacts = results
-      .slice(0, 3)
+      .slice(0, 5)
       .map((c: any) => ({
         email: c.properties.email || 'unknown',
-        lastActivity: c.properties.lastmodifieddate || 'unknown',
+        lastActivity: c.properties.hs_lastactivitydate || c.properties.lastmodifieddate || 'unknown',
       }));
+
+    // Email stats — HubSpot Marketing API (requires scope & setup)
+    // For now placeholder — real call example below (uncomment when ready)
+    let openRate = 28;
+    let clickRate = 4;
+
+    /*
+    // Real call example (add marketing scope to OAuth)
+    const analyticsResp = await fetch(
+      'https://api.hubapi.com/analytics/v3/performance/email?limit=10',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (analyticsResp.ok) {
+      const stats = await analyticsResp.json();
+      openRate = stats.overall?.openRate || 28;
+      clickRate = stats.overall?.clickRate || 4;
+    }
+    */
 
     return {
       atRiskContacts: inactive.length,
@@ -78,9 +87,10 @@ export async function fetchHubSpotData(userId: number): Promise<HubSpotData | nu
       clickRate,
       inactiveContacts: inactive.length,
       sampleContacts,
+      totalContacts: total || results.length,
     };
-  } catch (err) {
-    console.error('[HubSpot Fetch Error]', err);
-    return null;
+  } catch (err: any) {
+    console.error('[HubSpot Fetch Error]', err?.message || err);
+    return { atRiskContacts: 0, openRate: 0, clickRate: 0, inactiveContacts: 0, sampleContacts: [], totalContacts: 0, error: err?.message || 'Unknown error' };
   }
 }
