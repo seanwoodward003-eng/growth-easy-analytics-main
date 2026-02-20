@@ -152,7 +152,7 @@ export async function GET(request: Request) {
   // ────────────────────────────────────────────────
 
   // Helpers
-  const safeNum = (v) => Number(v) || 0;
+  const safeNum = (v: number | string) => Number(v) || 0;
   const now = new Date();
 
   // Period boundaries
@@ -165,13 +165,13 @@ export async function GET(request: Request) {
   };
 
   // Filter helpers
-  const inPeriod = (orders, start, end = now) => orders.filter(o => {
+  const inPeriod = (orders: OrderRow[], start: Date, end = now) => orders.filter(o => {
     const d = new Date(o.created_at);
     return d >= start && d < end;
   });
 
   // ── 1. Revenue family ──────────────────────────────────────
-  const rev = (ords) => {
+  const rev = (ords: OrderRow[]) => {
     const total = ords.reduce((s, o) => s + safeNum(o.total_price), 0);
     return {
       total: Math.round(total * 100) / 100,
@@ -187,7 +187,7 @@ export async function GET(request: Request) {
   const prevRev30 = rev(inPeriod(orders, periods.prev30, periods.d30));
   const prevRev90 = rev(inPeriod(orders, periods.prev90, periods.d90));
 
-  const revenueTrend = (curr, prev) => {
+  const revenueTrend = (curr: ReturnType<typeof rev>, prev: ReturnType<typeof rev>) => {
     if (prev.total === 0) return curr.total > 0 ? "+∞" : "0%";
     const pct = ((curr.total - prev.total) / prev.total) * 100;
     return pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
@@ -201,7 +201,7 @@ export async function GET(request: Request) {
     trend_90d:  revenueTrend(rev90, prevRev90),
     forecast_12m: Math.round(rev30.total * 12 * 1.1 * 100) / 100,  // conservative +10% growth assumption
     history: (() => {
-      const map = new Map();
+      const map = new Map<string, number>();
       for (let i = 89; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
@@ -210,22 +210,25 @@ export async function GET(request: Request) {
       }
       inPeriod(orders, periods.d90).forEach(o => {
         const key = new Date(o.created_at).toISOString().slice(0,10);
-        map.set(key, (map.get(key) || 0) + safeNum(o.total_price));
+        if (map.has(key)) {
+          map.set(key, (map.get(key) || 0) + safeNum(o.total_price));
+        }
       });
       const labels = Array.from(map.keys());
-      return { labels, values: labels.map(k => map.get(k)) };
+      return { labels, values: labels.map(k => map.get(k) || 0) };
     })()
   };
 
   // ── 2. Repeat / Retention / Cohorts ─────────────────────────────
-  const customerMap = new Map();
+  const customerMap = new Map<string | number, { date: Date; price: number }[]>();
   orders.forEach(o => {
     const cid = o.customer_id;
+    if (cid == null) return;
     if (!customerMap.has(cid)) customerMap.set(cid, []);
-    customerMap.get(cid).push({ date: new Date(o.created_at), price: safeNum(o.total_price) });
+    customerMap.get(cid)!.push({ date: new Date(o.created_at), price: safeNum(o.total_price) });
   });
 
-  Array.from(customerMap.values()).forEach(arr => arr.sort((a,b) => a.date - b.date));
+  Array.from(customerMap.values()).forEach(arr => arr.sort((a,b) => a.date.getTime() - b.date.getTime()));
 
   const repeatCount = Array.from(customerMap.values()).filter(a => a.length > 1).length;
   const repeatRate = customerMap.size > 0 ? Math.round((repeatCount / customerMap.size) * 100) : 0;
@@ -235,21 +238,23 @@ export async function GET(request: Request) {
   // Retention 30-day (first → second purchase within 30d)
   let retained30 = 0;
   customerMap.forEach(arr => {
-    if (arr.length >= 2 && (arr[1].date - arr[0].date) <= 30 * 86400000) retained30++;
+    if (arr.length >= 2 && (arr[1].date.getTime() - arr[0].date.getTime()) <= 30 * 86400000) retained30++;
   });
   const retention30 = customerMap.size > 0 ? Math.round((retained30 / customerMap.size) * 100) : 0;
 
   // Basic monthly cohorts
-  const cohorts = new Map();
+  const cohorts = new Map<string, { size: number; retained: Map<number, number> }>();
   customerMap.forEach(arr => {
     if (!arr.length) return;
     const cohortMonth = arr[0].date.toISOString().slice(0,7);
     if (!cohorts.has(cohortMonth)) cohorts.set(cohortMonth, { size: 0, retained: new Map() });
-    const c = cohorts.get(cohortMonth);
+    const c = cohorts.get(cohortMonth)!;
     c.size++;
     arr.slice(1).forEach(p => {
-      const monthDiff = Math.floor((p.date - arr[0].date) / (30 * 86400000));
-      if (monthDiff > 0) c.retained.set(monthDiff, (c.retained.get(monthDiff) || 0) + 1);
+      const monthDiff = Math.floor((p.date.getTime() - arr[0].date.getTime()) / (30 * 86400000));
+      if (monthDiff > 0) {
+        c.retained.set(monthDiff, (c.retained.get(monthDiff) || 0) + 1);
+      }
     });
   });
 
@@ -278,13 +283,13 @@ export async function GET(request: Request) {
   const prev90Customers = new Set(inPeriod(orders, periods.prev90, periods.d90).map(o => o.customer_id));
   const atRisk = Array.from(prev90Customers).filter(cid => {
     const lastDate = customerMap.get(cid)?.slice(-1)[0]?.date;
-    return lastDate && lastDate < new Date(now.getTime() - 45 * 86400000);
+    return lastDate && lastDate.getTime() < now.getTime() - 45 * 86400000;
   }).length;
 
   const churnRate = prev90Customers.size > 0 ? Math.round((atRisk / prev90Customers.size) * 100 * 10) / 10 : 0;
 
   // ── 4. Acquisition ──────────────────────────────────────────────
-  const sourceRevenue = new Map();
+  const sourceRevenue = new Map<string, number>();
   orders.forEach(o => {
     const src = o.source_name || "unknown";
     sourceRevenue.set(src, (sourceRevenue.get(src) || 0) + safeNum(o.total_price));
