@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCSRF } from '@/lib/auth';  // keep if you have it, remove if not needed
+import { authenticateRequest } from '@/lib/auth';  // ← Unified auth (Bearer + fallback)
 import { getRow, run } from '@/lib/db';
-
-// These two lines were missing — add them
 import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { verifyCSRF } from '@/lib/auth';  // Keep if you use CSRF, remove if not
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  // Optional CSRF check (remove if not using)
+  // Step 1: Protect with embedded session token + fallback
+  const authResult = await authenticateRequest(request);
+
+  if (!authResult.success) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+
+  const user = authResult.user;
+
+  // Step 2: Optional CSRF check (keep if needed, remove if not)
   if (!verifyCSRF(request)) {
     return NextResponse.json({ error: 'CSRF failed' }, { status: 403 });
   }
@@ -33,6 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ reply: 'Ask me about churn, revenue, or growth.' });
   }
 
+  // Load metrics for the authenticated user
   const metric = await getRow<{ revenue: number; churn_rate: number; at_risk: number }>(
     'SELECT revenue, churn_rate, at_risk FROM metrics ORDER BY date DESC LIMIT 1',
     []
@@ -79,4 +88,6 @@ Answer the question concisely in under 150 words. Be actionable, direct, and hel
   }
 }
 
-export const OPTIONS = () => new Response(null, { status: 200 });
+export async function OPTIONS() {
+  return new Response(null, { status: 204 });
+}
