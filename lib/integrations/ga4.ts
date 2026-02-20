@@ -4,50 +4,63 @@ import { run } from '@/lib/db';
 export interface GA4Data {
   sessions: number;
   users: number;
-  bounceRate: number;
+  bounceRate: number; // 0-1 scale
+  bounceRatePercent: string; // formatted % 
   topChannels: Array<{
     sourceMedium: string;
     sessions: number;
     revenue: number;
     conversionRate: number;
+    conversions: number;
   }>;
   deviceBreakdown: { [device: string]: number };
   estimatedCac: number;
+  adSpend?: number; // if available
+  error?: string;
 }
 
-export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
+interface GA4ReportRow {
+  dimensionValues: { value: string }[];
+  metricValues: { value: string }[];
+}
+
+export async function fetchGA4Data(
+  userId: number,
+  options: { dateRange?: '7days' | '30days' | '90days' } = { dateRange: '30days' }
+): Promise<GA4Data> {
   try {
-    // Get stored tokens
     const rawResult = await run(
       'SELECT ga4_access_token, ga4_refresh_token, ga4_property_id FROM users WHERE id = ?',
       [userId]
     );
 
-    // TS-safe guard: check if result is null/undefined first
-    if (rawResult == null) {  // == null catches both null and undefined
-      console.log('[GA4] No user row found for ID', userId);
-      return null;
+    if (!rawResult || !Array.isArray(rawResult) || rawResult.length === 0) {
+      return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0, error: 'No user data' };
     }
 
-    // Now TS knows rawResult is not null/undefined – cast to expected shape
-    const userRow = rawResult as {
+    const userRow = rawResult[0] as {
       ga4_access_token: string | null;
       ga4_refresh_token: string | null;
       ga4_property_id: string | null;
     };
 
-    // Second check for required fields
     if (!userRow.ga4_property_id || !userRow.ga4_access_token) {
-      console.log('[GA4] Missing property ID or access token for user', userId);
-      return null;
+      return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0, error: 'Missing property ID or token' };
     }
 
-    const accessToken = userRow.ga4_access_token;
-    const propertyId = userRow.ga4_property_id;
+    let accessToken = userRow.ga4_access_token;
 
-    // Simple token check (expand with full refresh later if needed)
-    const testResp = await fetch(
-      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+    // Determine date range
+    const dateRangeMap = {
+      '7days': { start: '7daysAgo', end: 'today' },
+      '30days': { start: '30daysAgo', end: 'today' },
+      '90days': { start: '90daysAgo', end: 'today' },
+    };
+    const range = dateRangeMap[options.dateRange || '30days'];
+
+    // Main report
+    const reportResp = await fetch(
+      `https://analyticsdata.googleapis.com/v1beta/properties/${userRow.ga4_property_id}:runReport`,
       {
         method: 'POST',
         headers: {
@@ -55,117 +68,111 @@ export async function fetchGA4Data(userId: number): Promise<GA4Data | null> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
-          metrics: [{ name: 'sessions' }],
-        }),
-      }
-    );
-
-    if (testResp.status === 401) {
-      console.warn('[GA4] Token expired – refresh needed for user', userId);
-      // TODO: Implement full refresh using ga4_refresh_token
-      return null;
-    }
-
-    if (!testResp.ok) {
-      console.error('[GA4] API test failed:', await testResp.text());
-      return null;
-    }
-
-    // Main report – last 30 days
-    const report = await fetch(
-      `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+          dateRanges: [{ startDate: range.start, endDate: range.end }],
           metrics: [
             { name: 'sessions' },
             { name: 'users' },
             { name: 'bounceRate' },
             { name: 'ecommerceRevenue' },
             { name: 'conversions' },
+            { name: 'totalRevenue' },
+            { name: 'advertiserAdCost' }, // ad spend if linked
           ],
           dimensions: [
             { name: 'sourceMedium' },
             { name: 'deviceCategory' },
           ],
           orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+          limit: 100, // top 100 channels max
         }),
       }
     );
 
-    if (!report.ok) {
-      console.error('[GA4] Main report failed:', await report.text());
-      return null;
+    if (reportResp.status === 401) {
+      console.warn('[GA4] Token expired for user', userId);
+      // TODO: refresh token using ga4_refresh_token + Google OAuth
+      // For now, return partial
+      return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0, error: 'Token expired' };
     }
 
-    const data = await report.json();
-    const rows = data.rows || [];
+    if (!reportResp.ok) {
+      const errText = await reportResp.text();
+      console.error('[GA4] Report failed:', errText);
+      return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0, error: `API error: ${errText.slice(0, 200)}` };
+    }
 
-    // Parse results
+    const data = await reportResp.json();
+    const rows = (data.rows || []) as GA4ReportRow[];
+
     let sessions = 0;
     let users = 0;
-    let bounceRate = 0;
+    let bounceRateSum = 0;
     let revenue = 0;
+    let adSpend = 0;
     let conversions = 0;
+
     const channelMap = new Map<string, { sessions: number; revenue: number; conv: number }>();
     const deviceMap = new Map<string, number>();
 
-    rows.forEach((row: any) => {
-      const values = row.metricValues || [];
+    rows.forEach(row => {
+      const metrics = row.metricValues || [];
       const dims = row.dimensionValues || [];
 
-      sessions += Number(values[0]?.value || 0);
-      users += Number(values[1]?.value || 0);
-      bounceRate += Number(values[2]?.value || 0);
-      revenue += Number(values[3]?.value || 0);
-      conversions += Number(values[4]?.value || 0);
+      const rowSessions = safeNum(metrics[0]?.value);
+      const rowUsers = safeNum(metrics[1]?.value);
+      const rowBounce = safeNum(metrics[2]?.value);
+      const rowRevenue = safeNum(metrics[3]?.value);
+      const rowConversions = safeNum(metrics[4]?.value);
+      const rowAdSpend = safeNum(metrics[5]?.value); // advertiserAdCost
+
+      sessions += rowSessions;
+      users += rowUsers;
+      bounceRateSum += rowBounce * rowSessions; // weighted average
+      revenue += rowRevenue;
+      conversions += rowConversions;
+      adSpend += rowAdSpend;
 
       const sourceMedium = dims[0]?.value || 'Unknown';
       const device = dims[1]?.value || 'Unknown';
 
-      if (sourceMedium) {
+      if (sourceMedium !== '(not set)' && sourceMedium !== '(direct)') {
         const ch = channelMap.get(sourceMedium) || { sessions: 0, revenue: 0, conv: 0 };
-        ch.sessions += Number(values[0]?.value || 0);
-        ch.revenue += Number(values[3]?.value || 0);
-        ch.conv += Number(values[4]?.value || 0);
+        ch.sessions += rowSessions;
+        ch.revenue += rowRevenue;
+        ch.conv += rowConversions;
         channelMap.set(sourceMedium, ch);
       }
 
-      if (device) {
-        deviceMap.set(device, (deviceMap.get(device) || 0) + Number(values[0]?.value || 0));
-      }
+      deviceMap.set(device, (deviceMap.get(device) || 0) + rowSessions);
     });
 
-    // Top 5 channels by sessions
+    const weightedBounceRate = sessions > 0 ? bounceRateSum / sessions : 0;
+
     const topChannels = Array.from(channelMap.entries())
       .map(([sourceMedium, { sessions, revenue, conv }]) => ({
         sourceMedium,
         sessions,
-        revenue,
+        revenue: Math.round(revenue * 100) / 100,
         conversionRate: sessions > 0 ? (conv / sessions) * 100 : 0,
+        conversions: conv,
       }))
       .sort((a, b) => b.sessions - a.sessions)
-      .slice(0, 5);
+      .slice(0, 10);
 
-    // Estimated CAC (rough – improve with real ad spend later)
-    const estimatedCac = users > 0 ? revenue / users : 0;
+    const estimatedCac = users > 0 ? Math.round((adSpend || revenue * 0.15) / users * 100) / 100 : 0; // fallback 15% of revenue
 
     return {
       sessions,
       users,
-      bounceRate: rows.length > 0 ? bounceRate / rows.length : 0,
+      bounceRate: weightedBounceRate,
+      bounceRatePercent: `${(weightedBounceRate * 100).toFixed(1)}%`,
       topChannels,
       deviceBreakdown: Object.fromEntries(deviceMap),
       estimatedCac,
+      adSpend: adSpend || undefined,
     };
-  } catch (err) {
-    console.error('[GA4 Fetch Error]', err);
-    return null;
+  } catch (err: any) {
+    console.error('[GA4 Fetch Error]', err?.message || err);
+    return { sessions: 0, users: 0, bounceRate: 0, bounceRatePercent: '0%', topChannels: [], deviceBreakdown: {}, estimatedCac: 0, error: err?.message || 'Unknown error' };
   }
 }
