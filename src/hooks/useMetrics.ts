@@ -1,4 +1,4 @@
-'use client';
+'use client';  // ← MOVED TO TOP (must be first line)
 
 import useSWR from 'swr';
 import { useAuthenticatedFetch } from '@/lib/authenticatedFetch';
@@ -31,7 +31,6 @@ export default function useMetrics() {
 
     const json = await res.json();
 
-    // DEBUG LOG - added exactly as you asked
     console.log('[useMetrics] API sent this:', JSON.stringify(json));
 
     return json;
@@ -66,4 +65,3 @@ export default function useMetrics() {
     refresh,
   };
 }
-'use client';
