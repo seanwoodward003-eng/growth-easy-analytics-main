@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Detect embedded-like requests (covers root with ?embedded=1 and dashboard paths)
+  // Detect embedded-like requests
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // Step 1 & 3: Set Shopify-safe CSP FIRST (applies to every HTML response in iframe)
+    // Set Shopify-safe CSP FIRST (applies to every HTML response in iframe)
     const shop = request.nextUrl.searchParams.get('shop');
 
     let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
@@ -80,17 +80,16 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Content-Security-Policy', cspValue);
     console.log('[MW DEBUG] CSP set for embedded request:', cspValue);
 
-    // Step 2: Check auth — if no token, BREAK OUT of iframe instead of redirecting inside
+    // Check auth — if no token, BREAK OUT of iframe
     const accessToken = request.cookies.get('access_token')?.value;
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
       console.log('[MW DEBUG] No token in embedded context - sending breakout redirect');
 
-      const loginUrl = new URL('/', request.url); // change to '/login' if you have a separate login page
+      const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'login_required');
 
-      // Return a small HTML page that redirects the TOP window (breaks out of iframe)
       const breakoutHtml = `
         <!DOCTYPE html>
         <html>
@@ -100,7 +99,7 @@ export async function middleware(request: NextRequest) {
           <body>
             <p>Redirecting to login...</p>
             <script>
-              const target = "${loginUrl.toString()}";
+              const target = "${loginUrl.toString().replace(/"/g, '\\"')}"; // escape quotes
               if (window.top && window.top !== window.self) {
                 window.top.location.href = target;
               } else {
@@ -111,16 +110,22 @@ export async function middleware(request: NextRequest) {
         </html>
       `;
 
-      return new Response(breakoutHtml, {
+      const res = new NextResponse(breakoutHtml, {
         status: 200,
         headers: {
           'Content-Type': 'text/html',
-          ...response.headers, // carry over security headers + CSP
+          ...response.headers,
         },
       });
+
+      res.cookies.delete('access_token');
+      res.cookies.delete('refresh_token');
+      res.cookies.delete('csrf_token');
+
+      return res;
     }
 
-    // Auth succeeds → continue with user data
+    // Auth succeeds → continue
     try {
       console.log('[MW DEBUG] Verifying JWT');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
@@ -135,13 +140,17 @@ export async function middleware(request: NextRequest) {
 
       if (!user) {
         console.log('[MW DEBUG] No user - sending breakout redirect');
-        // Same breakout logic as above
+        // Reuse breakout logic
         const loginUrl = new URL('/', request.url);
-        const breakoutHtml = `...`; // copy the breakoutHtml block from above
-        return new Response(breakoutHtml, {
+        const breakoutHtml = `...`; // copy the breakoutHtml string from above
+        const res = new NextResponse(breakoutHtml, {
           status: 200,
           headers: { 'Content-Type': 'text/html', ...response.headers },
         });
+        res.cookies.delete('access_token');
+        res.cookies.delete('refresh_token');
+        res.cookies.delete('csrf_token');
+        return res;
       }
 
       response.headers.set('x-user-id', userId.toString());
@@ -152,11 +161,11 @@ export async function middleware(request: NextRequest) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('[MW DEBUG] Auth error:', errorMessage);
 
-      // Breakout redirect on auth failure too
+      // Breakout on auth failure
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'session_expired');
-      const breakoutHtml = `...`; // copy the breakoutHtml block
-      const res = new Response(breakoutHtml, {
+      const breakoutHtml = `...`; // copy breakoutHtml
+      const res = new NextResponse(breakoutHtml, {
         status: 200,
         headers: { 'Content-Type': 'text/html', ...response.headers },
       });
@@ -178,6 +187,6 @@ export const config = {
     '/',                          // explicitly include root
     '/dashboard/:path*',
     '/api/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)', // everything else
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
