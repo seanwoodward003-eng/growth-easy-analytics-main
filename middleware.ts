@@ -14,19 +14,17 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
-  // Aggressive top-level logging to confirm run
+  // Aggressive top-level logging
   console.log('[MW DEBUG] === MIDDLEWARE STARTED ===');
-  console.log('[MW DEBUG] Full request URL:', request.url);
-  console.log('[MW DEBUG] Pathname:', request.nextUrl.pathname);
+  console.log('[MW DEBUG] Full URL:', request.url);
+  console.log('[MW DEBUG] Path:', request.nextUrl.pathname);
   console.log('[MW DEBUG] Query params:', Object.fromEntries(request.nextUrl.searchParams.entries()));
-  console.log('[MW DEBUG] Method:', request.method);
-  console.log('[MW DEBUG] x-forwarded-proto:', request.headers.get('x-forwarded-proto'));
   console.log('[MW DEBUG] Has embedded?', request.nextUrl.searchParams.has('embedded'));
   console.log('[MW DEBUG] Shop param:', request.nextUrl.searchParams.get('shop') || 'NONE');
 
   let response = NextResponse.next();
 
-  // Global security headers (NO X-Frame-Options!)
+  // Global security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
@@ -49,7 +47,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Embedded check: Catch root with embedded param OR dashboard OR root with query
+  // Embedded check: root with embedded param, dashboard, or root with query
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -60,7 +58,7 @@ export async function middleware(request: NextRequest) {
     console.log('[MW DEBUG] Embedded request detected - running auth + CSP');
 
     const accessToken = request.cookies.get('access_token')?.value;
-    console.log('[MW DEBUG] Access token cookie?', !!accessToken);
+    console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
       console.log('[MW DEBUG] No token - redirect to login');
@@ -91,30 +89,29 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-subscription-status', user.subscription_status);
       response.headers.set('x-trial-end', user.trial_end || '');
 
-      // CSP setup
-      console.log('[MW DEBUG] Setting CSP');
+      // Shopify-safe dynamic CSP (this is the block you asked to integrate)
       const shop = request.nextUrl.searchParams.get('shop');
-      let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com";
-      if (shop && shop.endsWith('.myshopify.com')) {
-        frameAncestors += ` https://${shop};`;
-        console.log('[MW DEBUG] Added exact shop:', shop);
-      } else {
-        frameAncestors += ' https://*.myshopify.com;';
-        console.log('[MW DEBUG] No shop param - using wildcard fallback');
-      }
 
-      const cspValue = `${frameAncestors} ` +
+      let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
+      if (shop && shop.endsWith('.myshopify.com')) {
+        frameAncestors += ` https://${shop}`;
+      }
+      frameAncestors += "; ";
+
+      const cspValue = 
+        frameAncestors +
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.stripe.com; " +
-        "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com https://*.shopify.com https://js.stripe.com https://*.stripe.com; " +
+        "connect-src 'self' https://*.shopify.com https://*.myshopify.com https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
         "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
         "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
-        "img-src 'self' data: blob: https://*.stripe.com; " +
+        "img-src 'self' data: blob: https://cdn.shopify.com https://*.shopify.com https://*.stripe.com; " +
         "style-src 'self' 'unsafe-inline'; " +
-        "font-src 'self' data:;";
+        "font-src 'self' data:; " +
+        "base-uri 'self';";
 
-      console.log('[MW DEBUG] CSP value:', cspValue);
       response.headers.set('Content-Security-Policy', cspValue);
+      console.log('[MW DEBUG] Applied Shopify-safe CSP:', cspValue);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
