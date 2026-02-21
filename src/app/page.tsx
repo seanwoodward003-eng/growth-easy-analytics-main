@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import Link from 'next/link';
+
+// Force dynamic rendering (no prerender/cache/ISR)
+export const dynamic = 'force-dynamic';
 
 export default function LandingPage() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
@@ -255,5 +258,3 @@ export default function LandingPage() {
     </main>
   );
 }
-
-
