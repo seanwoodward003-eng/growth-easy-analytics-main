@@ -1,3 +1,4 @@
+// app/page.tsx
 'use client';
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,27 @@ export default function LandingPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // ────────────────────────────────────────────────────────────────
+    // Stronger embedded detection + redirect to dashboard
+    // Shopify usually sends at least one of: embedded, shop, hmac, code, id_token
+    // ────────────────────────────────────────────────────────────────
+    const hasShopifyParam =
+      params.has('embedded') ||
+      params.has('hmac') ||
+      params.has('shop') ||
+      params.has('code') ||
+      params.has('id_token');
+
+    if (hasShopifyParam && window.location.pathname === '/') {
+      console.log('[Embedded Fallback] Shopify params detected → redirecting to /dashboard');
+      window.location.replace(`/dashboard${window.location.search}`);
+      return; // prevent further execution
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Original error / message handling
+    // ────────────────────────────────────────────────────────────────
     const error = params.get('error');
 
     if (error === 'trial_expired') {
@@ -25,11 +47,7 @@ export default function LandingPage() {
       setMessage('Please sign in to continue');
     }
 
-    // Client-side fallback redirect if embedded on root
-    if (params.has('embedded') && window.location.pathname === '/') {
-      window.location.href = `/dashboard${window.location.search}`;
-    }
-
+    // Client-side session check
     const checkSession = async () => {
       try {
         const res = await fetch('/api/refresh', {
@@ -40,7 +58,7 @@ export default function LandingPage() {
           window.location.href = '/dashboard';
         }
       } catch (err) {
-        // Silent
+        // Silent fail
       }
     };
 
