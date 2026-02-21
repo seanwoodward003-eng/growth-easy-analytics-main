@@ -1,14 +1,9 @@
 // app/page.tsx
-
-// 1. Config exports FIRST (server-side only)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
-
-// 2. 'use client' IMMEDIATELY after config exports — no comments or blank lines between
 'use client';
 
-// 3. Imports and code after 'use client'
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 
@@ -22,7 +17,6 @@ export default function LandingPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // Stronger embedded detection + redirect to dashboard
     const hasShopifyParam =
       params.has('embedded') ||
       params.has('hmac') ||
@@ -33,10 +27,9 @@ export default function LandingPage() {
     if (hasShopifyParam && window.location.pathname === '/') {
       console.log('[Embedded Fallback] Shopify params detected → redirecting to /dashboard');
       window.location.replace(`/dashboard${window.location.search}`);
-      return; // prevent further execution
+      return;
     }
 
-    // Original error / message handling
     const error = params.get('error');
 
     if (error === 'trial_expired') {
@@ -47,7 +40,6 @@ export default function LandingPage() {
       setMessage('Please sign in to continue');
     }
 
-    // Client-side session check
     const checkSession = async () => {
       try {
         const res = await fetch('/api/refresh', {
@@ -111,7 +103,6 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0a0f2c] via-[#0f1a3d] to-black flex flex-col items-center justify-start pt-8 pb-32 px-4 text-center relative">
-      {/* Trial Expired Banner */}
       {message.includes('Your 7-day free trial has ended') && (
         <div className="max-w-5xl mx-auto mb-16 p-10 bg-red-900/50 border-4 border-red-500 rounded-3xl shadow-2xl">
           <h2 className="text-6xl md:text-7xl font-black text-red-400 mb-6">
@@ -128,7 +119,6 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* General Message Banner */}
       {message && !message.includes('Your 7-day free trial has ended') && (
         <div className={`max-w-2xl mx-auto mb-8 p-6 rounded-2xl text-center border-4 ${
           message.includes('Check') || message.includes('Welcome') || message.includes('Redirecting')
@@ -139,7 +129,6 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Hero */}
       <div className="max-w-6xl mx-auto z-10 w-full">
         <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-4 md:mb-8 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent glow-title">
           GROWTHEASY AI
@@ -151,7 +140,6 @@ export default function LandingPage() {
           Connect your Shopify store and get real-time insights on revenue, churn, acquisition, retention — with an AI Growth Coach that reads your data and tells you exactly what to fix to make more money.
         </p>
 
-        {/* CTA Form */}
         <div className="max-w-2xl mx-auto mb-12 md:mb-20">
           <h2 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-6 md:mb-8">
             {mode === 'signup' ? 'Start Your 7-Day Free Trial' : 'Welcome Back'}
