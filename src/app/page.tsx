@@ -1,16 +1,17 @@
 // app/page.tsx
+
+// ────────────────────────────────────────────────────────────────
+// These MUST be at the VERY TOP, before 'use client' and imports
+// This forces the page to be fully dynamic (no prerender, no cache)
+// ────────────────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;              // number 0, not string/object
+export const fetchCache = 'force-no-store';
+
 'use client';
 
 import { useState, useEffect } from "react";
 import Link from 'next/link';
-
-// ────────────────────────────────────────────────────────────────
-// Force this page to be fully dynamic (no prerender, no ISR, no cache)
-// This prevents Vercel from serving static HTML and bypassing middleware
-// ────────────────────────────────────────────────────────────────
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;          // No revalidation / caching
-export const fetchCache = 'force-no-store'; // Extra layer for fetch calls
 
 export default function LandingPage() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
@@ -22,10 +23,7 @@ export default function LandingPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // ────────────────────────────────────────────────────────────────
     // Stronger embedded detection + redirect to dashboard
-    // Shopify usually sends at least one of: embedded, shop, hmac, code, id_token
-    // ────────────────────────────────────────────────────────────────
     const hasShopifyParam =
       params.has('embedded') ||
       params.has('hmac') ||
@@ -39,9 +37,7 @@ export default function LandingPage() {
       return; // prevent further execution
     }
 
-    // ────────────────────────────────────────────────────────────────
     // Original error / message handling
-    // ────────────────────────────────────────────────────────────────
     const error = params.get('error');
 
     if (error === 'trial_expired') {
