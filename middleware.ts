@@ -56,15 +56,20 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // NEW: Redirect embedded root / to /dashboard (preserves all query params)
+    // Bust cache for embedded loads (prevents stale 304/200 from old deploys)
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    // Redirect embedded root / to /dashboard (preserves all query params)
     if (request.nextUrl.pathname === '/') {
-      console.log('[MW DEBUG] Embedded root request - redirecting to /dashboard');
+      console.log('[MW DEBUG] Embedded root request - REDIRECTING to /dashboard with params');
       const dashboardUrl = new URL('/dashboard', request.url);
-      dashboardUrl.search = request.nextUrl.search; // keep embedded=1, shop, id_token, etc.
+      dashboardUrl.search = request.nextUrl.search; // keep embedded=1, shop, id_token, hmac, etc.
       return NextResponse.redirect(dashboardUrl, 307); // 307 = temporary, preserves method/query
     }
 
-    // Set Shopify-safe CSP (applies to dashboard and other embedded HTML)
+    // Set Shopify-safe CSP (applies to /dashboard and other embedded HTML)
     const shop = request.nextUrl.searchParams.get('shop');
 
     let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
@@ -151,7 +156,7 @@ export async function middleware(request: NextRequest) {
       if (!user) {
         console.log('[MW DEBUG] No user - sending breakout redirect');
         const loginUrl = new URL('/', request.url);
-        const breakoutHtml = `...`; // reuse breakoutHtml block
+        const breakoutHtml = `...`; // reuse breakoutHtml block from above
         const res = new NextResponse(breakoutHtml, {
           status: 200,
           headers: { 'Content-Type': 'text/html', ...response.headers },
