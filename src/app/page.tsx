@@ -1,13 +1,11 @@
 // app/page.tsx
 
-// ────────────────────────────────────────────────────────────────
-// These MUST be at the VERY TOP, before 'use client' and imports
-// This forces the page to be fully dynamic (no prerender, no cache)
-// ────────────────────────────────────────────────────────────────
+// These config exports MUST come first (server-side only)
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;              // number 0, not string/object
+export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
+// 'use client' MUST be right after config exports, before any imports
 'use client';
 
 import { useState, useEffect } from "react";
