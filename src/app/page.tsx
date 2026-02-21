@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 // Disable prerender/cache/ISR completely
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default function LandingPage() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
