@@ -19,7 +19,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "ALLOW-FROM https://admin.shopify.com"  // Changed from DENY → allows Shopify iframe
+          "value": "ALLOW-FROM https://admin.shopify.com"  
         },
         {
           "key": "X-XSS-Protection",
