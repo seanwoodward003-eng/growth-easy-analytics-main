@@ -53,12 +53,12 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // Bust Vercel cache on embedded loads (prevents stale 304/200)
+    // Bust Vercel cache on embedded loads
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
 
-    // Redirect embedded root / to /dashboard (preserves all params)
+    // Redirect embedded root / to /dashboard
     if (request.nextUrl.pathname === '/') {
       console.log('[MW DEBUG] Embedded root request - REDIRECTING to /dashboard with params');
       const dashboardUrl = new URL('/dashboard', request.url);
@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
-      console.log('[MW DEBUG] No token - sending breakout redirect');
+      console.log('[MW DEBUG] No token in embedded context - sending breakout redirect');
 
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'login_required');
@@ -151,7 +151,7 @@ export async function middleware(request: NextRequest) {
       if (!user) {
         console.log('[MW DEBUG] No user - sending breakout redirect');
         const loginUrl = new URL('/', request.url);
-        const breakoutHtml = `...`; // reuse from above
+        const breakoutHtml = `...`; // reuse breakoutHtml block from above
         const res = new NextResponse(breakoutHtml, {
           status: 200,
           headers: { 'Content-Type': 'text/html', ...response.headers },
