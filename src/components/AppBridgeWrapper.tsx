@@ -61,11 +61,7 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
       }
     };
 
-    const timer = setInterval(() => {
-      if (checkAppBridge()) {
-        clearInterval(timer);
-      }
-    }, intervalMs);
+    const timer = setInterval(checkAppBridge, intervalMs);
 
     // Initial check right away
     checkAppBridge();
