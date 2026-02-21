@@ -9,7 +9,6 @@ import Link from 'next/link';
 
 // Force dynamic rendering (no prerender/cache/ISR) – this is the fix to make middleware run every time
 export const dynamic = 'force-dynamic';
-export const revalidate = 0; 
 
 export default function Dashboard() {
   const searchParams = useSearchParams();
