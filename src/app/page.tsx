@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 
-// Force dynamic rendering (no prerender/cache/ISR)
+// Disable prerender/cache/ISR completely
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function LandingPage() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [marketingConsent, setMarketingConsent] = useState(false); // New: marketing opt-in
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -25,7 +26,11 @@ export default function LandingPage() {
       setMessage('Please sign in to continue');
     }
 
-    // Auto-redirect to dashboard if already logged in
+    // Client-side fallback redirect if embedded on root
+    if (params.has('embedded') && window.location.pathname === '/') {
+      window.location.href = `/dashboard${window.location.search}`;
+    }
+
     const checkSession = async () => {
       try {
         const res = await fetch('/api/refresh', {
@@ -36,7 +41,7 @@ export default function LandingPage() {
           window.location.href = '/dashboard';
         }
       } catch (err) {
-        // Silent fail — stay on landing
+        // Silent
       }
     };
 
@@ -62,8 +67,8 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: email.toLowerCase().trim(),
-          consent: true, // Existing GDPR consent
-          marketing_consent: marketingConsent // New: opt-in for marketing
+          consent: true,
+          marketing_consent: marketingConsent
         }),
       });
 
@@ -153,7 +158,6 @@ export default function LandingPage() {
             </button>
           </form>
 
-          {/* Marketing Consent Checkbox (only on signup) */}
           {mode === 'signup' && (
             <div className="mt-6 text-left max-w-2xl mx-auto text-cyan-300 text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -172,14 +176,13 @@ export default function LandingPage() {
             </div>
           )}
 
-          {/* Toggle Link */}
           <button
             type="button"
             onClick={() => {
               setMode(mode === 'signup' ? 'signin' : 'signup');
               setMessage('');
               setEmail('');
-              setMarketingConsent(false); // Reset consent when toggling
+              setMarketingConsent(false);
             }}
             className="mt-6 md:mt-8 text-cyan-300 hover:text-cyan-100 underline text-xl"
           >
@@ -187,7 +190,6 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* Urgency */}
         <div className="space-y-4 md:space-y-6 mb-12 md:mb-20">
           <p className="text-3xl md:text-4xl lg:text-5xl font-black text-red-400 animate-pulse">
             Only 200 Early Bird lifetime spots left at £49
@@ -197,7 +199,6 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-6xl mx-auto mb-12 md:mb-20">
           <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-cyan-900/20 to-purple-900/20 border border-cyan-500/30 backdrop-blur-md">
             <h3 className="text-2xl md:text-3xl font-black text-cyan-300 mb-4 md:mb-6">Real-Time Analytics</h3>
@@ -219,7 +220,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Pricing Preview */}
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-cyan-400 mb-8 md:mb-12">
             Lock In Lifetime Access
@@ -247,7 +247,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="absolute bottom-8 left-0 right-0 text-center text-cyan-500 text-sm space-x-4 md:space-x-8">
         <a href="/privacy" className="hover:underline">Privacy Policy</a>
         <a href="/terms" className="hover:underline">Terms of Service</a>
