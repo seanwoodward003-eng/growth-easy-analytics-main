@@ -1,13 +1,14 @@
 // app/page.tsx
 
-// These config exports MUST come first (server-side only)
+// 1. Config exports FIRST (server-side only)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-// 'use client' MUST be right after config exports, before any imports
+// 2. 'use client' IMMEDIATELY after config exports — no comments or blank lines between
 'use client';
 
+// 3. Imports and code after 'use client'
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 
