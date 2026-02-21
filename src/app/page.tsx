@@ -4,8 +4,13 @@
 import { useState, useEffect } from "react";
 import Link from 'next/link';
 
-// Disable prerender/cache/ISR completely
+// ────────────────────────────────────────────────────────────────
+// Force this page to be fully dynamic (no prerender, no ISR, no cache)
+// This prevents Vercel from serving static HTML and bypassing middleware
+// ────────────────────────────────────────────────────────────────
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;          // No revalidation / caching
+export const fetchCache = 'force-no-store'; // Extra layer for fetch calls
 
 export default function LandingPage() {
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
