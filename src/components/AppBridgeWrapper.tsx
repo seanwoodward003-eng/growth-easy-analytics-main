@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// The handler component (listens for shopify:navigate events from s-link clicks)
+// Handler for Shopify nav events
 function EmbeddedNavHandler() {
   const router = useRouter();
 
@@ -13,30 +13,46 @@ function EmbeddedNavHandler() {
       const href = target.getAttribute('href');
       if (href) {
         console.log('Shopify navigate event:', href);
-        router.push(href);           // Navigate client-side with Next.js
-        event.preventDefault();      // Prevent default full page reload
+        router.push(href);
+        event.preventDefault();
       }
     };
 
     document.addEventListener('shopify:navigate', handleNavigate);
-
-    return () => {
-      document.removeEventListener('shopify:navigate', handleNavigate);
-    };
+    return () => document.removeEventListener('shopify:navigate', handleNavigate);
   }, [router]);
 
-  return null;  // Invisible — no UI output
+  return null;
 }
 
 export function AppBridgeWrapper({ children }: { children: ReactNode }) {
   const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('AppBridgeWrapper mounted – Is Shopify embedded?', !!window.shopify);
-      setIsEmbedded(!!window.shopify);
-    }
+    // Delay to give App Bridge script time to load
+    const checkAppBridge = () => {
+      const shopify = (window as any).shopify;
+      console.log('App Bridge check:', {
+        exists: !!shopify,
+        version: shopify?.version,
+        config: shopify?.config,
+        full: shopify
+      });
+      setIsEmbedded(!!shopify);
+    };
+
+    // Check immediately + retry after 1s and 3s
+    checkAppBridge();
+    const timer1 = setTimeout(checkAppBridge, 1000);
+    const timer2 = setTimeout(checkAppBridge, 3000);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, []);
+
+  console.log('AppBridgeWrapper mounted – Is Shopify embedded?', isEmbedded);
 
   return (
     <>
@@ -50,11 +66,9 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
           <s-link href="/dashboard/performance">Performance</s-link>
           <s-link href="/dashboard/ai-growth-coach">AI Growth Coach</s-link>
           <s-link href="/dashboard/settings">Settings</s-link>
-          {/* Add About/Privacy/Upgrade if you want them in sidebar */}
         </s-app-nav>
       )}
 
-      {/* Add the nav handler here – it catches clicks on the s-links */}
       <EmbeddedNavHandler />
 
       {children}
