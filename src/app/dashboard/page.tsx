@@ -7,6 +7,9 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { AIInsights } from "@/components/AIInsights";
 import Link from 'next/link';
 
+// Force dynamic rendering (no prerender/cache/ISR) – this is the fix to make middleware run every time
+export const dynamic = 'force-dynamic';
+
 export default function Dashboard() {
   const searchParams = useSearchParams();
   const { 
@@ -107,8 +110,4 @@ export default function Dashboard() {
       )}
     </div>
   );
-} 
- 
-
-
-        
+}
