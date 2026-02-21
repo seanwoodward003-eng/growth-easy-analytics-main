@@ -19,7 +19,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"  // ← Optional: remove this too if it causes issues, or change to ALLOW-FROM https://admin.shopify.com
+          "value": "DENY" 
         },
         {
           "key": "X-XSS-Protection",
