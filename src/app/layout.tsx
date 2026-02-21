@@ -1,3 +1,4 @@
+// app/layout.tsx
 'use client';  // Client-side for hooks + embedded compatibility
 
 import "./globals.css";
@@ -55,18 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <head>
-        {/* Shopify Embedded App Bridge – required */}
-        <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
-        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" async={false} />
-        <script src="https://cdn.shopify.com/shopifycloud/polaris.js" async crossOrigin="anonymous" />
-
-        <meta 
-          name="viewport" 
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" 
-        />
-        <title>GrowthEasy AI</title>
-      </head>
+      {/* ────────────────────────────────────────────────────────────────
+          IMPORTANT: Shopify App Bridge script + meta tag are NOW in
+          app/_document.tsx — do NOT add them here again
+      ──────────────────────────────────────────────────────────────── */}
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
         {/* Header – no logo, menu button responsive */}
