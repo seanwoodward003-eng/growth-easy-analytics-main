@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Detect embedded-like requests (root with params + dashboard)
+  // Detect embedded-like requests
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -56,7 +56,15 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // Fix 2: Set full Shopify-safe CSP FIRST (applies to EVERY HTML response)
+    // NEW: Redirect embedded root / to /dashboard (preserves all query params)
+    if (request.nextUrl.pathname === '/') {
+      console.log('[MW DEBUG] Embedded root request - redirecting to /dashboard');
+      const dashboardUrl = new URL('/dashboard', request.url);
+      dashboardUrl.search = request.nextUrl.search; // keep embedded=1, shop, id_token, etc.
+      return NextResponse.redirect(dashboardUrl, 307); // 307 = temporary, preserves method/query
+    }
+
+    // Set Shopify-safe CSP (applies to dashboard and other embedded HTML)
     const shop = request.nextUrl.searchParams.get('shop');
 
     let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
@@ -80,14 +88,14 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Content-Security-Policy', cspValue);
     console.log('[MW DEBUG] CSP set for embedded request:', cspValue);
 
-    // Fix 1: Check auth — if no token, BREAK OUT of iframe (no internal redirect)
+    // Auth check — if no token, BREAK OUT of iframe
     const accessToken = request.cookies.get('access_token')?.value;
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
       console.log('[MW DEBUG] No token in embedded context - sending breakout redirect');
 
-      const loginUrl = new URL('/', request.url); // Change to '/login' if you have a dedicated login page
+      const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'login_required');
 
       const breakoutHtml = `
@@ -116,11 +124,10 @@ export async function middleware(request: NextRequest) {
         status: 200,
         headers: {
           'Content-Type': 'text/html',
-          ...response.headers, // Preserve CSP + security headers
+          ...response.headers,
         },
       });
 
-      // Delete cookies safely on the response
       res.cookies.delete('access_token');
       res.cookies.delete('refresh_token');
       res.cookies.delete('csrf_token');
@@ -128,7 +135,7 @@ export async function middleware(request: NextRequest) {
       return res;
     }
 
-    // Auth succeeds → proceed with user data
+    // Auth succeeds → proceed
     try {
       console.log('[MW DEBUG] Verifying JWT');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
@@ -142,10 +149,9 @@ export async function middleware(request: NextRequest) {
       );
 
       if (!user) {
-        console.log('[MW DEBUG] No user found - sending breakout redirect');
-        // Reuse breakout logic
+        console.log('[MW DEBUG] No user - sending breakout redirect');
         const loginUrl = new URL('/', request.url);
-        const breakoutHtml = `...`; // copy the breakoutHtml string from above
+        const breakoutHtml = `...`; // reuse breakoutHtml block
         const res = new NextResponse(breakoutHtml, {
           status: 200,
           headers: { 'Content-Type': 'text/html', ...response.headers },
@@ -164,10 +170,9 @@ export async function middleware(request: NextRequest) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('[MW DEBUG] Auth error:', errorMessage);
 
-      // Breakout on auth failure
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'session_expired');
-      const breakoutHtml = `...`; // copy breakoutHtml string
+      const breakoutHtml = `...`; // reuse
       const res = new NextResponse(breakoutHtml, {
         status: 200,
         headers: { 'Content-Type': 'text/html', ...response.headers },
@@ -187,9 +192,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/',                          // Explicitly include root path
+    '/',                          // Explicit root
     '/dashboard/:path*',
     '/api/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)', // Catch-all for other HTML pages
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
