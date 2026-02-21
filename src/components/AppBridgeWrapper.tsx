@@ -3,7 +3,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Nav event handler
 function EmbeddedNavHandler() {
   const router = useRouter();
 
@@ -12,7 +11,7 @@ function EmbeddedNavHandler() {
       const target = event.target as HTMLElement;
       const href = target.getAttribute('href');
       if (href) {
-        console.log('Shopify navigate:', href);
+        console.log('Shopify nav event:', href);
         router.push(href);
         event.preventDefault();
       }
@@ -29,26 +28,39 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
   const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 15; // ~10 seconds total
+    const intervalMs = 700;
+
     const checkAppBridge = () => {
-      if ((window as any).shopify) {
-        console.log('App Bridge initialized successfully:', (window as any).shopify);
+      attempts++;
+      const shopify = (window as any).shopify;
+
+      if (shopify) {
+        console.log('✅ App Bridge READY!', {
+          version: shopify.version,
+          config: shopify.config,
+          full: shopify
+        });
         setIsEmbedded(true);
+        return true; // stop interval
       } else {
-        console.log('App Bridge not ready yet... retrying');
+        console.log(`App Bridge attempt ${attempts}/${maxAttempts} - not ready yet`);
       }
+
+      if (attempts >= maxAttempts) {
+        console.log('App Bridge timeout - giving up after 10s');
+      }
+      return false;
     };
 
-    // Immediate + retries (App Bridge can take 1–3 seconds)
-    checkAppBridge();
-    const interval = setInterval(checkAppBridge, 800); // Check every 800ms
+    const timer = setInterval(() => {
+      if (checkAppBridge()) {
+        clearInterval(timer);
+      }
+    }, intervalMs);
 
-    // Stop checking after 10 seconds max
-    const timeout = setTimeout(() => clearInterval(interval), 10000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
+    return () => clearInterval(timer);
   }, []);
 
   console.log('AppBridgeWrapper mounted – Is embedded?', isEmbedded);
