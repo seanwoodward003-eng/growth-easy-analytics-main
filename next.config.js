@@ -1,12 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Keep other settings if you have them (e.g. images, reactStrictMode, etc.)
-  // async headers() { ... }  ← REMOVE or COMMENT this entire block
-
-  // Example if you have other config
+  // Disable static export / prerender for embedded routes
+  output: 'standalone', // or remove if you had 'export'
+  trailingSlash: false,
   reactStrictMode: true,
-  // swcMinify: true,
-  // etc.
+
+  // Force dynamic rendering on root and dashboard (no prerender)
+  experimental: {
+    serverComponentsExternalPackages: ['jose'], // if needed
+  },
 };
 
 module.exports = nextConfig;
