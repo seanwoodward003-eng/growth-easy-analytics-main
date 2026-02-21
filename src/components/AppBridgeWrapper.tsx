@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Handler for Shopify nav events
+// Nav event handler
 function EmbeddedNavHandler() {
   const router = useRouter();
 
@@ -12,7 +12,7 @@ function EmbeddedNavHandler() {
       const target = event.target as HTMLElement;
       const href = target.getAttribute('href');
       if (href) {
-        console.log('Shopify navigate event:', href);
+        console.log('Shopify navigate:', href);
         router.push(href);
         event.preventDefault();
       }
@@ -29,30 +29,29 @@ export function AppBridgeWrapper({ children }: { children: ReactNode }) {
   const [isEmbedded, setIsEmbedded] = useState(false);
 
   useEffect(() => {
-    // Delay to give App Bridge script time to load
     const checkAppBridge = () => {
-      const shopify = (window as any).shopify;
-      console.log('App Bridge check:', {
-        exists: !!shopify,
-        version: shopify?.version,
-        config: shopify?.config,
-        full: shopify
-      });
-      setIsEmbedded(!!shopify);
+      if ((window as any).shopify) {
+        console.log('App Bridge initialized successfully:', (window as any).shopify);
+        setIsEmbedded(true);
+      } else {
+        console.log('App Bridge not ready yet... retrying');
+      }
     };
 
-    // Check immediately + retry after 1s and 3s
+    // Immediate + retries (App Bridge can take 1–3 seconds)
     checkAppBridge();
-    const timer1 = setTimeout(checkAppBridge, 1000);
-    const timer2 = setTimeout(checkAppBridge, 3000);
+    const interval = setInterval(checkAppBridge, 800); // Check every 800ms
+
+    // Stop checking after 10 seconds max
+    const timeout = setTimeout(() => clearInterval(interval), 10000);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearInterval(interval);
+      clearTimeout(timeout);
     };
   }, []);
 
-  console.log('AppBridgeWrapper mounted – Is Shopify embedded?', isEmbedded);
+  console.log('AppBridgeWrapper mounted – Is embedded?', isEmbedded);
 
   return (
     <>
