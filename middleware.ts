@@ -23,11 +23,9 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next();
 
-  // Global security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // CORS for API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('[MW DEBUG] API route - setting CORS');
     const origin = request.headers.get('origin');
@@ -46,7 +44,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Detect embedded-like requests
   const isEmbeddedRequest =
     request.nextUrl.searchParams.has('embedded') ||
     request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -56,20 +53,20 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // Bust cache for embedded loads (prevents stale 304/200 from old deploys)
-    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    // Bust Vercel cache on embedded loads (prevents stale 304/200)
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
 
-    // Redirect embedded root / to /dashboard (preserves all query params)
+    // Redirect embedded root / to /dashboard (preserves all params)
     if (request.nextUrl.pathname === '/') {
       console.log('[MW DEBUG] Embedded root request - REDIRECTING to /dashboard with params');
       const dashboardUrl = new URL('/dashboard', request.url);
-      dashboardUrl.search = request.nextUrl.search; // keep embedded=1, shop, id_token, hmac, etc.
-      return NextResponse.redirect(dashboardUrl, 307); // 307 = temporary, preserves method/query
+      dashboardUrl.search = request.nextUrl.search;
+      return NextResponse.redirect(dashboardUrl, 307);
     }
 
-    // Set Shopify-safe CSP (applies to /dashboard and other embedded HTML)
+    // Set Shopify-safe CSP
     const shop = request.nextUrl.searchParams.get('shop');
 
     let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
@@ -93,12 +90,11 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Content-Security-Policy', cspValue);
     console.log('[MW DEBUG] CSP set for embedded request:', cspValue);
 
-    // Auth check — if no token, BREAK OUT of iframe
     const accessToken = request.cookies.get('access_token')?.value;
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
 
     if (!accessToken) {
-      console.log('[MW DEBUG] No token in embedded context - sending breakout redirect');
+      console.log('[MW DEBUG] No token - sending breakout redirect');
 
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('error', 'login_required');
@@ -140,7 +136,6 @@ export async function middleware(request: NextRequest) {
       return res;
     }
 
-    // Auth succeeds → proceed
     try {
       console.log('[MW DEBUG] Verifying JWT');
       const { payload } = await jwtVerify(accessToken, JWT_SECRET_KEY);
@@ -156,7 +151,7 @@ export async function middleware(request: NextRequest) {
       if (!user) {
         console.log('[MW DEBUG] No user - sending breakout redirect');
         const loginUrl = new URL('/', request.url);
-        const breakoutHtml = `...`; // reuse breakoutHtml block from above
+        const breakoutHtml = `...`; // reuse from above
         const res = new NextResponse(breakoutHtml, {
           status: 200,
           headers: { 'Content-Type': 'text/html', ...response.headers },
