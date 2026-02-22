@@ -21,6 +21,24 @@ export default function Document() {
           crossOrigin="anonymous"
         />
 
+        {/* Debug 1: Log meta value */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              console.log('Meta shopify-api-key content:', 
+                document.querySelector('meta[name="shopify-api-key"]')?.getAttribute('content') || 'MISSING_OR_EMPTY'
+              );
+            `
+          }}
+        />
+
+        {/* Debug 2: Log script load success/fail */}
+        <script
+          src="https://cdn.shopify.com/shopifycloud/app-bridge.js"
+          onLoad={() => console.log('✅ App Bridge script LOADED from CDN')}
+          onError={() => console.log('❌ App Bridge script FAILED to load')}
+        />
+
         {/* Viewport – good to have early */}
         <meta
           name="viewport"
