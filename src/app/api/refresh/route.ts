@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
 
   const finalResponse = NextResponse.json({ success: true }, { headers: response.headers });
 
+  // Pass finalResponse as 4th argument
   await setAuthCookies(access, newRefresh, csrf, finalResponse);
 
   return finalResponse;
