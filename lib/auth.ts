@@ -36,7 +36,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
     try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),  // ← Use Client Secret
+        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET || process.env.SHOPIFY_API_SECRET || ''),  // Use Client Secret if set
         { algorithms: ['HS256'] }
       );
 
@@ -96,7 +96,6 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
         subscription_status: row.subscription_status ?? undefined,
       };
 
-      // Basic subscription/trial check
       const now = new Date();
       const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
 
@@ -111,7 +110,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
       return { success: true, user, shopDomain };
     } catch (err) {
       console.error('[AUTH] Shopify session token verification failed:', err);
-      return { success: false, error: 'Invalid or expired session token', status: 401 }; // ← Graceful return, no crash
+      return { success: false, error: 'Invalid or expired session token', status: 401 }; // Graceful 401 - NO CRASH
     }
   }
 
