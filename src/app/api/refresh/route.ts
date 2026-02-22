@@ -4,37 +4,46 @@ import { generateTokens, generateCsrfToken, setAuthCookies } from '@/lib/auth';
 import { getRow } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
-  // Ensure CORS headers for Shopify Admin iframe
-  const origin = request.headers.get('origin') || '';
-  const response = NextResponse.next();
+  console.log('[REFRESH] Refresh request received');
 
+  // CORS for Shopify Admin iframe (no next())
+  const origin = request.headers.get('origin') || '';
   const allowedOrigins = [
     'https://admin.shopify.com',
     'https://*.myshopify.com',
     'https://*.shopify.com'
   ];
 
+  let corsHeaders = {};
   if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
+    corsHeaders = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   } else {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   }
-
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const authResult = await authenticateRequest(request);
 
   if (!authResult.success) {
+    const response = NextResponse.json(
+      { error: authResult.error },
+      { status: authResult.status, headers: corsHeaders }
+    );
+
     response.cookies.delete('access_token');
     response.cookies.delete('refresh_token');
     response.cookies.delete('csrf_token');
 
-    return NextResponse.json(
-      { error: authResult.error },
-      { status: authResult.status, headers: response.headers }
-    );
+    return response;
   }
 
   const user = authResult.user;
@@ -43,32 +52,37 @@ export async function POST(request: NextRequest) {
 
   const csrf = generateCsrfToken();
 
-  const finalResponse = NextResponse.json({ success: true }, { headers: response.headers });
+  const response = NextResponse.json({ success: true }, { headers: corsHeaders });
 
-  await setAuthCookies(access, newRefresh, csrf, finalResponse);
+  await setAuthCookies(access, newRefresh, csrf, response);
 
-  return finalResponse;
+  return response;
 }
 
-export async function OPTIONS(request: NextRequest) {  // <-- Added request parameter here
-  const origin = request.headers.get('origin') || '';  // <-- Now request is defined
-  const response = NextResponse.next();
-
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
   const allowedOrigins = [
     'https://admin.shopify.com',
     'https://*.myshopify.com',
     'https://*.shopify.com'
   ];
 
+  let corsHeaders = {};
   if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
+    corsHeaders = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   } else {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   }
 
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  return new NextResponse(null, { status: 204, headers: response.headers });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
