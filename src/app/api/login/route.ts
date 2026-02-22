@@ -90,4 +90,4 @@ export async function OPTIONS(request: NextRequest) {
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   return new NextResponse(null, { status: 204, headers: response.headers });
-}
+} 
