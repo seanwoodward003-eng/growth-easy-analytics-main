@@ -24,10 +24,6 @@ export async function POST(request: NextRequest) {
   response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (request.method === 'OPTIONS') {
-    return new NextResponse(null, { status: 204, headers: response.headers });
-  }
-
   const authResult = await authenticateRequest(request);
 
   if (!authResult.success) {
@@ -49,16 +45,15 @@ export async function POST(request: NextRequest) {
 
   const finalResponse = NextResponse.json({ success: true }, { headers: response.headers });
 
-  // Pass finalResponse as 4th argument
   await setAuthCookies(access, newRefresh, csrf, finalResponse);
 
   return finalResponse;
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {  // <-- Added request parameter here
+  const origin = request.headers.get('origin') || '';  // <-- Now request is defined
   const response = NextResponse.next();
 
-  const origin = request.headers.get('origin') || '';
   const allowedOrigins = [
     'https://admin.shopify.com',
     'https://*.myshopify.com',
