@@ -5,12 +5,14 @@ import { NextResponse } from 'next/server';
 export async function POST() {
   const cookieStore = cookies();
 
-  // Delete cookies aggressively
-  cookieStore.delete('access_token', { path: '/' });
-  cookieStore.delete('refresh_token', { path: '/' });
-  cookieStore.delete('csrf_token', { path: '/' });
+  // Delete cookies by name only (path is '/' by default, no need for options)
+  cookieStore.delete('access_token');
+  cookieStore.delete('refresh_token');
+  cookieStore.delete('csrf_token');
 
-  // Return HTML with client-side clear + breakout redirect
+  // Optional: add more deletes if you have other cookies
+
+  // Return HTML with client-side clear + breakout redirect from iframe
   const logoutHtml = `
     <!DOCTYPE html>
     <html lang="en">
@@ -22,11 +24,11 @@ export async function POST() {
     <body>
       <p>Logging out... Redirecting.</p>
       <script>
-        // Clear any client-side state
+        // Clear client-side state
         localStorage.clear();
         sessionStorage.clear();
 
-        // Break out of Shopify Admin iframe
+        // Break out of Shopify iframe and go to login/home
         const target = "/";  // Change to "/login" if you have a separate login page
         if (window.top && window.top !== window.self) {
           window.top.location.href = target + "?logged_out=true";
