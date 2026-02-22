@@ -36,7 +36,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
     try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),  // ← FIXED: Use Client Secret here
+        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),  // FIXED: Client Secret for Shopify ID token
         { algorithms: ['HS256'] }
       );
 
