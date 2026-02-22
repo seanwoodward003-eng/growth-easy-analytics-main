@@ -29,6 +29,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
   const authHeader = req.headers.get('authorization');
 
   /* ── Bearer block commented out to prevent crash / loop ──
+  // ── Primary path: Shopify embedded app session token (Bearer JWT) ──
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     console.log('[AUTH] authenticateRequest → attempting Shopify session token validation');
@@ -36,7 +37,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
     try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),
+        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET || process.env.SHOPIFY_API_SECRET || ''),
         { algorithms: ['HS256'] }
       );
 
@@ -166,34 +167,40 @@ export async function setAuthCookies(
 ) {
   const isProd = process.env.NODE_ENV === 'production';
 
+  // Base cookie options – sameSite 'lax' in development (localhost), 'none' in production (embedded iframe)
   const baseOptions = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: 'none' as const,
+    secure: isProd,                      // secure only on HTTPS (production)
+    sameSite: isProd ? 'none' as const : 'lax' as const,  // ← This is the key fix for embedded
     path: '/',
   };
 
-  console.log('[AUTH] Setting cookies — access_token length:', access.length);
+  console.log('[AUTH] Setting cookies — mode:', isProd ? 'production' : 'development');
+  console.log('[AUTH] - secure:', baseOptions.secure);
+  console.log('[AUTH] - sameSite:', baseOptions.sameSite);
 
+  // Access token (short-lived, httpOnly)
   response.cookies.set('access_token', access, {
     ...baseOptions,
     maxAge: 60 * 60 * 1, // 1 hour
   });
 
+  // Refresh token (long-lived, httpOnly)
   response.cookies.set('refresh_token', refresh, {
     ...baseOptions,
     maxAge: 60 * 60 * 24 * 90, // 90 days
   });
 
+  // CSRF token (non-httpOnly so client can read it)
   response.cookies.set('csrf_token', csrf, {
-    httpOnly: false,
+    httpOnly: false,                    // Client needs to read it for CSRF protection
     secure: isProd,
-    sameSite: 'none' as const,
+    sameSite: isProd ? 'none' as const : 'lax' as const,
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
 
-  console.log('[AUTH] Cookies set with sameSite=none, secure=' + isProd);
+  console.log('[AUTH] Cookies set successfully');
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
