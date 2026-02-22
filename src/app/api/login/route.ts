@@ -1,29 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTokens, setAuthCookies } from '@/lib/auth';
 import { getRow } from '@/lib/db';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   console.log('[LOGIN] Login request received');
 
-  // ── CORS for Shopify Admin iframe ──
+  // CORS for Shopify Admin iframe (no next())
   const origin = request.headers.get('origin') || '';
-  const response = NextResponse.next();
-
   const allowedOrigins = [
     'https://admin.shopify.com',
     'https://*.myshopify.com',
     'https://*.shopify.com'
   ];
 
+  let corsHeaders = {};
   if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
+    corsHeaders = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   } else {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   }
-
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const json = await request.json();
   const email = (json.email || '').toLowerCase().trim();
@@ -32,13 +38,13 @@ export async function POST(request: NextRequest) {
 
   if (!email || !/@.+\..+/.test(email)) {
     console.log('[LOGIN] Invalid email');
-    return NextResponse.json({ error: 'Valid email required' }, { status: 400, headers: response.headers });
+    return NextResponse.json({ error: 'Valid email required' }, { status: 400, headers: corsHeaders });
   }
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) {
     console.log('[LOGIN] No user found for email:', email);
-    return NextResponse.json({ error: 'No account found with this email. Please sign up.' }, { status: 404, headers: response.headers });
+    return NextResponse.json({ error: 'No account found with this email. Please sign up.' }, { status: 404, headers: corsHeaders });
   }
 
   console.log('[LOGIN] User found, ID:', user.id);
@@ -52,42 +58,45 @@ export async function POST(request: NextRequest) {
 
   console.log('[LOGIN] Tokens generated, access length:', access.length);
 
-  // Create the final response
-  const finalResponse = NextResponse.json(
+  const response = NextResponse.json(
     {
       success: true,
       redirect: '/dashboard',
     },
-    { headers: response.headers }
+    { headers: corsHeaders }
   );
 
-  // Pass finalResponse as 4th argument (now matches setAuthCookies signature)
-  await setAuthCookies(access, refresh, csrf, finalResponse);
+  await setAuthCookies(access, refresh, csrf, response);
 
   console.log('[LOGIN] Cookies set, redirecting to dashboard');
 
-  return finalResponse;
+  return response;
 }
 
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
-  const response = NextResponse.next();
-
   const allowedOrigins = [
     'https://admin.shopify.com',
     'https://*.myshopify.com',
     'https://*.shopify.com'
   ];
 
+  let corsHeaders = {};
   if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
+    corsHeaders = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   } else {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
   }
 
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  return new NextResponse(null, { status: 204, headers: response.headers });
-} 
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
