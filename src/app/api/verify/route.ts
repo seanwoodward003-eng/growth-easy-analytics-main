@@ -58,13 +58,15 @@ export async function GET(request: NextRequest) {
 
   console.log('Verify: Token valid - logging in user:', newUser.id, pendingUser.email);
 
-  // ── ADD AWAIT HERE ──
   const { access, refresh } = await generateTokens(newUser.id, pendingUser.email);
 
   const csrf = crypto.randomBytes(32).toString('hex');
 
+  // Create the final redirect response
   const response = NextResponse.redirect(new URL('/dashboard?verified=true', request.url));
-  await setAuthCookies(access, refresh, csrf);
+
+  // Pass response as 4th argument (now matches setAuthCookies signature)
+  await setAuthCookies(access, refresh, csrf, response);
 
   console.log('Verify: Success - cookies set, redirecting to dashboard');
 
