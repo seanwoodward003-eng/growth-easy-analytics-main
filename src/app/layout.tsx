@@ -56,10 +56,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      {/* ────────────────────────────────────────────────────────────────
-          IMPORTANT: Shopify App Bridge script + meta tag are NOW in
-          app/_document.tsx — do NOT add them here again
-      ──────────────────────────────────────────────────────────────── */}
+      <head>
+        {/* Shopify App Bridge – added here as fallback since _document.tsx may not render reliably */}
+        <meta name="shopify-api-key" content={process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || ''} />
+        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
+
+        {/* Optional Polaris */}
+        <script src="https://cdn.shopify.com/shopifycloud/polaris.js" async crossOrigin="anonymous" />
+
+        {/* Your existing head tags can go here if you have any */}
+      </head>
 
       <body className={`${orbitron.className} bg-[#0a0f2c] text-cyan-200 min-h-dvh relative overflow-x-hidden`}>
         {/* Header – no logo, menu button responsive */}
