@@ -1,8 +1,9 @@
+// lib/auth.ts
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { getRow } from './db';
 import { decrypt } from '@/lib/encryption';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const JWT_SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || process.env.SECRET_KEY!
@@ -159,38 +160,42 @@ export function generateCsrfToken() {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-export async function setAuthCookies(access: string, refresh: string, csrf: string) {
-  const cookieStore = await cookies();
+export async function setAuthCookies(
+  access: string,
+  refresh: string,
+  csrf: string,
+  response: NextResponse // <-- Added 4th parameter to accept the response object
+) {
   const isProd = process.env.NODE_ENV === 'production';
 
   const baseOptions = {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'lax' as const,
+    sameSite: 'none' as const, // Required for cross-origin (embedded) requests
     path: '/',
   };
 
   console.log('[AUTH] Setting cookies — access_token length:', access.length);
 
-  cookieStore.set('access_token', access, {
+  response.cookies.set('access_token', access, {
     ...baseOptions,
     maxAge: 60 * 60 * 1, // 1 hour
   });
 
-  cookieStore.set('refresh_token', refresh, {
+  response.cookies.set('refresh_token', refresh, {
     ...baseOptions,
     maxAge: 60 * 60 * 24 * 90, // 90 days
   });
 
-  cookieStore.set('csrf_token', csrf, {
+  response.cookies.set('csrf_token', csrf, {
     httpOnly: false,
     secure: isProd,
-    sameSite: 'lax' as const,
+    sameSite: 'none' as const,
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
 
-  console.log('[AUTH] Cookies set with sameSite=lax, secure=' + isProd);
+  console.log('[AUTH] Cookies set with sameSite=none, secure=' + isProd);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
