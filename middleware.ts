@@ -6,11 +6,11 @@ const JWT_SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || process.env.SECRET_KEY!
 );
 
-const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_FRONTEND_URL!,
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://127.0.0.1:3000',
+// Shopify Admin origins (exact match required for credentials)
+const SHOPIFY_ORIGINS = [
+  'https://admin.shopify.com',
+  'https://*.myshopify.com',
+  'https://*.shopify.com',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -26,14 +26,17 @@ export async function middleware(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
+  // Enhanced CORS for Shopify Admin iframe (cross-origin credentials)
   if (request.nextUrl.pathname.startsWith('/api')) {
     console.log('[MW DEBUG] API route - setting CORS');
-    const origin = request.headers.get('origin');
-    if (origin && ALLOWED_ORIGINS.includes(origin)) {
-      response.headers.set('Access-Control-Allow-Origin', origin);
-    } else {
-      response.headers.set('Access-Control-Allow-Origin', '*');
+    const origin = request.headers.get('origin') || '';
+
+    let corsOrigin = '*';
+    if (origin && SHOPIFY_ORIGINS.some(o => origin === o || origin.endsWith(o.replace('*', '')))) {
+      corsOrigin = origin; // exact match for credentials
     }
+
+    response.headers.set('Access-Control-Allow-Origin', corsOrigin);
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
@@ -53,16 +56,13 @@ export async function middleware(request: NextRequest) {
   if (isEmbeddedRequest) {
     console.log('[MW DEBUG] Embedded request detected');
 
-    // Force NO caching on all embedded requests to prevent static/prerender bypass
+    // Force NO caching on embedded requests
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
     response.headers.set('Surrogate-Control', 'no-store');
 
-    // ────────────────────────────────────────────────
-    // FORCE CORRECT FRAME-ANCESTORS ON ROOT
-    // This overrides any 'none' coming from elsewhere
-    // ────────────────────────────────────────────────
+    // Force correct frame-ancestors on root
     if (request.nextUrl.pathname === '/' || request.nextUrl.pathname === '') {
       const shop = request.nextUrl.searchParams.get('shop') || '';
 
@@ -80,8 +80,8 @@ export async function middleware(request: NextRequest) {
         "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
         "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
         "img-src 'self' data: blob: https://cdn.shopify.com https://*.shopify.com https://*.stripe.com; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "font-src 'self' data:; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com; " +
+        "font-src 'self' data: https://fonts.gstatic.com https://cdn.shopify.com; " +
         "base-uri 'self';";
 
       response.headers.set('Content-Security-Policy', cspValue);
@@ -96,30 +96,6 @@ export async function middleware(request: NextRequest) {
       dashboardUrl.search = request.nextUrl.search;
       return NextResponse.redirect(dashboardUrl, 307);
     }
-
-    // Set Shopify-safe CSP (your original block - kept for consistency)
-    const shop = request.nextUrl.searchParams.get('shop');
-
-    let frameAncestors = "frame-ancestors 'self' https://admin.shopify.com https://*.shopify.com https://*.myshopify.com";
-    if (shop && shop.endsWith('.myshopify.com')) {
-      frameAncestors += ` https://${shop}`;
-    }
-    frameAncestors += "; ";
-
-    const cspValue = 
-      frameAncestors +
-      "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.shopify.com https://*.shopify.com https://js.stripe.com https://*.stripe.com; " +
-      "connect-src 'self' https://*.shopify.com https://*.myshopify.com https://api.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
-      "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://*.stripe.com; " +
-      "child-src 'self' blob: https://js.stripe.com https://checkout.stripe.com; " +
-      "img-src 'self' data: blob: https://cdn.shopify.com https://*.shopify.com https://*.stripe.com; " +
-      "style-src 'self' 'unsafe-inline'; " +
-      "font-src 'self' data:; " +
-      "base-uri 'self';";
-
-    response.headers.set('Content-Security-Policy', cspValue);
-    console.log('[MW DEBUG] CSP set for embedded request:', cspValue);
 
     const accessToken = request.cookies.get('access_token')?.value;
     console.log('[MW DEBUG] Access token exists?', !!accessToken);
