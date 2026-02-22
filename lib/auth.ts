@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { getRow } from './db';
@@ -24,7 +23,7 @@ export type AuthResult =
   | { success: false; error: string; status: number };
 
 // ────────────────────────────────────────────────
-// NEW: Unified auth for embedded + legacy cookie flows
+// Unified auth for embedded + legacy cookie flows
 // ────────────────────────────────────────────────
 export async function authenticateRequest(req: NextRequest): Promise<AuthResult> {
   const authHeader = req.headers.get('authorization');
@@ -37,7 +36,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
     try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(process.env.SHOPIFY_API_SECRET!),
+        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),  // ← FIXED: Use Client Secret here
         { algorithms: ['HS256'] }
       );
 
@@ -97,7 +96,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
         subscription_status: row.subscription_status ?? undefined,
       };
 
-      // Basic subscription/trial check (mirroring requireAuth logic)
+      // Basic subscription/trial check
       const now = new Date();
       const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
 
@@ -121,9 +120,8 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
   const legacyResult = await requireAuth();
 
   if ('error' in legacyResult) {
-    // We know error is present when 'error' in legacyResult
-    const error = legacyResult.error!;                    // non-null assertion
-    const status = legacyResult.status ?? 401;            // safe default
+    const error = legacyResult.error!;
+    const status = legacyResult.status ?? 401;
     return { success: false, error, status };
   }
 
@@ -164,14 +162,14 @@ export async function setAuthCookies(
   access: string,
   refresh: string,
   csrf: string,
-  response: NextResponse // <-- Added 4th parameter to accept the response object
+  response: NextResponse
 ) {
   const isProd = process.env.NODE_ENV === 'production';
 
   const baseOptions = {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'none' as const, // Required for cross-origin (embedded) requests
+    sameSite: 'none' as const,
     path: '/',
   };
 
