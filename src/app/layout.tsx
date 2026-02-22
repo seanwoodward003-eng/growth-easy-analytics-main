@@ -19,6 +19,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const isCoachPage = pathname === '/dashboard/ai-growth-coach';
   const isActive = (path: string) => pathname.startsWith(path);
 
+  // Prevent auto re-login after logout (detect ?logged_out=true)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('logged_out') === 'true') {
+      console.log('[LOGOUT] Detected logged_out param - clearing stale state');
+      localStorage.clear();
+      sessionStorage.clear();
+      // Optional: force redirect to clean login/home
+      if (window.location.pathname !== '/') {
+        window.location.replace('/');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) setShowCookieBanner(true);
@@ -51,7 +65,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       console.error('Error during logout:', error);
     }
 
-    window.location.replace('/');
+    // Clear client-side state
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Break out of Shopify Admin iframe and redirect to home/login
+    const target = '/?logged_out=true';
+    if (window.top && window.top !== window.self) {
+      console.log('[LOGOUT] Breaking out of iframe to:', target);
+      window.top.location.href = target;
+    } else {
+      console.log('[LOGOUT] Redirecting to:', target);
+      window.location.replace(target);
+    }
   };
 
   return (
