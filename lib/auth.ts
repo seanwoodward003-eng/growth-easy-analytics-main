@@ -1,3 +1,4 @@
+// lib/auth.ts
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { getRow } from './db';
@@ -23,19 +24,106 @@ export type AuthResult =
   | { success: false; error: string; status: number };
 
 // ────────────────────────────────────────────────
-// Unified auth for embedded + legacy cookie flows
+// NEW: Unified auth for embedded + legacy cookie flows
 // ────────────────────────────────────────────────
 export async function authenticateRequest(req: NextRequest): Promise<AuthResult> {
   const authHeader = req.headers.get('authorization');
 
-  // Bearer block never enabled in this version — fallback to cookie auth always
-  console.log('[AUTH] authenticateRequest → using legacy cookie/session auth');
+  // ── Primary path: Shopify embedded app session token (Bearer JWT) ──
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    console.log('[AUTH] authenticateRequest → attempting Shopify session token validation');
 
+    try {
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(process.env.SHOPIFY_API_SECRET!),
+        { algorithms: ['HS256'] }
+      );
+
+      if (payload.aud !== process.env.SHOPIFY_API_KEY) {
+        console.log('[AUTH] Invalid audience in Shopify session token');
+        return { success: false, error: 'Invalid token audience', status: 401 };
+      }
+
+      const shopDomain =
+        (payload.dest as string)?.replace('https://', '') ||
+        (payload.iss as string)?.replace('https://', '') ||
+        null;
+
+      if (!shopDomain) {
+        console.log('[AUTH] Missing shop domain in Shopify session token');
+        return { success: false, error: 'Missing shop domain in token', status: 401 };
+      }
+
+      console.log('[AUTH] Shopify session token valid — shop domain:', shopDomain);
+
+      const row = await getRow<{
+        id: number;
+        email: string;
+        shopify_shop: string | null;
+        shopify_access_token: string | null;
+        ga4_connected: boolean | null;
+        hubspot_connected: boolean | null;
+        trial_end: string | null;
+        subscription_status: string | null;
+      }>(
+        'SELECT id, email, shopify_shop, shopify_access_token, ga4_connected, hubspot_connected, trial_end, subscription_status FROM users WHERE shopify_shop = ? LIMIT 1',
+        [shopDomain]
+      );
+
+      if (!row) {
+        console.log('[AUTH] No user found for shop domain:', shopDomain);
+        return { success: false, error: 'User not found for shop', status: 404 };
+      }
+
+      let decryptedShopifyToken: string | null = null;
+      if (row.shopify_access_token) {
+        try {
+          decryptedShopifyToken = await decrypt(row.shopify_access_token);
+        } catch (err) {
+          console.error('[AUTH] Decryption failed for shopify_access_token:', err);
+        }
+      }
+
+      const user: AuthUser & { trial_end?: string; subscription_status?: string } = {
+        id: row.id,
+        email: row.email,
+        shopify_shop: row.shopify_shop,
+        shopify_access_token: decryptedShopifyToken,
+        ga4_connected: row.ga4_connected,
+        hubspot_connected: row.hubspot_connected,
+        trial_end: row.trial_end ?? undefined,
+        subscription_status: row.subscription_status ?? undefined,
+      };
+
+      // Basic subscription/trial check (mirroring requireAuth logic)
+      const now = new Date();
+      const trialEnd = row.trial_end ? new Date(row.trial_end) : null;
+
+      if (row.subscription_status === 'trial' && trialEnd && now > trialEnd) {
+        return { success: false, error: 'trial_expired', status: 403 };
+      }
+
+      if (row.subscription_status === 'canceled') {
+        return { success: false, error: 'subscription_canceled', status: 403 };
+      }
+
+      return { success: true, user, shopDomain };
+    } catch (err) {
+      console.error('[AUTH] Shopify session token verification failed:', err);
+      return { success: false, error: 'Invalid or expired session token', status: 401 };
+    }
+  }
+
+  // ── Fallback: legacy cookie-based auth ──
+  console.log('[AUTH] authenticateRequest → falling back to cookie/session auth');
   const legacyResult = await requireAuth();
 
   if ('error' in legacyResult) {
-    const error = legacyResult.error!;
-    const status = legacyResult.status ?? 401;
+    // We know error is present when 'error' in legacyResult
+    const error = legacyResult.error!;                    // non-null assertion
+    const status = legacyResult.status ?? 401;            // safe default
     return { success: false, error, status };
   }
 
@@ -76,20 +164,18 @@ export async function setAuthCookies(
   access: string,
   refresh: string,
   csrf: string,
-  response: NextResponse
+  response: NextResponse // <-- Added 4th parameter to accept the response object
 ) {
   const isProd = process.env.NODE_ENV === 'production';
 
   const baseOptions = {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'none' as const : 'lax' as const,
+    sameSite: 'none' as const, // Required for cross-origin (embedded) requests
     path: '/',
   };
 
-  console.log('[AUTH] Setting cookies — mode:', isProd ? 'production' : 'development');
-  console.log('[AUTH] - secure:', baseOptions.secure);
-  console.log('[AUTH] - sameSite:', baseOptions.sameSite);
+  console.log('[AUTH] Setting cookies — access_token length:', access.length);
 
   response.cookies.set('access_token', access, {
     ...baseOptions,
@@ -104,12 +190,12 @@ export async function setAuthCookies(
   response.cookies.set('csrf_token', csrf, {
     httpOnly: false,
     secure: isProd,
-    sameSite: isProd ? 'none' as const : 'lax' as const,
+    sameSite: 'none' as const,
     path: '/',
     maxAge: 60 * 60 * 24 * 90,
   });
 
-  console.log('[AUTH] Cookies set successfully');
+  console.log('[AUTH] Cookies set with sameSite=none, secure=' + isProd);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
