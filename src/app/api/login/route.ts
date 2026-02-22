@@ -5,6 +5,26 @@ import { getRow } from '@/lib/db';
 export async function POST(request: NextRequest) {
   console.log('[LOGIN] Login request received');
 
+  // ── CORS for Shopify Admin iframe ──
+  const origin = request.headers.get('origin') || '';
+  const response = NextResponse.next();
+
+  const allowedOrigins = [
+    'https://admin.shopify.com',
+    'https://*.myshopify.com',
+    'https://*.shopify.com'
+  ];
+
+  if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  } else {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+  }
+
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   const json = await request.json();
   const email = (json.email || '').toLowerCase().trim();
 
@@ -12,18 +32,17 @@ export async function POST(request: NextRequest) {
 
   if (!email || !/@.+\..+/.test(email)) {
     console.log('[LOGIN] Invalid email');
-    return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
+    return NextResponse.json({ error: 'Valid email required' }, { status: 400, headers: response.headers });
   }
 
   const user = await getRow<{ id: number }>('SELECT id FROM users WHERE email = ?', [email]);
   if (!user) {
     console.log('[LOGIN] No user found for email:', email);
-    return NextResponse.json({ error: 'No account found with this email. Please sign up.' }, { status: 404 });
+    return NextResponse.json({ error: 'No account found with this email. Please sign up.' }, { status: 404, headers: response.headers });
   }
 
   console.log('[LOGIN] User found, ID:', user.id);
 
-  // ── Added await here ──
   const { access, refresh } = await generateTokens(user.id, email);
 
   const csrf = crypto.getRandomValues(new Uint8Array(32)).reduce(
@@ -33,17 +52,42 @@ export async function POST(request: NextRequest) {
 
   console.log('[LOGIN] Tokens generated, access length:', access.length);
 
-  const response = NextResponse.json({
-    success: true,
-    redirect: '/dashboard',
-  });
+  // Create the final response
+  const finalResponse = NextResponse.json(
+    {
+      success: true,
+      redirect: '/dashboard',
+    },
+    { headers: response.headers }
+  );
 
-  await setAuthCookies(access, refresh, csrf);
+  // Pass finalResponse as 4th argument (now matches setAuthCookies signature)
+  await setAuthCookies(access, refresh, csrf, finalResponse);
+
   console.log('[LOGIN] Cookies set, redirecting to dashboard');
 
-  return response;
+  return finalResponse;
 }
 
-export async function OPTIONS() {
-  return new Response(null, { status: 200 });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const response = NextResponse.next();
+
+  const allowedOrigins = [
+    'https://admin.shopify.com',
+    'https://*.myshopify.com',
+    'https://*.shopify.com'
+  ];
+
+  if (allowedOrigins.some(o => origin.startsWith(o) || origin.endsWith(o.replace('*', '')))) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  } else {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+  }
+
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  return new NextResponse(null, { status: 204, headers: response.headers });
 }
