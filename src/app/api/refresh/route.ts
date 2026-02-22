@@ -4,8 +4,6 @@ import { generateTokens, generateCsrfToken, setAuthCookies } from '@/lib/auth';
 import { getRow } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
-  console.log('[REFRESH] Refresh request received');
-
   const authResult = await authenticateRequest(request);
 
   if (!authResult.success) {
