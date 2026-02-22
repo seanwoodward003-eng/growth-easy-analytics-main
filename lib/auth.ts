@@ -28,7 +28,7 @@ export type AuthResult =
 export async function authenticateRequest(req: NextRequest): Promise<AuthResult> {
   const authHeader = req.headers.get('authorization');
 
-  // ── Primary path: Shopify embedded app session token (Bearer JWT) ──
+  /* ── Bearer block commented out to prevent crash / loop ──
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     console.log('[AUTH] authenticateRequest → attempting Shopify session token validation');
@@ -36,7 +36,7 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
     try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),  // Client Secret for Shopify ID token
+        new TextEncoder().encode(process.env.SHOPIFY_CLIENT_SECRET!),
         { algorithms: ['HS256'] }
       );
 
@@ -110,9 +110,10 @@ export async function authenticateRequest(req: NextRequest): Promise<AuthResult>
       return { success: true, user, shopDomain };
     } catch (err) {
       console.error('[AUTH] Shopify session token verification failed:', err);
-      return { success: false, error: 'Invalid or expired session token', status: 401 }; // Graceful 401
+      return { success: false, error: 'Invalid or expired session token', status: 401 };
     }
   }
+  ── End commented block ── */
 
   // ── Fallback: legacy cookie-based auth ──
   console.log('[AUTH] authenticateRequest → falling back to cookie/session auth');
@@ -321,4 +322,4 @@ export async function verifyRefreshToken(token: string): Promise<{ sub: number }
   } catch {
     return null;
   }
-} 
+}
